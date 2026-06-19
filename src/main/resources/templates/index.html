@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лесное хозяйство - Валидатор делян</title>
+
+    <!-- UIKit -->
+    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css" />
+    <script src="/webjars/uikit/js/uikit.min.js"></script>
+    <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .coordinate-row {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .coordinate-row input {
+            width: 140px;
+            display: inline-block;
+        }
+        .btn-add-coordinate {
+            margin-top: 10px;
+        }
+        .conflict-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .severity-critical {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .severity-warning {
+            color: #f57c00;
+            font-weight: bold;
+        }
+        .severity-ok {
+            color: #388e3c;
+        }
+        .plot-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .uk-card {
+            transition: all 0.3s ease;
+        }
+        .uk-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .coord-input {
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- НАВИГАЦИЯ -->
+<!-- ============================================ -->
+<nav class="uk-navbar-container" uk-navbar>
+    <div class="uk-navbar-left">
+        <ul class="uk-navbar-nav">
+            <li class="uk-active"><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
+            <li><a href="/mass-load"><span uk-icon="icon: upload"></span> Массовая загрузка</a></li>
+        </ul>
+    </div>
+    <div class="uk-navbar-right">
+        <span class="uk-navbar-item uk-text-meta">🌲 Лесное хозяйство v1.0</span>
+    </div>
+</nav>
+
+<!-- ============================================ -->
+<!-- ОСНОВНОЙ КОНТЕНТ -->
+<!-- ============================================ -->
+<div class="uk-container uk-container-large uk-margin-top">
+
+    <!-- Заголовок -->
+    <h1 class="uk-heading-divider">
+        <span uk-icon="icon: tree; ratio: 1.5"></span>
+        Валидатор лесных делян
+    </h1>
+
+    <!-- Flash сообщения -->
+    <div th:if="${success}" class="uk-alert-success" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: check"></span> <span th:text="${success}"></span></p>
+    </div>
+
+    <div th:if="${warning}" class="uk-alert-warning" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: warning"></span> <span th:text="${warning}"></span></p>
+    </div>
+
+    <div th:if="${error}" class="uk-alert-danger" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: close"></span> <span th:text="${error}"></span></p>
+    </div>
+
+    <!-- Конфликты -->
+    <div th:if="${conflicts != null and !conflicts.empty}"
+         class="uk-card uk-card-default uk-card-body uk-margin"
+         style="border-left: 4px solid #f57c00;">
+
+        <h3 class="uk-card-title" style="color: #f57c00;">
+            <span uk-icon="icon: warning; ratio: 1.2"></span>
+            Обнаружены пересечения!
+            <span class="uk-badge uk-badge-danger uk-margin-left"
+                  th:text="${#lists.size(conflicts)} + ' конф.'"></span>
+        </h3>
+
+        <div class="conflict-list">
+            <table class="uk-table uk-table-striped uk-table-hover uk-table-small">
+                <thead>
+                <tr>
+                    <th>Деляна 1</th>
+                    <th>Деляна 2</th>
+                    <th>Площадь (м²)</th>
+                    <th>Серьёзность</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="conflict : ${conflicts}">
+                    <td><strong th:text="${conflict.plot1Number}"></strong></td>
+                    <td><strong th:text="${conflict.plot2Number}"></strong></td>
+                    <td th:text="${#numbers.formatDecimal(conflict.overlapArea, 1, 2)}"></td>
+                    <td>
+                            <span th:if="${conflict.severity == 'CRITICAL'}" class="severity-critical">
+                                <span uk-icon="icon: ban"></span> КРИТИЧНО
+                            </span>
+                        <span th:if="${conflict.severity == 'WARNING'}" class="severity-warning">
+                                <span uk-icon="icon: warning"></span> ПРЕДУПРЕЖДЕНИЕ
+                            </span>
+                        <span th:if="${conflict.severity == 'OK'}" class="severity-ok">
+                                <span uk-icon="icon: check"></span> OK
+                            </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ДВЕ КОЛОНКИ -->
+    <!-- ========================================== -->
+    <div class="uk-grid uk-margin-top" uk-grid>
+
+        <!-- ===== ЛЕВАЯ КОЛОНКА - ФОРМА ===== -->
+        <div class="uk-width-1-2@m">
+            <div class="uk-card uk-card-default uk-card-body">
+                <h3 class="uk-card-title">
+                    <span uk-icon="icon: pencil"></span>
+                    Добавление новой деляны
+                </h3>
+
+                <form th:action="@{/api/plots/create}" th:object="${plotDto}" method="post" id="plotForm">
+
+                    <!-- Номер деляны -->
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="plotNumber">
+                            Номер деляны <span class="uk-text-danger">*</span>
+                        </label>
+                        <div class="uk-form-controls">
+                            <input class="uk-input" type="text" id="plotNumber"
+                                   th:field="*{plotNumber}"
+                                   placeholder="Например: Л-12-2024" required>
+                        </div>
+                    </div>
+
+                    <!-- Лесничество -->
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="forestryName">Лесничество</label>
+                        <div class="uk-form-controls">
+                            <input class="uk-input" type="text" id="forestryName"
+                                   th:field="*{forestryName}"
+                                   placeholder="Название лесничества">
+                        </div>
+                    </div>
+
+                    <!-- Описание -->
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="description">Описание</label>
+                        <div class="uk-form-controls">
+                            <textarea class="uk-textarea" id="description"
+                                      th:field="*{description}" rows="2"
+                                      placeholder="Дополнительная информация"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- ПОДСКАЗКА (ПРАВИЛЬНАЯ!) -->
+                    <!-- ========================================== -->
+                    <div class="uk-alert-primary uk-margin-small" uk-alert>
+                        <p>
+                            <span uk-icon="icon: info"></span>
+                            <strong>Как вводить координаты:</strong><br>
+                            1. Введите точки <span class="uk-text-bold">по порядку</span> (по часовой стрелке или против)<br>
+                            2. Используйте <span class="uk-text-bold">ТОЧКУ</span> как разделитель (например, <code>55.123456</code>)<br>
+                            3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система замкнёт полигон автоматически!
+                        </p>
+                    </div>
+
+                    <hr>
+
+                    <!-- Координаты -->
+                    <div class="uk-margin">
+                        <label class="uk-form-label">
+                            Координаты полигона <span class="uk-text-danger">*</span>
+                            <span class="uk-text-meta uk-text-small">(Широта, Долгота)</span>
+                        </label>
+
+                        <div id="coordinates-container">
+                            <div th:each="coord, iter : *{coordinates}"
+                                 th:id="'coord-row-' + ${iter.index}"
+                                 class="coordinate-row">
+                                <input class="uk-input uk-form-width-small coord-input" type="text"
+                                       th:field="*{coordinates[__${iter.index}__].lat}"
+                                       placeholder="Широта"
+                                       oninput="validateCoordInput(this)">
+                                <input class="uk-input uk-form-width-small coord-input" type="text"
+                                       th:field="*{coordinates[__${iter.index}__].lng}"
+                                       placeholder="Долгота"
+                                       oninput="validateCoordInput(this)">
+                                <button type="button" class="uk-button uk-button-danger uk-button-small"
+                                        th:onclick="'removeCoordinate(' + ${iter.index} + ')'">
+                                    <span uk-icon="icon: close"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="uk-margin-small-top">
+                            <button type="button" class="uk-button uk-button-default uk-button-small"
+                                    onclick="addCoordinate()">
+                                <span uk-icon="icon: plus-circle"></span> Добавить точку
+                            </button>
+                            <button type="button" class="uk-button uk-button-danger uk-button-small"
+                                    onclick="clearAllCoordinates()">
+                                <span uk-icon="icon: trash"></span> Очистить все
+                            </button>
+                        </div>
+
+                        <div class="uk-text-meta uk-text-small uk-margin-small-top">
+                            <span uk-icon="icon: info"></span>
+                            Минимум 3 точки (система автоматически замкнёт полигон)
+                        </div>
+                    </div>
+
+                    <!-- Кнопки -->
+                    <div class="uk-margin">
+                        <button type="submit" class="uk-button uk-button-primary">
+                            <span uk-icon="icon: check"></span> Создать и проверить
+                        </button>
+                        <button type="reset" class="uk-button uk-button-default" onclick="resetForm()">
+                            <span uk-icon="icon: refresh"></span> Очистить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА И СПИСОК ===== -->
+        <div class="uk-width-1-2@m">
+            <div class="uk-card uk-card-default uk-card-body">
+                <h3 class="uk-card-title">
+                    <span uk-icon="icon: location"></span>
+                    Существующие деляны
+                </h3>
+
+                <div id="map"></div>
+
+                <div class="uk-margin-top uk-flex uk-flex-between">
+                    <button class="uk-button uk-button-secondary uk-button-small"
+                            onclick="checkAll()">
+                        <span uk-icon="icon: search"></span> Проверить все
+                    </button>
+                    <span class="uk-text-meta">
+                        Всего: <strong th:text="${plots != null ? plots.size() : 0}"></strong> делян
+                    </span>
+                </div>
+
+                <div class="plot-list uk-margin-top">
+                    <table class="uk-table uk-table-small uk-table-divider">
+                        <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Название</th>
+                            <th>Статус</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="plot : ${plots}">
+                            <td th:text="${plot.plotNumber}"></td>
+                            <td th:text="${plot.forestryName != null ? plot.forestryName : '-'}"></td>
+                            <td>
+                                    <span th:if="${plot.verified}"
+                                          class="uk-badge uk-badge-success">✓ Вериф.</span>
+                                <span th:unless="${plot.verified}"
+                                      class="uk-badge uk-badge-warning">⏳ Не провер.</span>
+                            </td>
+                        </tr>
+                        <tr th:if="${plots == null or plots.empty}">
+                            <td colspan="3" class="uk-text-center uk-text-muted">
+                                Нет добавленных делян
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // ==========================================
+    // РАБОТА С КООРДИНАТАМИ
+    // ==========================================
+
+    function addCoordinate() {
+        const container = document.getElementById('coordinates-container');
+        const index = container.children.length;
+
+        const div = document.createElement('div');
+        div.className = 'coordinate-row';
+        div.id = 'coord-row-' + index;
+        div.innerHTML = `
+            <input class="uk-input uk-form-width-small coord-input" type="text"
+                   name="coordinates[${index}].lat"
+                   placeholder="Широта"
+                   oninput="validateCoordInput(this)">
+            <input class="uk-input uk-form-width-small coord-input" type="text"
+                   name="coordinates[${index}].lng"
+                   placeholder="Долгота"
+                   oninput="validateCoordInput(this)">
+            <button type="button" class="uk-button uk-button-danger uk-button-small"
+                    onclick="removeCoordinate(${index})">
+                <span uk-icon="icon: close"></span>
+            </button>
+        `;
+        container.appendChild(div);
+
+        if (window.UIkit) {
+            UIkit.icon(div);
+        }
+    }
+
+    function removeCoordinate(index) {
+        const container = document.getElementById('coordinates-container');
+        const element = document.getElementById('coord-row-' + index);
+
+        if (element && container.children.length > 3) {
+            element.remove();
+        } else {
+            UIkit.notification({
+                message: 'Нельзя удалить последнюю точку (нужно минимум 3)',
+                status: 'warning',
+                timeout: 2000
+            });
+        }
+    }
+
+    function clearAllCoordinates() {
+        const container = document.getElementById('coordinates-container');
+        while (container.children.length > 3) {
+            container.removeChild(container.lastChild);
+        }
+        container.querySelectorAll('input').forEach(input => input.value = '');
+    }
+
+    function resetForm() {
+        clearAllCoordinates();
+        document.getElementById('plotNumber').value = '';
+        document.getElementById('forestryName').value = '';
+        document.getElementById('description').value = '';
+    }
+
+    // ==========================================
+    // ВАЛИДАЦИЯ ВВОДА (замена запятой на точку)
+    // ==========================================
+
+    function validateCoordInput(input) {
+        // Заменяем запятую на точку
+        input.value = input.value.replace(',', '.');
+        input.value = input.value.trim();
+
+        // Проверяем, что введено число
+        if (input.value !== '' && isNaN(parseFloat(input.value))) {
+            input.style.borderColor = '#f0506e';
+        } else {
+            input.style.borderColor = '';
+        }
+    }
+
+    // ==========================================
+    // КАРТА
+    // ==========================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const map = L.map('map').setView([56.0, 92.0], 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        fetch('/api/plots/all')
+            .then(response => response.json())
+            .then(plots => {
+                plots.forEach(plot => {
+                    if (plot.geometry) {
+                        try {
+                            const coords = plot.geometry.coordinates[0].map(c => [c[1], c[0]]);
+                            const polygon = L.polygon(coords, {
+                                color: plot.verified ? '#2e7d32' : '#f57c00',
+                                weight: 2,
+                                opacity: 0.8,
+                                fillOpacity: 0.3
+                            }).addTo(map);
+
+                            polygon.bindPopup(`
+                                <b>${plot.plotNumber}</b><br>
+                                ${plot.forestryName || 'Без лесничества'}<br>
+                                ${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}<br>
+                                <small>Площадь: ${plot.areaM2 ? (plot.areaM2 / 10000).toFixed(2) + ' га' : 'н/д'}</small>
+                            `);
+                        } catch(e) {
+                            console.error('Ошибка при отображении деляны:', plot.plotNumber, e);
+                        }
+                    }
+                });
+
+                if (plots.length > 0) {
+                    const group = new L.featureGroup();
+                    plots.forEach(plot => {
+                        if (plot.geometry) {
+                            const coords = plot.geometry.coordinates[0].map(c => [c[1], c[0]]);
+                            group.addLayer(L.polygon(coords));
+                        }
+                    });
+                    if (group.getLayers().length > 0) {
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    }
+                }
+            })
+            .catch(error => console.error('Error loading plots:', error));
+    });
+
+    function checkAll() {
+        UIkit.notification({
+            message: 'Запуск проверки всех делян...',
+            status: 'primary',
+            timeout: 2000
+        });
+
+        fetch('/api/plots/validate-all', {
+            method: 'POST'
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                UIkit.notification({
+                    message: 'Ошибка при проверке',
+                    status: 'danger',
+                    timeout: 3000
+                });
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            UIkit.notification({
+                message: 'Ошибка: ' + error.message,
+                status: 'danger',
+                timeout: 3000
+            });
+        });
+    }
+</script>
+
+</body>
+</html>

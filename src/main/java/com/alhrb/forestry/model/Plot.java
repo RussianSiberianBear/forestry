@@ -19,10 +19,10 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "plot_number", nullable = false, unique = true)
+    @Column(name = "plot_number", nullable = false, unique = true, length = 100)
     private String plotNumber;
 
-    @Column(name = "forestry_name")
+    @Column(name = "forestry_name", length = 100)
     private String forestryName;
 
     @Column(name = "description", length = 500)
@@ -44,7 +44,7 @@ public class Plot {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (geometry != null) {
-            // Приблизительный перевод градусов в метры (на экваторе)
+            // Расчёт площади в м² (приблизительный перевод)
             areaM2 = geometry.getArea() * 111319.9 * 111319.9;
         }
     }
