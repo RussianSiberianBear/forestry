@@ -29,21 +29,25 @@ public class DictionaryController {
 
     @GetMapping("/municipal-districts/by-region/{regionId}")
     public ResponseEntity<List<MunicipalDistrict>> getMunicipalDistricts(@PathVariable Long regionId) {
-        return ResponseEntity.ok(municipalDistrictService.findByRegionId(regionId));
+        List<MunicipalDistrict> districts = municipalDistrictService.findByRegionId(regionId);
+        return ResponseEntity.ok(districts);
     }
 
     @GetMapping("/forestries/by-district/{municipalDistrictId}")
     public ResponseEntity<List<Forestry>> getForestries(@PathVariable Long municipalDistrictId) {
-        return ResponseEntity.ok(forestryService.findByMunicipalDistrictId(municipalDistrictId));
+        List<Forestry> forestries = forestryService.findByMunicipalDistrictId(municipalDistrictId);
+        return ResponseEntity.ok(forestries);
     }
 
     @GetMapping("/district-forestries/by-forestry/{forestryId}")
     public ResponseEntity<List<DistrictForestry>> getDistrictForestries(@PathVariable Long forestryId) {
-        return ResponseEntity.ok(districtForestryService.findByForestryId(forestryId));
+        List<DistrictForestry> districts = districtForestryService.findByForestryId(forestryId);
+        return ResponseEntity.ok(districts);
     }
 
     @GetMapping("/quarters/by-district/{districtForestryId}")
     public ResponseEntity<List<Quarter>> getQuarters(@PathVariable Long districtForestryId) {
-        return ResponseEntity.ok(quarterService.findByDistrictForestry(districtForestryId));
+        List<Quarter> quarters = quarterService.findByDistrictForestry(districtForestryId);
+        return ResponseEntity.ok(quarters);
     }
 }
