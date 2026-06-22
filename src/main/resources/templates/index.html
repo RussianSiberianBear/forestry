@@ -84,6 +84,54 @@
             color: #999;
             margin-top: 4px;
         }
+
+        /* ===== AUTOCOMPLETE ===== */
+        .autocomplete-wrapper {
+            position: relative;
+        }
+        .autocomplete-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+        }
+        .autocomplete-suggestions .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.2s ease;
+        }
+        .autocomplete-suggestions .suggestion-item:hover {
+            background: #e3f0ff;
+        }
+        .autocomplete-suggestions .suggestion-item.active {
+            background: #1e87f0;
+            color: white;
+        }
+        .autocomplete-suggestions .suggestion-item .suggestion-number {
+            font-weight: bold;
+        }
+        .autocomplete-suggestions .suggestion-item .suggestion-name {
+            color: #666;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .autocomplete-suggestions .no-results {
+            padding: 12px;
+            color: #999;
+            text-align: center;
+        }
+        .autocomplete-suggestions .loading-suggestions {
+            padding: 12px;
+            color: #666;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -187,7 +235,7 @@
 
                 <form th:action="@{/api/plots/create}" th:object="${plotDto}" method="post" id="plotForm">
 
-                    <!-- Регион -->
+                    <!-- ===== 1. РЕГИОН ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="regionSelect">
                             Регион <span class="required-star">*</span>
@@ -206,7 +254,7 @@
                         </div>
                     </div>
 
-                    <!-- Муниципальный район -->
+                    <!-- ===== 2. МУНИЦИПАЛЬНЫЙ РАЙОН ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="municipalDistrictSelect">
                             Муниципальный район <span class="required-star">*</span>
@@ -221,7 +269,7 @@
                         </div>
                     </div>
 
-                    <!-- Лесничество -->
+                    <!-- ===== 3. ЛЕСНИЧЕСТВО ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="forestrySelect">
                             Лесничество <span class="required-star">*</span>
@@ -236,7 +284,7 @@
                         </div>
                     </div>
 
-                    <!-- Участковое лесничество -->
+                    <!-- ===== 4. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="districtForestrySelect">
                             Участковое лесничество <span class="required-star">*</span>
@@ -244,34 +292,56 @@
                         <div class="uk-form-controls">
                             <select class="form-select dependent-select" id="districtForestrySelect"
                                     name="districtForestryId"
-                                    onchange="loadQuarters(this.value)"
+                                    onchange="loadTechnicalUnits(this.value)"
                                     disabled>
                                 <option value="">-- Сначала выберите лесничество --</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Квартал -->
+                    <!-- ===== 5. ТЕХНИЧЕСКИЙ УЧАСТОК (НОВЫЙ!) ===== -->
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="quarterSelect">
-                            Квартал <span class="required-star">*</span>
+                        <label class="uk-form-label" for="technicalUnitSelect">
+                            Технический участок <span class="required-star">*</span>
                         </label>
                         <div class="uk-form-controls">
-                            <select class="form-select dependent-select" id="quarterSelect"
-                                    name="quarterId"
+                            <select class="form-select dependent-select" id="technicalUnitSelect"
+                                    name="technicalUnitId"
+                                    onchange="loadQuarters(this.value)"
                                     disabled>
                                 <option value="">-- Сначала выберите участковое лесничество --</option>
                             </select>
                         </div>
                         <div class="field-hint">
                             <span uk-icon="icon: info"></span>
-                            Если квартала нет в списке, создайте его через админку
+                            Если участок только один, он будет выбран автоматически
+                        </div>
+                    </div>
+
+                    <!-- ===== 6. КВАРТАЛ (AUTOCOMPLETE) ===== -->
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="quarterInput">
+                            Квартал <span class="required-star">*</span>
+                        </label>
+                        <div class="uk-form-controls autocomplete-wrapper">
+                            <input class="uk-input" type="text" id="quarterInput"
+                                   placeholder="Введите номер квартала (например: 12)"
+                                   autocomplete="off"
+                                   oninput="searchQuarters(this.value)"
+                                   onfocus="searchQuarters(this.value)"
+                                   disabled>
+                            <input type="hidden" id="quarterId" name="quarterId" th:field="*{quarterId}">
+                            <div id="quarterSuggestions" class="autocomplete-suggestions"></div>
+                        </div>
+                        <div class="field-hint">
+                            <span uk-icon="icon: info"></span>
+                            Введите номер квартала — система покажет подходящие варианты
                         </div>
                     </div>
 
                     <hr>
 
-                    <!-- Номер деляны -->
+                    <!-- ===== 7. НОМЕР ДЕЛЯНЫ ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="numberInQuarter">
                             Номер деляны в квартале <span class="required-star">*</span>
@@ -288,7 +358,7 @@
                         </div>
                     </div>
 
-                    <!-- Выделы -->
+                    <!-- ===== 8. ВЫДЕЛЫ ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="plots">Выделы</label>
                         <div class="uk-form-controls">
@@ -302,7 +372,7 @@
                         </div>
                     </div>
 
-                    <!-- Описание -->
+                    <!-- ===== 9. ОПИСАНИЕ ===== -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="description">Описание</label>
                         <div class="uk-form-controls">
@@ -312,7 +382,7 @@
                         </div>
                     </div>
 
-                    <!-- Год рубки и тип -->
+                    <!-- ===== 10. ГОД РУБКИ И ТИП ===== -->
                     <div class="uk-grid uk-grid-small" uk-grid>
                         <div class="uk-width-1-2">
                             <div class="uk-margin">
@@ -343,7 +413,7 @@
 
                     <hr>
 
-                    <!-- Координаты -->
+                    <!-- ===== 11. КООРДИНАТЫ ===== -->
                     <div class="uk-alert-primary uk-margin-small" uk-alert>
                         <p>
                             <span uk-icon="icon: info"></span>
@@ -396,7 +466,7 @@
                         </div>
                     </div>
 
-                    <!-- Кнопки -->
+                    <!-- ===== 12. КНОПКИ ===== -->
                     <div class="uk-margin">
                         <button type="submit" class="uk-button uk-button-primary">
                             <span uk-icon="icon: check"></span> Создать и проверить
@@ -536,8 +606,12 @@
         document.getElementById('forestrySelect').disabled = true;
         document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
         document.getElementById('districtForestrySelect').disabled = true;
-        document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-        document.getElementById('quarterSelect').disabled = true;
+        document.getElementById('technicalUnitSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+        document.getElementById('technicalUnitSelect').disabled = true;
+        document.getElementById('quarterInput').value = '';
+        document.getElementById('quarterId').value = '';
+        document.getElementById('quarterInput').disabled = true;
+        document.getElementById('quarterSuggestions').style.display = 'none';
     }
 
     function validateCoordInput(input) {
@@ -555,14 +629,7 @@
 
     function loadMunicipalDistricts(regionId) {
         if (!regionId) {
-            document.getElementById('municipalDistrictSelect').innerHTML = '<option value="">-- Сначала выберите регион --</option>';
-            document.getElementById('municipalDistrictSelect').disabled = true;
-            document.getElementById('forestrySelect').innerHTML = '<option value="">-- Сначала выберите район --</option>';
-            document.getElementById('forestrySelect').disabled = true;
-            document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-            document.getElementById('districtForestrySelect').disabled = true;
-            document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-            document.getElementById('quarterSelect').disabled = true;
+            resetDependentSelects();
             return;
         }
 
@@ -573,9 +640,7 @@
 
         fetch('/api/municipal-districts/by-region/' + regionId)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             })
             .then(data => {
@@ -598,7 +663,7 @@
                 select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
                 UIkit.notification({
-                    message: 'Ошибка загрузки районов: ' + error.message,
+                    message: 'Ошибка загрузки районов',
                     status: 'danger',
                     timeout: 3000
                 });
@@ -607,12 +672,7 @@
 
     function loadForestries(municipalDistrictId) {
         if (!municipalDistrictId) {
-            document.getElementById('forestrySelect').innerHTML = '<option value="">-- Сначала выберите район --</option>';
-            document.getElementById('forestrySelect').disabled = true;
-            document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-            document.getElementById('districtForestrySelect').disabled = true;
-            document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-            document.getElementById('quarterSelect').disabled = true;
+            resetDependentSelects('forestry');
             return;
         }
 
@@ -623,9 +683,7 @@
 
         fetch('/api/forestries/by-district/' + municipalDistrictId)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             })
             .then(data => {
@@ -647,20 +705,12 @@
                 console.error('Ошибка загрузки лесничеств:', error);
                 select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
-                UIkit.notification({
-                    message: 'Ошибка загрузки лесничеств: ' + error.message,
-                    status: 'danger',
-                    timeout: 3000
-                });
             });
     }
 
     function loadDistrictForestries(forestryId) {
         if (!forestryId) {
-            document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-            document.getElementById('districtForestrySelect').disabled = true;
-            document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-            document.getElementById('quarterSelect').disabled = true;
+            resetDependentSelects('district');
             return;
         }
 
@@ -671,9 +721,7 @@
 
         fetch('/api/district-forestries/by-forestry/' + forestryId)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             })
             .then(data => {
@@ -695,59 +743,201 @@
                 console.error('Ошибка загрузки участковых лесничеств:', error);
                 select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
-                UIkit.notification({
-                    message: 'Ошибка загрузки участковых лесничеств: ' + error.message,
-                    status: 'danger',
-                    timeout: 3000
-                });
             });
     }
 
-    function loadQuarters(districtForestryId) {
+    // ==========================================
+    // ТЕХНИЧЕСКИЕ УЧАСТКИ (НОВЫЙ УРОВЕНЬ!)
+    // ==========================================
+
+    function loadTechnicalUnits(districtForestryId) {
         if (!districtForestryId) {
-            document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-            document.getElementById('quarterSelect').disabled = true;
+            resetDependentSelects('technical');
             return;
         }
 
-        const select = document.getElementById('quarterSelect');
+        const select = document.getElementById('technicalUnitSelect');
         select.classList.add('loading');
         select.innerHTML = '<option value="">Загрузка...</option>';
         select.disabled = true;
 
-        fetch('/api/quarters/by-district/' + districtForestryId)
+        fetch('/api/technical-units/by-district/' + districtForestryId)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 return response.json();
             })
             .then(data => {
-                select.innerHTML = '<option value="">-- Выберите квартал --</option>';
+                select.innerHTML = '';
                 if (Array.isArray(data) && data.length > 0) {
-                    data.forEach(item => {
+                    // Если только один участок — выбираем его автоматически
+                    if (data.length === 1) {
                         const option = document.createElement('option');
-                        option.value = item.id;
-                        option.textContent = 'Кв. ' + item.number + (item.name ? ' (' + item.name + ')' : '');
+                        option.value = data[0].id;
+                        option.textContent = data[0].name || 'Без названия';
+                        option.selected = true;
                         select.appendChild(option);
-                    });
-                    select.disabled = false;
+                        select.disabled = false;
+                        // Автоматически загружаем кварталы
+                        loadQuarters(data[0].id);
+                    } else {
+                        // Несколько участков — показываем список
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = '-- Выберите технический участок --';
+                        select.appendChild(defaultOption);
+                        data.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.textContent = item.name || 'Без названия';
+                            select.appendChild(option);
+                        });
+                        select.disabled = false;
+                    }
                 } else {
-                    select.innerHTML = '<option value="">-- Кварталы не найдены --</option>';
+                    select.innerHTML = '<option value="">-- Технические участки не найдены --</option>';
+                    select.disabled = true;
                 }
                 select.classList.remove('loading');
             })
             .catch(error => {
-                console.error('Ошибка загрузки кварталов:', error);
+                console.error('Ошибка загрузки технических участков:', error);
                 select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
-                UIkit.notification({
-                    message: 'Ошибка загрузки кварталов: ' + error.message,
-                    status: 'danger',
-                    timeout: 3000
-                });
+                select.disabled = true;
             });
     }
+
+    // ==========================================
+    // КВАРТАЛЫ (AUTOCOMPLETE)
+    // ==========================================
+
+    let quarterSearchTimeout = null;
+
+    function searchQuarters(query) {
+        const technicalUnitId = document.getElementById('technicalUnitSelect').value;
+        const suggestionsDiv = document.getElementById('quarterSuggestions');
+        const quarterInput = document.getElementById('quarterInput');
+        const quarterIdInput = document.getElementById('quarterId');
+
+        // Если не выбран технический участок
+        if (!technicalUnitId) {
+            suggestionsDiv.innerHTML = '<div class="no-results">Сначала выберите технический участок</div>';
+            suggestionsDiv.style.display = 'block';
+            quarterInput.disabled = true;
+            return;
+        }
+
+        quarterInput.disabled = false;
+
+        // Если запрос пустой
+        if (!query || query.trim().length === 0) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(quarterSearchTimeout);
+        quarterSearchTimeout = setTimeout(() => {
+            suggestionsDiv.innerHTML = '<div class="loading-suggestions">Поиск...</div>';
+            suggestionsDiv.style.display = 'block';
+
+            fetch('/api/quarters/search?technicalUnitId=' + technicalUnitId + '&query=' + encodeURIComponent(query.trim()))
+                .then(response => {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    if (!Array.isArray(data) || data.length === 0) {
+                        suggestionsDiv.innerHTML = '<div class="no-results">Кварталы не найдены</div>';
+                        return;
+                    }
+
+                    let html = '';
+                    data.forEach(item => {
+                        html += `
+                            <div class="suggestion-item"
+                                 data-id="${item.id}"
+                                 data-number="${item.number}"
+                                 onclick="selectQuarter(${item.id}, '${item.number}', '${item.name || ''}')">
+                                <span class="suggestion-number">Кв. ${item.number}</span>
+                                ${item.name ? `<span class="suggestion-name">${item.name}</span>` : ''}
+                                ${item.areaHa ? `<span class="suggestion-name">${item.areaHa.toFixed(1)} га</span>` : ''}
+                            </div>
+                        `;
+                    });
+                    suggestionsDiv.innerHTML = html;
+                    suggestionsDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Ошибка поиска кварталов:', error);
+                    suggestionsDiv.innerHTML = '<div class="no-results">❌ Ошибка загрузки</div>';
+                });
+        }, 300);
+    }
+
+    function selectQuarter(id, number, name) {
+        const quarterInput = document.getElementById('quarterInput');
+        const quarterIdInput = document.getElementById('quarterId');
+        const suggestionsDiv = document.getElementById('quarterSuggestions');
+
+        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
+        quarterIdInput.value = id;
+        suggestionsDiv.style.display = 'none';
+
+        UIkit.notification({
+            message: '✅ Выбран квартал ' + number,
+            status: 'success',
+            timeout: 1500
+        });
+    }
+
+    function loadQuarters(technicalUnitId) {
+        if (!technicalUnitId) {
+            document.getElementById('quarterInput').disabled = true;
+            document.getElementById('quarterInput').value = '';
+            document.getElementById('quarterId').value = '';
+            document.getElementById('quarterSuggestions').style.display = 'none';
+            return;
+        }
+
+        // Активируем поле ввода квартала
+        document.getElementById('quarterInput').disabled = false;
+        document.getElementById('quarterInput').placeholder = 'Введите номер квартала...';
+
+        // Подгружаем список для первого показа (опционально)
+        const input = document.getElementById('quarterInput');
+        if (input.value.trim().length > 0) {
+            searchQuarters(input.value);
+        }
+    }
+
+    // ==========================================
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // ==========================================
+
+    function resetDependentSelects(level) {
+        if (!level || level === 'district' || level === 'technical' || level === 'quarter') {
+            document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+            document.getElementById('districtForestrySelect').disabled = true;
+        }
+        if (!level || level === 'technical' || level === 'quarter') {
+            document.getElementById('technicalUnitSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            document.getElementById('technicalUnitSelect').disabled = true;
+        }
+        if (!level || level === 'quarter') {
+            document.getElementById('quarterInput').disabled = true;
+            document.getElementById('quarterInput').value = '';
+            document.getElementById('quarterId').value = '';
+            document.getElementById('quarterSuggestions').style.display = 'none';
+        }
+    }
+
+    // Закрываем подсказки при клике вне
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('quarterInput')?.closest('.autocomplete-wrapper');
+        if (container && !container.contains(e.target)) {
+            document.getElementById('quarterSuggestions').style.display = 'none';
+        }
+    });
 
     // ==========================================
     // КАРТА

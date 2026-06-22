@@ -4,10 +4,7 @@ import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -20,6 +17,7 @@ public class DictionaryController {
     private final MunicipalDistrictService municipalDistrictService;
     private final ForestryService forestryService;
     private final DistrictForestryService districtForestryService;
+    private final TechnicalUnitService technicalUnitService;  // ← НОВЫЙ СЕРВИС!
     private final QuarterService quarterService;
 
     @GetMapping("/regions")
@@ -29,25 +27,29 @@ public class DictionaryController {
 
     @GetMapping("/municipal-districts/by-region/{regionId}")
     public ResponseEntity<List<MunicipalDistrict>> getMunicipalDistricts(@PathVariable Long regionId) {
-        List<MunicipalDistrict> districts = municipalDistrictService.findByRegionId(regionId);
-        return ResponseEntity.ok(districts);
+        return ResponseEntity.ok(municipalDistrictService.findByRegionId(regionId));
     }
 
     @GetMapping("/forestries/by-district/{municipalDistrictId}")
     public ResponseEntity<List<Forestry>> getForestries(@PathVariable Long municipalDistrictId) {
-        List<Forestry> forestries = forestryService.findByMunicipalDistrictId(municipalDistrictId);
-        return ResponseEntity.ok(forestries);
+        return ResponseEntity.ok(forestryService.findByMunicipalDistrictId(municipalDistrictId));
     }
 
     @GetMapping("/district-forestries/by-forestry/{forestryId}")
     public ResponseEntity<List<DistrictForestry>> getDistrictForestries(@PathVariable Long forestryId) {
-        List<DistrictForestry> districts = districtForestryService.findByForestryId(forestryId);
-        return ResponseEntity.ok(districts);
+        return ResponseEntity.ok(districtForestryService.findByForestryId(forestryId));
     }
 
-    @GetMapping("/quarters/by-district/{districtForestryId}")
-    public ResponseEntity<List<Quarter>> getQuarters(@PathVariable Long districtForestryId) {
-        List<Quarter> quarters = quarterService.findByDistrictForestry(districtForestryId);
-        return ResponseEntity.ok(quarters);
+    // ===== НОВЫЙ ЭНДПОИНТ: ТЕХНИЧЕСКИЕ УЧАСТКИ =====
+    @GetMapping("/technical-units/by-district/{districtForestryId}")
+    public ResponseEntity<List<TechnicalUnit>> getTechnicalUnits(@PathVariable Long districtForestryId) {
+        return ResponseEntity.ok(technicalUnitService.findByDistrictForestryId(districtForestryId));
+    }
+
+    @GetMapping("/quarters/search")
+    public ResponseEntity<List<Quarter>> searchQuarters(
+            @RequestParam Long technicalUnitId,
+            @RequestParam String query) {
+        return ResponseEntity.ok(quarterService.searchByTechnicalUnitAndNumber(technicalUnitId, query));
     }
 }
