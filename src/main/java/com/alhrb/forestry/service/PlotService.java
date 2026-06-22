@@ -1,11 +1,13 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.dto.IntersectionReport;
+import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.PlotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -328,5 +331,38 @@ public class PlotService {
         }
 
         return allConflicts;
+    }
+
+    public List<PlotMapDto> getAllPlotsForMap() {
+        List<Plot> plots = plotRepository.findAll();
+        return plots.stream()
+                .map(this::convertToMapDto)
+                .collect(Collectors.toList());
+    }
+
+    private PlotMapDto convertToMapDto(Plot plot) {
+        PlotMapDto dto = new PlotMapDto();
+        dto.setId(plot.getId());
+        dto.setFullNumber(plot.getFullNumber());
+        dto.setNumberInQuarter(plot.getNumberInQuarter());
+        dto.setVerified(plot.getVerified());
+        dto.setAreaM2(plot.getAreaM2());
+
+        // Геометрия в GeoJSON
+        if (plot.getGeometry() != null) {
+            try {
+                GeoJsonWriter writer = new GeoJsonWriter();
+                dto.setGeometryGeoJson(writer.write(plot.getGeometry()));
+            } catch (Exception e) {
+                dto.setGeometryGeoJson(null);
+            }
+        }
+
+        // Только имя лесничества (без всей иерархии)
+        if (plot.getForestry() != null) {
+            dto.setForestryName(plot.getForestry().getName());
+        }
+
+        return dto;
     }
 }

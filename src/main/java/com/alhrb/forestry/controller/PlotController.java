@@ -2,6 +2,7 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotDto;
+import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.Plot;
 import com.alhrb.forestry.model.Quarter;
 import com.alhrb.forestry.service.*;
@@ -151,5 +152,11 @@ public class PlotController {
         }
 
         return "redirect:/";
+    }
+
+    @GetMapping("/map-data")
+    @ResponseBody
+    public ResponseEntity<List<PlotMapDto>> getPlotsForMap() {
+        return ResponseEntity.ok(plotService.getAllPlotsForMap());
     }
 }

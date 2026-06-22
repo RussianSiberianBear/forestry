@@ -960,30 +960,33 @@
     });
 
     function loadPlots() {
-        fetch('/api/plots/all')
+        fetch('/api/plots/map-data')
             .then(response => response.json())
             .then(plots => {
                 if (!map) return;
 
                 plots.forEach(plot => {
-                    if (plot.geometry && plot.geometry.coordinates) {
+                    if (plot.geometryGeoJson) {
                         try {
-                            const coords = plot.geometry.coordinates[0].map(c => [c[1], c[0]]);
-                            const polygon = L.polygon(coords, {
-                                color: plot.verified ? '#2e7d32' : '#f57c00',
-                                weight: 2,
-                                opacity: 0.8,
-                                fillOpacity: 0.3
-                            }).addTo(map);
+                            const geojson = JSON.parse(plot.geometryGeoJson);
+                            if (geojson.type === 'Polygon' && geojson.coordinates) {
+                                const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
+                                const polygon = L.polygon(coords, {
+                                    color: plot.verified ? '#2e7d32' : '#f57c00',
+                                    weight: 2,
+                                    opacity: 0.8,
+                                    fillOpacity: 0.3
+                                }).addTo(map);
 
-                            polygon.bindPopup(`
+                                polygon.bindPopup(`
                                 <b>${plot.fullNumber || plot.numberInQuarter}</b><br>
-                                ${plot.forestry ? plot.forestry.name : 'Без лесничества'}<br>
+                                ${plot.forestryName || 'Без лесничества'}<br>
                                 ${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}<br>
                                 <small>Площадь: ${plot.areaM2 ? (plot.areaM2 / 10000).toFixed(2) + ' га' : 'н/д'}</small>
                             `);
+                            }
                         } catch(e) {
-                            console.error('Ошибка при отображении деляны:', plot.numberInQuarter, e);
+                            console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
                         }
                     }
                 });

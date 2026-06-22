@@ -111,6 +111,12 @@
             <artifactId>leaflet</artifactId>
             <version>1.9.4</version>
         </dependency>
+        <!-- JTS GeoJSON для сериализации геометрии -->
+        <dependency>
+            <groupId>org.locationtech.jts.io</groupId>
+            <artifactId>jts-io-common</artifactId>
+            <version>1.19.0</version>
+        </dependency>
     </dependencies>
 
     <build>
