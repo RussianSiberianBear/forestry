@@ -8,17 +8,34 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PlotRepository extends JpaRepository<Plot, Long> {
 
-    /**
-     * Проверка пересечений конкретной деляны с существующими
-     */
+    // Поиск по кварталу и номеру
+    Optional<Plot> findByQuarterIdAndNumberInQuarter(Long quarterId, String numberInQuarter);
+
+    // Поиск по полному номеру
+    Optional<Plot> findByFullNumber(String fullNumber);
+
+    // Все деляны квартала
+    List<Plot> findByQuarterIdOrderByNumberInQuarter(Long quarterId);
+
+    // Все деляны лесничества
+    List<Plot> findByForestryId(Long forestryId);
+
+    // Все деляны района
+    List<Plot> findByMunicipalDistrictId(Long municipalDistrictId);
+
+    // Все деляны региона
+    List<Plot> findByRegionId(Long regionId);
+
+    // Проверка пересечений
     @Query(value = """
         SELECT 
             b.id, 
-            b.plot_number,
+            b.full_number,
             ST_Area(ST_Intersection(:geometry, b.geometry)) AS area
         FROM forest_plot b
         WHERE b.id != :plotId
@@ -31,9 +48,7 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
             @Param("minArea") Double minArea
     );
 
-    /**
-     * Массовая проверка всех делян
-     */
+    // Массовая проверка
     @Query(value = """
         WITH candidates AS (
             SELECT 
@@ -54,42 +69,4 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
             AND ST_Area(ST_Intersection(a.geometry, b.geometry)) > :minArea
     """, nativeQuery = true)
     List<Object[]> findAllIntersections(@Param("minArea") Double minArea);
-
-    /**
-     * Проверка пересечений с учётом буфера (допуска)
-     */
-    @Query(value = """
-        SELECT 
-            b.id, 
-            b.plot_number,
-            ST_Area(ST_Intersection(
-                ST_Buffer(:geometry, -:tolerance),
-                ST_Buffer(b.geometry, -:tolerance)
-            )) AS area
-        FROM forest_plot b
-        WHERE b.id != :plotId
-            AND ST_Intersects(
-                ST_Buffer(:geometry, -:tolerance),
-                ST_Buffer(b.geometry, -:tolerance)
-            )
-            AND ST_Area(ST_Intersection(
-                ST_Buffer(:geometry, -:tolerance),
-                ST_Buffer(b.geometry, -:tolerance)
-            )) > :minArea
-    """, nativeQuery = true)
-    List<Object[]> findIntersectionsWithPlotWithTolerance(
-            @Param("geometry") Polygon geometry,
-            @Param("plotId") Long plotId,
-            @Param("minArea") Double minArea,
-            @Param("tolerance") Double tolerance
-    );
-
-    Plot findByPlotNumber(String plotNumber);
-
-    List<Plot> findByVerifiedTrue();
-
-    List<Plot> findByVerifiedFalse();
-
-    @Query(value = "SELECT ST_AsGeoJSON(geometry) FROM forest_plot WHERE id = :id", nativeQuery = true)
-    String findGeometryAsGeoJson(@Param("id") Long id);
 }

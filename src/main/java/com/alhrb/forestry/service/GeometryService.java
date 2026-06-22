@@ -112,4 +112,28 @@ public class GeometryService {
         if (polygon == null) return null;
         return polygon.toText();
     }
+
+    /**
+     * Проверка, что деляна находится внутри квартала
+     */
+    public boolean isPlotInsideQuarter(Polygon plotGeometry, Polygon quarterGeometry) {
+        if (plotGeometry == null || quarterGeometry == null) {
+            return false;
+        }
+        return quarterGeometry.contains(plotGeometry);
+    }
+
+    /**
+     * Проверка с понятным сообщением
+     */
+    public void validatePlotInsideQuarter(Polygon plotGeometry, Polygon quarterGeometry,
+                                          String plotNumber, Integer quarterNumber) {
+        if (!isPlotInsideQuarter(plotGeometry, quarterGeometry)) {
+            throw new IllegalArgumentException(
+                    String.format("❌ Деляна '%s' выходит за границы квартала %d! " +
+                                    "Пожалуйста, проверьте координаты.",
+                            plotNumber, quarterNumber)
+            );
+        }
+    }
 }
