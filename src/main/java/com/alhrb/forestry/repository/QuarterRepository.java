@@ -11,10 +11,20 @@ import java.util.Optional;
 
 @Repository
 public interface QuarterRepository extends JpaRepository<Quarter, Long> {
-    List<Quarter> findByDistrictForestryId(Long districtForestryId);
-    Optional<Quarter> findByDistrictForestryIdAndNumber(Long districtForestryId, Integer number);
-    List<Quarter> findByDistrictForestryIdOrderByNumber(Long districtForestryId);
 
+    // По техническому участку
+    List<Quarter> findByTechnicalUnitIdOrderByNumber(Long technicalUnitId);
+    Optional<Quarter> findByTechnicalUnitIdAndNumber(Long technicalUnitId, Integer number);
+
+    // По участковому лесничеству (для обратной совместимости)
     @Query("SELECT q FROM Quarter q WHERE q.districtForestry.id = :districtForestryId")
-    List<Quarter> findAllByDistrictForestryId(@Param("districtForestryId") Long districtForestryId);
+    List<Quarter> findByDistrictForestryId(@Param("districtForestryId") Long districtForestryId);
+
+    @Query("SELECT q FROM Quarter q WHERE q.districtForestry.id = :districtForestryId ORDER BY q.number")
+    List<Quarter> findByDistrictForestryIdOrderByNumber(@Param("districtForestryId") Long districtForestryId);
+
+    Optional<Quarter> findByDistrictForestryIdAndNumber(Long districtForestryId, Integer number);
+
+    // Поиск по имени
+    List<Quarter> findByTechnicalUnitIdAndNameContainingIgnoreCase(Long technicalUnitId, String name);
 }

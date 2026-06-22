@@ -36,10 +36,16 @@ public class Quarter {
     @Column(name = "geometry", columnDefinition = "geometry(Polygon,4326)")
     private Polygon geometry;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    // ===== ПРИВЯЗКА К ТЕХНИЧЕСКОМУ УЧАСТКУ =====
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "technical_unit_id")
+    private TechnicalUnit technicalUnit;
+
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "district_forestry_id")
-    private DistrictForestry districtForestry;
+    private DistrictForestry districtForestry; // ← дублируем для быстрых запросов
 
     @JsonIgnore
     @OneToMany(mappedBy = "quarter", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -55,6 +61,9 @@ public class Quarter {
 
     @Override
     public String toString() {
-        return "Кв. " + number + (name != null ? " (" + name + ")" : "");
+        String prefix = technicalUnit != null && !technicalUnit.getIsMain()
+                ? technicalUnit.getName() + " / "
+                : "";
+        return prefix + "Кв. " + number + (name != null ? " (" + name + ")" : "");
     }
 }

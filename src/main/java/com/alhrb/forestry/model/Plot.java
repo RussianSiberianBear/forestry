@@ -20,35 +20,42 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    // ===== ПРЯМЫЕ ССЫЛКИ НА ВСЕ УРОВНИ =====
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id")
     private Region region;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "municipal_district_id")
     private MunicipalDistrict municipalDistrict;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "forestry_id")
     private Forestry forestry;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "district_forestry_id")
     private DistrictForestry districtForestry;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "technical_unit_id")  // ← НОВОЕ ПОЛЕ!
+    private TechnicalUnit technicalUnit;
+
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quarter_id")
     private Quarter quarter;
 
+    // ===== НОМЕР ДЕЛЯНЫ =====
     @Column(name = "number_in_quarter", nullable = false, length = 50)
     private String numberInQuarter;
 
-    @Column(name = "full_number", length = 200, unique = true)
+    @Column(name = "full_number", length = 300, unique = true)  // ← увеличил до 300
     private String fullNumber;
 
     @Column(name = "plots", length = 200)
@@ -86,6 +93,7 @@ public class Plot {
             areaM2 = geometry.getArea() * 111319.9 * 111319.9;
         }
 
+        // Проверка внутри квартала
         if (quarter != null && quarter.getGeometry() != null && geometry != null) {
             if (!quarter.getGeometry().contains(geometry)) {
                 throw new IllegalStateException(
@@ -95,6 +103,7 @@ public class Plot {
             }
         }
 
+        // Формируем полный номер с учётом технического участка
         if (fullNumber == null) {
             StringBuilder sb = new StringBuilder();
 
@@ -109,6 +118,9 @@ public class Plot {
             }
             if (districtForestry != null) {
                 sb.append(districtForestry.getName()).append("/");
+            }
+            if (technicalUnit != null && !technicalUnit.getIsMain()) {
+                sb.append(technicalUnit.getName()).append("/");
             }
             if (quarter != null) {
                 sb.append("Кв.").append(quarter.getNumber()).append("/");
