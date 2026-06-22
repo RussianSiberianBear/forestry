@@ -338,6 +338,8 @@ function onRegionChange(regionId) {
     saveUISetting('district-forestry', 0);
     saveUISetting('technical-unit', 0);
     saveUISetting('quarter', 0);
+
+    updateTerritoryInfo();
 }
 
 function onMunicipalDistrictChange(municipalDistrictId) {
@@ -353,6 +355,8 @@ function onMunicipalDistrictChange(municipalDistrictId) {
     saveUISetting('district-forestry', 0);
     saveUISetting('technical-unit', 0);
     saveUISetting('quarter', 0);
+
+    updateTerritoryInfo();
 }
 
 function onForestryChange(forestryId) {
@@ -367,6 +371,8 @@ function onForestryChange(forestryId) {
     saveUISetting('district-forestry', 0);
     saveUISetting('technical-unit', 0);
     saveUISetting('quarter', 0);
+
+    updateTerritoryInfo();
 }
 
 function onDistrictForestryChange(districtForestryId) {
@@ -380,6 +386,8 @@ function onDistrictForestryChange(districtForestryId) {
     loadTechnicalUnits(districtForestryId);
     saveUISetting('technical-unit', 0);
     saveUISetting('quarter', 0);
+
+    updateTerritoryInfo();
 }
 
 function onTechnicalUnitChange(technicalUnitId) {
@@ -392,6 +400,29 @@ function onTechnicalUnitChange(technicalUnitId) {
     saveUISetting('technical-unit', technicalUnitId);
     loadQuarters(technicalUnitId);
     saveUISetting('quarter', 0);
+
+    updateTerritoryInfo();
+}
+
+function selectQuarter(id, number, name) {
+    const quarterInput = document.getElementById('quarterInput');
+    const quarterIdInput = document.getElementById('quarterId');
+    const suggestionsDiv = document.getElementById('quarterSuggestions');
+
+    if (quarterInput) {
+        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
+    }
+    if (quarterIdInput) quarterIdInput.value = id;
+    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+
+    saveUISetting('quarter', id);
+    updateTerritoryInfo();
+
+    UIkit.notification({
+        message: '✅ Выбран квартал ' + number,
+        status: 'success',
+        timeout: 1500
+    });
 }
 
 // ==========================================
@@ -436,6 +467,8 @@ function resetAllDependentSelects() {
     if (quarterId) quarterId.value = '';
     const suggestions = document.getElementById('quarterSuggestions');
     if (suggestions) suggestions.style.display = 'none';
+
+    updateTerritoryInfo();
 }
 
 // ==========================================
@@ -487,6 +520,7 @@ function loadMunicipalDistricts(regionId, callback) {
                 select.disabled = true;
             }
             select.classList.remove('loading');
+            updateTerritoryInfo();
             if (callback) callback();
         })
         .catch(error => {
@@ -547,6 +581,7 @@ function loadForestries(municipalDistrictId, callback) {
                 select.disabled = true;
             }
             select.classList.remove('loading');
+            updateTerritoryInfo();
             if (callback) callback();
         })
         .catch(error => {
@@ -602,6 +637,7 @@ function loadDistrictForestries(forestryId, callback) {
                 select.disabled = true;
             }
             select.classList.remove('loading');
+            updateTerritoryInfo();
             if (callback) callback();
         })
         .catch(error => {
@@ -662,6 +698,7 @@ function loadTechnicalUnits(districtForestryId, callback) {
                 select.disabled = true;
             }
             select.classList.remove('loading');
+            updateTerritoryInfo();
             if (callback) callback();
         })
         .catch(error => {
@@ -768,26 +805,6 @@ function searchQuarters(query) {
     }, 300);
 }
 
-function selectQuarter(id, number, name) {
-    const quarterInput = document.getElementById('quarterInput');
-    const quarterIdInput = document.getElementById('quarterId');
-    const suggestionsDiv = document.getElementById('quarterSuggestions');
-
-    if (quarterInput) {
-        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
-    }
-    if (quarterIdInput) quarterIdInput.value = id;
-    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
-
-    saveUISetting('quarter', id);
-
-    UIkit.notification({
-        message: '✅ Выбран квартал ' + number,
-        status: 'success',
-        timeout: 1500
-    });
-}
-
 // ==========================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
@@ -830,129 +847,166 @@ document.addEventListener('click', function(e) {
 });
 
 // ==========================================
-// КАРТА
+// ОБНОВЛЕНИЕ ИНФОРМАЦИИ О ВЫБРАННОЙ ТЕРРИТОРИИ
 // ==========================================
 
-let map = null;
-let osmLayer = null;
-let googleSatLayer = null;
+function updateTerritoryInfo() {
+    const regionId = document.getElementById('regionSelect')?.value;
+    const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
+    const forestryId = document.getElementById('forestrySelect')?.value;
+    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
+    const quarterId = document.getElementById('quarterId')?.value;
+    const quarterInput = document.getElementById('quarterInput')?.value;
 
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        map = L.map('map').setView([56.0, 92.0], 6);
+    let name = 'не выбрано';
 
-        // ===== СЛОЙ OSM (СХЕМА) =====
-        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        });
-
-        // ===== СЛОЙ GOOGLE SATELLITE (СПУТНИК) =====
-        googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '© Google Maps'
-        });
-
-        // ===== ДОБАВЛЯЕМ СЛОИ И ПЕРЕКЛЮЧАТЕЛЬ =====
-        var baseMaps = {
-            "🗺️ Схема": osmLayer,
-            "🛰️ Спутник": googleSatLayer
-        };
-
-        // ✅ По умолчанию показываем СПУТНИК
-        googleSatLayer.addTo(map);
-        L.control.layers(baseMaps).addTo(map);
-
-        // Загружаем настройки и деляны
-        loadUISettingsFromServer();
-        loadPlots();
-
-        const regionSelect = document.getElementById('regionSelect');
-        if (regionSelect) {
-            const options = regionSelect.querySelectorAll('option');
-            const regionOptions = Array.from(options).filter(opt => opt.value !== '');
-            if (regionOptions.length === 1 && !regionSelect.value) {
-                const regionId = regionOptions[0].value;
-                regionSelect.value = regionId;
-                onRegionChange(regionId);
-            }
-        }
-
-        updateCoordCounter();
-    } catch (e) {
-        console.error('Ошибка инициализации карты:', e);
+    if (quarterId && quarterId !== '') {
+        name = quarterInput || 'Квартал';
+    } else if (technicalUnitId && technicalUnitId !== '') {
+        const select = document.getElementById('technicalUnitSelect');
+        name = select?.options[select.selectedIndex]?.text || 'Технический участок';
+    } else if (districtForestryId && districtForestryId !== '') {
+        const select = document.getElementById('districtForestrySelect');
+        name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
+    } else if (forestryId && forestryId !== '') {
+        const select = document.getElementById('forestrySelect');
+        name = select?.options[select.selectedIndex]?.text || 'Лесничество';
+    } else if (municipalDistrictId && municipalDistrictId !== '') {
+        const select = document.getElementById('municipalDistrictSelect');
+        name = select?.options[select.selectedIndex]?.text || 'Муниципальный район';
+    } else if (regionId && regionId !== '') {
+        const select = document.getElementById('regionSelect');
+        name = select?.options[select.selectedIndex]?.text || 'Регион';
     }
-});
 
-// ==========================================
-// ЗАГРУЗКА ДЕЛЯН НА КАРТУ
-// ==========================================
-
-function loadPlots() {
-    fetch('/api/plots/map-data')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.json();
-        })
-        .then(plots => {
-            if (!map) return;
-
-            // Удаляем старые полигоны (сохраняем только базовые слои)
-            map.eachLayer(function(layer) {
-                if (layer instanceof L.Polygon) {
-                    map.removeLayer(layer);
-                }
-            });
-
-            plots.forEach(plot => {
-                if (plot.geometryGeoJson) {
-                    try {
-                        const geojson = JSON.parse(plot.geometryGeoJson);
-                        if (geojson.type === 'Polygon' && geojson.coordinates) {
-                            const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
-
-                            const polygon = L.polygon(coords, {
-                                color: '#d32f2f',
-                                weight: 2.5,
-                                opacity: 0.9,
-                                fillColor: '#d32f2f',
-                                fillOpacity: 0.2
-                            }).addTo(map);
-
-                            polygon.bindPopup(`
-                                <b style="color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
-                                ${plot.forestryName || 'Без лесничества'}<br>
-                                ${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}<br>
-                                <small>Площадь: ${plot.areaM2 ? (plot.areaM2 / 10000).toFixed(2) + ' га' : 'н/д'}</small>
-                            `);
-                        }
-                    } catch(e) {
-                        console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
-                    }
-                }
-            });
-        })
-        .catch(error => console.error('Error loading plots:', error));
+    document.getElementById('selectedTerritoryName').textContent = name;
 }
 
 // ==========================================
-// ПРОВЕРКА ВСЕХ ДЕЛЯН
+// ПРОВЕРКА ВЫБРАННОЙ ТЕРРИТОРИИ (ПО ФОРМЕ)
 // ==========================================
 
-// ==========================================
-// ПРОВЕРКА ВСЕХ ДЕЛЯН (БЕЗ СБРОСА КАРТЫ)
-// ==========================================
+function checkSelected() {
+    const regionId = document.getElementById('regionSelect')?.value;
+    const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
+    const forestryId = document.getElementById('forestrySelect')?.value;
+    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
+    const quarterId = document.getElementById('quarterId')?.value;
+
+    let type = null;
+    let id = null;
+    let name = '';
+
+    if (quarterId && quarterId !== '') {
+        type = 'QUARTER';
+        id = quarterId;
+        name = document.getElementById('quarterInput')?.value || 'Квартал';
+    } else if (technicalUnitId && technicalUnitId !== '') {
+        type = 'TECHNICAL_UNIT';
+        id = technicalUnitId;
+        const select = document.getElementById('technicalUnitSelect');
+        name = select?.options[select.selectedIndex]?.text || 'Технический участок';
+    } else if (districtForestryId && districtForestryId !== '') {
+        type = 'DISTRICT_FORESTRY';
+        id = districtForestryId;
+        const select = document.getElementById('districtForestrySelect');
+        name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
+    } else if (forestryId && forestryId !== '') {
+        type = 'FORESTRY';
+        id = forestryId;
+        const select = document.getElementById('forestrySelect');
+        name = select?.options[select.selectedIndex]?.text || 'Лесничество';
+    } else if (municipalDistrictId && municipalDistrictId !== '') {
+        type = 'MUNICIPAL_DISTRICT';
+        id = municipalDistrictId;
+        const select = document.getElementById('municipalDistrictSelect');
+        name = select?.options[select.selectedIndex]?.text || 'Муниципальный район';
+    } else if (regionId && regionId !== '') {
+        type = 'REGION';
+        id = regionId;
+        const select = document.getElementById('regionSelect');
+        name = select?.options[select.selectedIndex]?.text || 'Регион';
+    } else {
+        UIkit.notification({
+            message: '❌ Выберите территорию в форме выше (регион, район, лесничество или участковое)',
+            status: 'warning',
+            timeout: 4000
+        });
+        return;
+    }
+
+    const typeNames = {
+        'REGION': 'региону',
+        'MUNICIPAL_DISTRICT': 'муниципальному району',
+        'FORESTRY': 'лесничеству',
+        'DISTRICT_FORESTRY': 'участковому лесничеству',
+        'TECHNICAL_UNIT': 'техническому участку',
+        'QUARTER': 'кварталу'
+    };
+
+    UIkit.notification({
+        message: `🔍 Проверка делян по ${typeNames[type]}: "${name}"...`,
+        status: 'primary',
+        timeout: 3000
+    });
+
+    fetch('/api/plots/validate-by-territory?type=' + type + '&id=' + id, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(text || 'HTTP ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(conflicts => {
+            UIkit.notification.closeAll();
+
+            if (conflicts.length === 0) {
+                UIkit.notification({
+                    message: `✅ Все деляны по "${name}" проверены! Пересечений не обнаружено.`,
+                    status: 'success',
+                    timeout: 5000
+                });
+
+                const conflictBlock = document.getElementById('conflictResults');
+                if (conflictBlock) {
+                    conflictBlock.style.display = 'none';
+                }
+            } else {
+                UIkit.notification({
+                    message: `⚠️ Найдено ${conflicts.length} пересечений по "${name}"! Проверьте список ниже.`,
+                    status: 'warning',
+                    timeout: 5000
+                });
+
+                showConflicts(conflicts);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при проверке:', error);
+            UIkit.notification({
+                message: '❌ Ошибка при проверке: ' + error.message,
+                status: 'danger',
+                timeout: 5000
+            });
+        });
+}
 
 // ==========================================
-// ПРОВЕРКА ВСЕХ ДЕЛЯН (БЕЗ КАКИХ-ЛИБО ИЗМЕНЕНИЙ КАРТЫ)
+// ПРОВЕРКА ВСЕХ ДЕЛЯН (ГЛОБАЛЬНО)
 // ==========================================
 
 function checkAll() {
     UIkit.notification({
-        message: '🔍 Запуск проверки всех делян...',
+        message: '🔍 Запуск глобальной проверки всех делян...',
         status: 'primary',
         timeout: 3000
     });
@@ -979,7 +1033,6 @@ function checkAll() {
                     timeout: 5000
                 });
 
-                // Скрываем блок конфликтов, если он был открыт
                 const conflictBlock = document.getElementById('conflictResults');
                 if (conflictBlock) {
                     conflictBlock.style.display = 'none';
@@ -1075,4 +1128,104 @@ function showConflicts(conflicts) {
     if (window.UIkit) {
         UIkit.icon(conflictBlock);
     }
+}
+
+// ==========================================
+// КАРТА
+// ==========================================
+
+let map = null;
+let osmLayer = null;
+let googleSatLayer = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        map = L.map('map').setView([56.0, 92.0], 6);
+
+        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        });
+
+        googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
+        });
+
+        var baseMaps = {
+            "🗺️ Схема": osmLayer,
+            "🛰️ Спутник": googleSatLayer
+        };
+
+        googleSatLayer.addTo(map);
+        L.control.layers(baseMaps).addTo(map);
+
+        loadUISettingsFromServer();
+        loadPlots();
+
+        const regionSelect = document.getElementById('regionSelect');
+        if (regionSelect) {
+            const options = regionSelect.querySelectorAll('option');
+            const regionOptions = Array.from(options).filter(opt => opt.value !== '');
+            if (regionOptions.length === 1 && !regionSelect.value) {
+                const regionId = regionOptions[0].value;
+                regionSelect.value = regionId;
+                onRegionChange(regionId);
+            }
+        }
+
+        updateCoordCounter();
+        updateTerritoryInfo();
+    } catch (e) {
+        console.error('Ошибка инициализации карты:', e);
+    }
+});
+
+function loadPlots() {
+    fetch('/api/plots/map-data')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
+        .then(plots => {
+            if (!map) return;
+
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Polygon) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            plots.forEach(plot => {
+                if (plot.geometryGeoJson) {
+                    try {
+                        const geojson = JSON.parse(plot.geometryGeoJson);
+                        if (geojson.type === 'Polygon' && geojson.coordinates) {
+                            const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
+
+                            const polygon = L.polygon(coords, {
+                                color: '#d32f2f',
+                                weight: 2.5,
+                                opacity: 0.9,
+                                fillColor: '#d32f2f',
+                                fillOpacity: 0.2
+                            }).addTo(map);
+
+                            polygon.bindPopup(`
+                                <b style="color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
+                                ${plot.forestryName || 'Без лесничества'}<br>
+                                ${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}<br>
+                                <small>Площадь: ${plot.areaM2 ? (plot.areaM2 / 10000).toFixed(2) + ' га' : 'н/д'}</small>
+                            `);
+                        }
+                    } catch(e) {
+                        console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error loading plots:', error));
 }

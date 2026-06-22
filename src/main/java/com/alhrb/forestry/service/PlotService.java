@@ -6,16 +6,18 @@ import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.PlotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.locationtech.jts.geom.Polygon;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,7 +38,9 @@ public class PlotService {
     @Value("${forest.validation.min-area:0.01}")
     private double minArea;
 
-    // ===== БАЗОВЫЕ ОПЕРАЦИИ =====
+    // ==========================================
+    // БАЗОВЫЕ ОПЕРАЦИИ
+    // ==========================================
 
     @Transactional
     public Plot save(Plot plot) {
@@ -71,7 +75,17 @@ public class PlotService {
         return plotRepository.findByRegionId(regionId);
     }
 
-    // ===== МЕТОД ДЛЯ КАРТЫ =====
+    public List<Plot> findByDistrictForestryId(Long districtForestryId) {
+        return plotRepository.findByDistrictForestryId(districtForestryId);
+    }
+
+    public List<Plot> findByTechnicalUnitId(Long technicalUnitId) {
+        return plotRepository.findByTechnicalUnitId(technicalUnitId);
+    }
+
+    // ==========================================
+    // МЕТОД ДЛЯ КАРТЫ
+    // ==========================================
 
     public List<PlotMapDto> getAllPlotsForMap() {
         List<Plot> plots = plotRepository.findAll();
@@ -105,7 +119,9 @@ public class PlotService {
         return dto;
     }
 
-    // ===== СОЗДАНИЕ ДЕЛЯНЫ С ПРОВЕРКОЙ =====
+    // ==========================================
+    // СОЗДАНИЕ ДЕЛЯНЫ С ПРОВЕРКОЙ
+    // ==========================================
 
     @Transactional
     public List<IntersectionReport> createPlotWithValidation(
@@ -117,12 +133,10 @@ public class PlotService {
             Integer yearOfCut,
             String cutType) {
 
-        // 1. Проверка геометрии
         if (geometry == null) {
             throw new IllegalArgumentException("Геометрия деляны не задана");
         }
 
-        // 2. Проверка на "бабочку"
         if (!geometryService.isValid(geometry)) {
             throw new IllegalArgumentException(
                     "⚠️ Деляна имеет некорректную геометрию! " +
@@ -130,11 +144,9 @@ public class PlotService {
             );
         }
 
-        // 3. Получаем квартал
         Quarter quarter = quarterService.findById(quarterId)
                 .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
-        // 4. Проверка, что деляна внутри квартала
         if (quarter.getGeometry() != null) {
             geometryService.validatePlotInsideQuarter(
                     geometry,
@@ -144,7 +156,6 @@ public class PlotService {
             );
         }
 
-        // 5. Проверка уникальности номера внутри квартала
         Optional<Plot> existing = plotRepository.findByQuarterIdAndNumberInQuarter(quarterId, numberInQuarter);
         if (existing.isPresent()) {
             throw new IllegalArgumentException(
@@ -153,7 +164,6 @@ public class PlotService {
             );
         }
 
-        // 6. Создаём деляну
         Plot plot = new Plot();
         plot.setNumberInQuarter(numberInQuarter);
         plot.setPlots(plots);
@@ -163,16 +173,12 @@ public class PlotService {
         plot.setYearOfCut(yearOfCut);
         plot.setCutType(cutType);
 
-        // 7. Заполняем иерархию из квартала
         if (quarter.getDistrictForestry() != null) {
             plot.setDistrictForestry(quarter.getDistrictForestry());
-
             if (quarter.getDistrictForestry().getForestry() != null) {
                 plot.setForestry(quarter.getDistrictForestry().getForestry());
-
                 if (quarter.getDistrictForestry().getForestry().getMunicipalDistrict() != null) {
                     plot.setMunicipalDistrict(quarter.getDistrictForestry().getForestry().getMunicipalDistrict());
-
                     if (quarter.getDistrictForestry().getForestry().getMunicipalDistrict().getRegion() != null) {
                         plot.setRegion(quarter.getDistrictForestry().getForestry().getMunicipalDistrict().getRegion());
                     }
@@ -180,15 +186,15 @@ public class PlotService {
             }
         }
 
-        // 8. Сохраняем и проверяем
         return saveWithValidation(plot);
     }
 
-    // ===== СОХРАНЕНИЕ С ПРОВЕРКОЙ =====
+    // ==========================================
+    // СОХРАНЕНИЕ С ПРОВЕРКОЙ
+    // ==========================================
 
     @Transactional
     public List<IntersectionReport> saveWithValidation(Plot plot) {
-        // Проверка геометрии
         if (plot.getGeometry() == null) {
             throw new IllegalArgumentException("Геометрия деляны не задана");
         }
@@ -200,12 +206,10 @@ public class PlotService {
             );
         }
 
-        // Проверка номера
         if (plot.getNumberInQuarter() == null || plot.getNumberInQuarter().isEmpty()) {
             throw new IllegalArgumentException("Номер деляны в квартале обязателен!");
         }
 
-        // Проверка уникальности
         if (plot.getQuarter() != null) {
             Optional<Plot> existing = plotRepository.findByQuarterIdAndNumberInQuarter(
                     plot.getQuarter().getId(),
@@ -219,7 +223,6 @@ public class PlotService {
             }
         }
 
-        // Проверка внутри квартала
         if (plot.getQuarter() != null && plot.getQuarter().getGeometry() != null) {
             geometryService.validatePlotInsideQuarter(
                     plot.getGeometry(),
@@ -229,7 +232,6 @@ public class PlotService {
             );
         }
 
-        // Заполняем иерархию из квартала, если не заполнена
         if (plot.getQuarter() != null) {
             Quarter quarter = plot.getQuarter();
             if (quarter.getDistrictForestry() != null) {
@@ -246,15 +248,12 @@ public class PlotService {
             }
         }
 
-        // Сохраняем деляну
         Plot saved = plotRepository.save(plot);
         log.info("Сохранена деляна: {} (ID: {}, площадь: {} м²)",
                 saved.getFullNumber(), saved.getId(), saved.getAreaM2());
 
-        // Проверяем пересечения
         List<IntersectionReport> conflicts = validatePlot(saved);
 
-        // ✅ Если конфликтов нет — помечаем как верифицированную
         if (conflicts.isEmpty()) {
             saved.setVerified(true);
             plotRepository.save(saved);
@@ -268,7 +267,9 @@ public class PlotService {
         return conflicts;
     }
 
-    // ===== ВАЛИДАЦИЯ =====
+    // ==========================================
+    // ВАЛИДАЦИЯ
+    // ==========================================
 
     @Transactional
     public List<IntersectionReport> validatePlot(Plot plot) {
@@ -334,7 +335,6 @@ public class PlotService {
             reports.add(report);
         }
 
-        // ✅ Если конфликтов нет — верифицируем все деляны
         if (reports.isEmpty()) {
             List<Plot> allPlots = plotRepository.findAll();
             for (Plot plot : allPlots) {
@@ -343,7 +343,6 @@ public class PlotService {
             }
             log.info("✅ Все деляны верифицированы (пересечений нет)");
         } else {
-            // Снимаем верификацию с делян, у которых есть пересечения
             for (IntersectionReport report : reports) {
                 plotRepository.findById(report.getPlot1Id()).ifPresent(plot -> {
                     plot.setVerified(false);
@@ -360,7 +359,38 @@ public class PlotService {
         return reports;
     }
 
-    // ===== ИМПОРТ ИЗ EXCEL =====
+    // ==========================================
+    // ПРОВЕРКА КОНКРЕТНОГО СПИСКА ДЕЛЯН
+    // ==========================================
+
+    @Transactional
+    public List<IntersectionReport> validatePlots(List<Plot> plots) {
+        List<IntersectionReport> allReports = new ArrayList<>();
+
+        for (Plot plot : plots) {
+            if (plot.getGeometry() != null) {
+                List<IntersectionReport> reports = validatePlot(plot);
+                allReports.addAll(reports);
+            }
+        }
+
+        Set<String> seen = new HashSet<>();
+        List<IntersectionReport> uniqueReports = new ArrayList<>();
+        for (IntersectionReport report : allReports) {
+            String key = Math.min(report.getPlot1Id(), report.getPlot2Id()) + "_" +
+                    Math.max(report.getPlot1Id(), report.getPlot2Id());
+            if (!seen.contains(key)) {
+                seen.add(key);
+                uniqueReports.add(report);
+            }
+        }
+
+        return uniqueReports;
+    }
+
+    // ==========================================
+    // ИМПОРТ ИЗ EXCEL
+    // ==========================================
 
     @Transactional
     public List<IntersectionReport> importFromExcel(MultipartFile file) {

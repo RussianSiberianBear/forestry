@@ -22,6 +22,8 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
     List<Plot> findByForestryId(Long forestryId);
     List<Plot> findByMunicipalDistrictId(Long municipalDistrictId);
     List<Plot> findByRegionId(Long regionId);
+    List<Plot> findByDistrictForestryId(Long districtForestryId);
+    List<Plot> findByTechnicalUnitId(Long technicalUnitId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """

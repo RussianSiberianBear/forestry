@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -42,19 +43,15 @@ public class PlotController {
         }
 
         try {
-            // 1. Создаём полигон из координат
             var geometry = geometryService.createPolygon(plotDto.getCoordinates());
 
-            // 2. Проверяем, что выбран квартал
             if (plotDto.getQuarterId() == null) {
                 throw new IllegalArgumentException("Не выбран квартал!");
             }
 
-            // 3. Получаем квартал
             Quarter quarter = quarterService.findById(plotDto.getQuarterId())
                     .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
-            // 4. Проверяем, что деляна внутри квартала
             if (quarter.getGeometry() != null) {
                 geometryService.validatePlotInsideQuarter(
                         geometry,
@@ -64,7 +61,6 @@ public class PlotController {
                 );
             }
 
-            // 5. Создаём деляну через сервис
             List<IntersectionReport> conflicts = plotService.createPlotWithValidation(
                     plotDto.getNumberInQuarter(),
                     plotDto.getPlots(),
@@ -144,6 +140,72 @@ public class PlotController {
     @ResponseBody
     public ResponseEntity<List<IntersectionReport>> validateAll() {
         List<IntersectionReport> conflicts = plotService.validateAllPlots();
+        return ResponseEntity.ok(conflicts);
+    }
+
+    @PostMapping("/validate-by-territory")
+    @ResponseBody
+    public ResponseEntity<List<IntersectionReport>> validateByTerritory(
+            @RequestParam String type,
+            @RequestParam Long id) {
+
+        List<Plot> plots = new ArrayList<>();
+        String territoryName = "";
+
+        switch (type) {
+            case "REGION":
+                plots = plotService.findByRegionId(id);
+                territoryName = "региону";
+                break;
+            case "MUNICIPAL_DISTRICT":
+                plots = plotService.findByMunicipalDistrictId(id);
+                territoryName = "муниципальному району";
+                break;
+            case "FORESTRY":
+                plots = plotService.findByForestryId(id);
+                territoryName = "лесничеству";
+                break;
+            case "DISTRICT_FORESTRY":
+                plots = plotService.findByDistrictForestryId(id);
+                territoryName = "участковому лесничеству";
+                break;
+            case "TECHNICAL_UNIT":
+                plots = plotService.findByTechnicalUnitId(id);
+                territoryName = "техническому участку";
+                break;
+            case "QUARTER":
+                plots = plotService.findByQuarterId(id);
+                territoryName = "кварталу";
+                break;
+            default:
+                throw new IllegalArgumentException("Неизвестный тип территории: " + type);
+        }
+
+        log.info("🔍 Проверка делян по {} (ID: {})", territoryName, id);
+        log.info("📊 Найдено {} делян для проверки", plots.size());
+
+        List<IntersectionReport> conflicts = plotService.validatePlots(plots);
+
+        if (conflicts.isEmpty()) {
+            for (Plot plot : plots) {
+                plot.setVerified(true);
+                plotService.save(plot);
+            }
+            log.info("✅ Все деляны по территории проверены, пересечений нет");
+        } else {
+            for (IntersectionReport report : conflicts) {
+                plotService.findById(report.getPlot1Id()).ifPresent(plot -> {
+                    plot.setVerified(false);
+                    plotService.save(plot);
+                });
+                plotService.findById(report.getPlot2Id()).ifPresent(plot -> {
+                    plot.setVerified(false);
+                    plotService.save(plot);
+                });
+            }
+            log.warn("⚠️ Найдено {} пересечений по территории", conflicts.size());
+        }
+
         return ResponseEntity.ok(conflicts);
     }
 }
