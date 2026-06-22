@@ -3,7 +3,7 @@
    ========================================== */
 
 #map {
-    height: 400px;
+    height: 500px;
     width: 100%;
     margin-top: 20px;
     border-radius: 8px;
@@ -160,4 +160,54 @@
     padding: 12px;
     color: #666;
     text-align: center;
+}
+
+/* ==========================================
+   КООРДИНАТЫ - ОДНА СТРОКА
+   ========================================== */
+
+#coordInput {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    padding: 10px 14px;
+    border: 2px solid #e5e5e5;
+    border-radius: 4px;
+    transition: border-color 0.3s ease;
+}
+#coordInput:focus {
+    border-color: #1e87f0;
+    outline: none;
+}
+
+.coordinate-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.coordinate-row:last-child {
+    border-bottom: none;
+}
+
+.coordinate-row .coord-index {
+    font-weight: bold;
+    color: #1e87f0;
+    min-width: 24px;
+}
+.coordinate-row .coord-lat,
+.coordinate-row .coord-lng {
+    font-family: 'Courier New', monospace;
+    color: #333;
+}
+.coordinate-row .coord-lat {
+    color: #2e7d32;
+}
+.coordinate-row .coord-lng {
+    color: #d32f2f;
+}
+
+#coordCounter {
+    font-weight: bold;
+    color: #666;
 }

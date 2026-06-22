@@ -6,12 +6,12 @@ import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.PlotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.geojson.GeoJsonWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.locationtech.jts.geom.Polygon;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +29,7 @@ public class PlotService {
     private final MunicipalDistrictService municipalDistrictService;
     private final ForestryService forestryService;
     private final DistrictForestryService districtForestryService;
+    private final TechnicalUnitService technicalUnitService;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
 
@@ -68,6 +69,40 @@ public class PlotService {
 
     public List<Plot> findByRegionId(Long regionId) {
         return plotRepository.findByRegionId(regionId);
+    }
+
+    // ===== МЕТОД ДЛЯ КАРТЫ =====
+
+    public List<PlotMapDto> getAllPlotsForMap() {
+        List<Plot> plots = plotRepository.findAll();
+        return plots.stream()
+                .map(this::convertToMapDto)
+                .collect(Collectors.toList());
+    }
+
+    private PlotMapDto convertToMapDto(Plot plot) {
+        PlotMapDto dto = new PlotMapDto();
+        dto.setId(plot.getId());
+        dto.setFullNumber(plot.getFullNumber());
+        dto.setNumberInQuarter(plot.getNumberInQuarter());
+        dto.setVerified(plot.getVerified());
+        dto.setAreaM2(plot.getAreaM2());
+
+        if (plot.getGeometry() != null) {
+            try {
+                GeoJsonWriter writer = new GeoJsonWriter();
+                dto.setGeometryGeoJson(writer.write(plot.getGeometry()));
+            } catch (Exception e) {
+                log.error("Ошибка конвертации геометрии в GeoJSON: {}", e.getMessage());
+                dto.setGeometryGeoJson(null);
+            }
+        }
+
+        if (plot.getForestry() != null) {
+            dto.setForestryName(plot.getForestry().getName());
+        }
+
+        return dto;
     }
 
     // ===== СОЗДАНИЕ ДЕЛЯНЫ С ПРОВЕРКОЙ =====
@@ -121,7 +156,7 @@ public class PlotService {
         // 6. Создаём деляну
         Plot plot = new Plot();
         plot.setNumberInQuarter(numberInQuarter);
-        plot.setPlots(plots); // ← ТЕПЕРЬ РАБОТАЕТ!
+        plot.setPlots(plots);
         plot.setDescription(description);
         plot.setGeometry(geometry);
         plot.setQuarter(quarter);
@@ -145,16 +180,11 @@ public class PlotService {
             }
         }
 
-        // 8. Сохраняем
-        Plot saved = plotRepository.save(plot);
-        log.info("Сохранена деляна: {} (ID: {}, площадь: {} м²)",
-                saved.getFullNumber(), saved.getId(), saved.getAreaM2());
-
-        // 9. Проверяем пересечения
-        return validatePlot(saved);
+        // 8. Сохраняем и проверяем
+        return saveWithValidation(plot);
     }
 
-    // ===== СТАРЫЙ МЕТОД ДЛЯ СОВМЕСТИМОСТИ =====
+    // ===== СОХРАНЕНИЕ С ПРОВЕРКОЙ =====
 
     @Transactional
     public List<IntersectionReport> saveWithValidation(Plot plot) {
@@ -216,11 +246,26 @@ public class PlotService {
             }
         }
 
+        // Сохраняем деляну
         Plot saved = plotRepository.save(plot);
         log.info("Сохранена деляна: {} (ID: {}, площадь: {} м²)",
                 saved.getFullNumber(), saved.getId(), saved.getAreaM2());
 
-        return validatePlot(saved);
+        // Проверяем пересечения
+        List<IntersectionReport> conflicts = validatePlot(saved);
+
+        // ✅ Если конфликтов нет — помечаем как верифицированную
+        if (conflicts.isEmpty()) {
+            saved.setVerified(true);
+            plotRepository.save(saved);
+            log.info("✅ Деляна {} верифицирована (пересечений нет)", saved.getFullNumber());
+        } else {
+            saved.setVerified(false);
+            plotRepository.save(saved);
+            log.warn("⚠️ Деляна {} имеет {} пересечений", saved.getFullNumber(), conflicts.size());
+        }
+
+        return conflicts;
     }
 
     // ===== ВАЛИДАЦИЯ =====
@@ -289,7 +334,29 @@ public class PlotService {
             reports.add(report);
         }
 
-        log.info("Проверка завершена. Найдено {} пересечений", reports.size());
+        // ✅ Если конфликтов нет — верифицируем все деляны
+        if (reports.isEmpty()) {
+            List<Plot> allPlots = plotRepository.findAll();
+            for (Plot plot : allPlots) {
+                plot.setVerified(true);
+                plotRepository.save(plot);
+            }
+            log.info("✅ Все деляны верифицированы (пересечений нет)");
+        } else {
+            // Снимаем верификацию с делян, у которых есть пересечения
+            for (IntersectionReport report : reports) {
+                plotRepository.findById(report.getPlot1Id()).ifPresent(plot -> {
+                    plot.setVerified(false);
+                    plotRepository.save(plot);
+                });
+                plotRepository.findById(report.getPlot2Id()).ifPresent(plot -> {
+                    plot.setVerified(false);
+                    plotRepository.save(plot);
+                });
+            }
+            log.warn("⚠️ Найдено {} пересечений, верификация снята с проблемных делян", reports.size());
+        }
+
         return reports;
     }
 
@@ -331,38 +398,5 @@ public class PlotService {
         }
 
         return allConflicts;
-    }
-
-    public List<PlotMapDto> getAllPlotsForMap() {
-        List<Plot> plots = plotRepository.findAll();
-        return plots.stream()
-                .map(this::convertToMapDto)
-                .collect(Collectors.toList());
-    }
-
-    private PlotMapDto convertToMapDto(Plot plot) {
-        PlotMapDto dto = new PlotMapDto();
-        dto.setId(plot.getId());
-        dto.setFullNumber(plot.getFullNumber());
-        dto.setNumberInQuarter(plot.getNumberInQuarter());
-        dto.setVerified(plot.getVerified());
-        dto.setAreaM2(plot.getAreaM2());
-
-        // Геометрия в GeoJSON
-        if (plot.getGeometry() != null) {
-            try {
-                GeoJsonWriter writer = new GeoJsonWriter();
-                dto.setGeometryGeoJson(writer.write(plot.getGeometry()));
-            } catch (Exception e) {
-                dto.setGeometryGeoJson(null);
-            }
-        }
-
-        // Только имя лесничества (без всей иерархии)
-        if (plot.getForestry() != null) {
-            dto.setForestryName(plot.getForestry().getName());
-        }
-
-        return dto;
     }
 }

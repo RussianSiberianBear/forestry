@@ -134,29 +134,16 @@ public class PlotController {
         return ResponseEntity.ok(plotService.findAll());
     }
 
-    @PostMapping("/validate-all")
-    public String validateAll(RedirectAttributes redirectAttributes) {
-        try {
-            List<IntersectionReport> conflicts = plotService.validateAllPlots();
-
-            if (conflicts.isEmpty()) {
-                redirectAttributes.addFlashAttribute("success", "Все деляны проверены, пересечений не обнаружено!");
-            } else {
-                redirectAttributes.addFlashAttribute("conflicts", conflicts);
-                redirectAttributes.addFlashAttribute("warning", "Обнаружены пересечения между делянами!");
-            }
-
-        } catch (Exception e) {
-            log.error("Ошибка при проверке", e);
-            redirectAttributes.addFlashAttribute("error", "Ошибка при проверке: " + e.getMessage());
-        }
-
-        return "redirect:/";
-    }
-
     @GetMapping("/map-data")
     @ResponseBody
     public ResponseEntity<List<PlotMapDto>> getPlotsForMap() {
         return ResponseEntity.ok(plotService.getAllPlotsForMap());
+    }
+
+    @PostMapping("/validate-all")
+    @ResponseBody
+    public ResponseEntity<List<IntersectionReport>> validateAll() {
+        List<IntersectionReport> conflicts = plotService.validateAllPlots();
+        return ResponseEntity.ok(conflicts);
     }
 }

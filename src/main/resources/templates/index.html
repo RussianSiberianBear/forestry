@@ -300,8 +300,8 @@
                         <p>
                             <span uk-icon="icon: info"></span>
                             <strong>Как вводить координаты:</strong><br>
-                            1. Введите точки <span class="uk-text-bold">по порядку</span><br>
-                            2. Используйте <span class="uk-text-bold">ТОЧКУ</span> как разделитель<br>
+                            1. Введите <span class="uk-text-bold">Широту</span> и <span class="uk-text-bold">Долготу</span><br>
+                            2. Нажмите <span class="uk-text-bold">Enter</span> в поле "Долгота" — добавится новая строка для следующей точки<br>
                             3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система замкнёт сама
                         </p>
                     </div>
@@ -312,6 +312,7 @@
                             <span class="uk-text-meta uk-text-small">(Широта, Долгота)</span>
                         </label>
 
+                        <!-- Список строк с координатами -->
                         <div id="coordinates-container">
                             <div th:each="coord, iter : *{coordinates}"
                                  th:id="'coord-row-' + ${iter.index}"
@@ -319,10 +320,12 @@
                                 <input class="uk-input uk-form-width-small coord-input" type="text"
                                        th:field="*{coordinates[__${iter.index}__].lat}"
                                        placeholder="Широта"
+                                       onkeydown="handleCoordInput(event, 'lat', ${iter.index})"
                                        oninput="validateCoordInput(this)">
                                 <input class="uk-input uk-form-width-small coord-input" type="text"
                                        th:field="*{coordinates[__${iter.index}__].lng}"
                                        placeholder="Долгота"
+                                       onkeydown="handleCoordInput(event, 'lng', ${iter.index})"
                                        oninput="validateCoordInput(this)">
                                 <button type="button" class="uk-button uk-button-danger uk-button-small"
                                         th:onclick="'removeCoordinate(' + ${iter.index} + ')'">
@@ -333,13 +336,14 @@
 
                         <div class="uk-margin-small-top">
                             <button type="button" class="uk-button uk-button-default uk-button-small"
-                                    onclick="addCoordinate()">
+                                    onclick="addNewCoordinateRow()">
                                 <span uk-icon="icon: plus-circle"></span> Добавить точку
                             </button>
                             <button type="button" class="uk-button uk-button-danger uk-button-small"
                                     onclick="clearAllCoordinates()">
                                 <span uk-icon="icon: trash"></span> Очистить все
                             </button>
+                            <span class="uk-text-meta uk-text-small uk-margin-left" id="coordCounter">Точек: 0</span>
                         </div>
 
                         <div class="uk-text-meta uk-text-small uk-margin-small-top">

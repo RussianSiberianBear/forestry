@@ -1,71 +1,195 @@
 // ==========================================
-// РАБОТА С КООРДИНАТАМИ
+// КООРДИНАТЫ - ДОБАВЛЕНИЕ НОВЫХ СТРОК ПО ENTER
 // ==========================================
 
-function addCoordinate() {
+function handleCoordInput(event, field, index) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+
+        if (field === 'lat') {
+            // Enter в поле Широта → переходим на Долготу
+            const row = document.getElementById('coord-row-' + index);
+            if (row) {
+                const lngInput = row.querySelector('input[placeholder="Долгота"]');
+                if (lngInput) lngInput.focus();
+            }
+        } else if (field === 'lng') {
+            // Enter в поле Долгота → добавляем новую строку
+            addNewCoordinateRow();
+        }
+    }
+}
+
+function addNewCoordinateRow() {
     const container = document.getElementById('coordinates-container');
     const index = container.children.length;
 
-    const div = document.createElement('div');
-    div.className = 'coordinate-row';
-    div.id = 'coord-row-' + index;
-    div.innerHTML = `
+    // Проверяем, что последняя строка заполнена
+    if (index > 0) {
+        const lastRow = container.children[index - 1];
+        const latInput = lastRow.querySelector('input[placeholder="Широта"]');
+        const lngInput = lastRow.querySelector('input[placeholder="Долгота"]');
+
+        if (latInput && lngInput) {
+            const lat = parseFloat(latInput.value.replace(',', '.').trim());
+            const lng = parseFloat(lngInput.value.replace(',', '.').trim());
+
+            if (isNaN(lat) || isNaN(lng)) {
+                UIkit.notification({
+                    message: '❌ Заполните оба поля: Широту и Долготу',
+                    status: 'warning',
+                    timeout: 2000
+                });
+                return;
+            }
+
+            if (lat < -90 || lat > 90) {
+                UIkit.notification({
+                    message: '❌ Широта должна быть в диапазоне -90...90',
+                    status: 'warning',
+                    timeout: 2000
+                });
+                return;
+            }
+
+            if (lng < -180 || lng > 180) {
+                UIkit.notification({
+                    message: '❌ Долгота должна быть в диапазоне -180...180',
+                    status: 'warning',
+                    timeout: 2000
+                });
+                return;
+            }
+        }
+    }
+
+    // Создаём новую строку
+    const row = document.createElement('div');
+    row.className = 'coordinate-row';
+    row.id = 'coord-row-' + index;
+    row.innerHTML = `
         <input class="uk-input uk-form-width-small coord-input" type="text"
                name="coordinates[${index}].lat"
                placeholder="Широта"
+               onkeydown="handleCoordInput(event, 'lat', ${index})"
                oninput="validateCoordInput(this)">
         <input class="uk-input uk-form-width-small coord-input" type="text"
                name="coordinates[${index}].lng"
                placeholder="Долгота"
+               onkeydown="handleCoordInput(event, 'lng', ${index})"
                oninput="validateCoordInput(this)">
         <button type="button" class="uk-button uk-button-danger uk-button-small"
                 onclick="removeCoordinate(${index})">
             <span uk-icon="icon: close"></span>
         </button>
     `;
-    container.appendChild(div);
+    container.appendChild(row);
 
-    if (window.UIkit) {
-        UIkit.icon(div);
-    }
+    // Ставим фокус на поле Широты новой строки
+    const newLatInput = row.querySelector('input[placeholder="Широта"]');
+    if (newLatInput) newLatInput.focus();
+
+    updateCoordCounter();
+    updateIndices();
 }
 
 function removeCoordinate(index) {
     const container = document.getElementById('coordinates-container');
-    const element = document.getElementById('coord-row-' + index);
+    const count = container.children.length;
 
-    if (element && container.children.length > 3) {
-        element.remove();
-    } else {
+    if (count <= 3) {
         UIkit.notification({
-            message: 'Нельзя удалить последнюю точку (нужно минимум 3)',
+            message: '❌ Нельзя удалить последнюю точку (нужно минимум 3)',
             status: 'warning',
             timeout: 2000
+        });
+        return;
+    }
+
+    const element = document.getElementById('coord-row-' + index);
+    if (element) {
+        element.remove();
+        updateIndices();
+        updateCoordCounter();
+
+        UIkit.notification({
+            message: '✅ Точка удалена',
+            status: 'success',
+            timeout: 1000
         });
     }
 }
 
 function clearAllCoordinates() {
     const container = document.getElementById('coordinates-container');
+    const count = container.children.length;
+
+    if (count <= 3) {
+        UIkit.notification({
+            message: '❌ Нужно минимум 3 точки',
+            status: 'warning',
+            timeout: 2000
+        });
+        return;
+    }
+
+    // Оставляем только 3 точки
     while (container.children.length > 3) {
         container.removeChild(container.lastChild);
     }
-    container.querySelectorAll('input').forEach(input => input.value = '');
+    updateIndices();
+    updateCoordCounter();
+
+    // Очищаем значения в оставшихся полях
+    container.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+
+    // Ставим фокус на первую строку
+    const firstRow = container.children[0];
+    if (firstRow) {
+        const latInput = firstRow.querySelector('input[placeholder="Широта"]');
+        if (latInput) latInput.focus();
+    }
+
+    UIkit.notification({
+        message: '✅ Очищено до 3 точек',
+        status: 'success',
+        timeout: 1500
+    });
 }
 
-function resetForm() {
-    clearAllCoordinates();
-    document.getElementById('numberInQuarter').value = '';
-    document.getElementById('plots').value = '';
-    document.getElementById('description').value = '';
-    document.getElementById('yearOfCut').value = '';
-    document.getElementById('cutType').value = '';
+function updateIndices() {
+    const rows = document.querySelectorAll('#coordinates-container .coordinate-row');
+    rows.forEach((row, index) => {
+        // Обновляем id
+        row.id = 'coord-row-' + index;
 
-    // Сбрасываем все селекты
-    resetAllDependentSelects();
+        // Обновляем name атрибуты
+        const latInput = row.querySelector('input[placeholder="Широта"]');
+        const lngInput = row.querySelector('input[placeholder="Долгота"]');
+        if (latInput) {
+            latInput.name = 'coordinates[' + index + '].lat';
+            latInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lat\', ' + index + ')');
+        }
+        if (lngInput) {
+            lngInput.name = 'coordinates[' + index + '].lng';
+            lngInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lng\', ' + index + ')');
+        }
 
-    const regionSelect = document.getElementById('regionSelect');
-    regionSelect.value = '';
+        // Обновляем onclick у кнопки
+        const btn = row.querySelector('button');
+        if (btn) {
+            btn.setAttribute('onclick', 'removeCoordinate(' + index + ')');
+        }
+    });
+}
+
+function updateCoordCounter() {
+    const container = document.getElementById('coordinates-container');
+    const count = container.children.length;
+    const counter = document.getElementById('coordCounter');
+    if (counter) {
+        counter.textContent = 'Точек: ' + count;
+    }
 }
 
 function validateCoordInput(input) {
@@ -75,6 +199,31 @@ function validateCoordInput(input) {
     } else {
         input.style.borderColor = '';
     }
+}
+
+// ==========================================
+// СБРОС ФОРМЫ
+// ==========================================
+
+function resetForm() {
+    // Оставляем 3 пустые строки
+    const container = document.getElementById('coordinates-container');
+    while (container.children.length > 3) {
+        container.removeChild(container.lastChild);
+    }
+    container.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+    updateIndices();
+    updateCoordCounter();
+
+    document.getElementById('numberInQuarter').value = '';
+    document.getElementById('plots').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('yearOfCut').value = '';
+    document.getElementById('cutType').value = '';
+
+    resetAllDependentSelects();
+    const regionSelect = document.getElementById('regionSelect');
+    if (regionSelect) regionSelect.value = '';
 }
 
 // ==========================================
@@ -125,39 +274,29 @@ function loadUISettingsFromServer() {
         return;
     }
 
-    // === 1. Регион ===
     const regionSelect = document.getElementById('regionSelect');
-    regionSelect.value = regionId;
+    if (regionSelect) regionSelect.value = regionId;
 
     if (centerLat && centerLng && map) {
         map.setView([parseFloat(centerLat), parseFloat(centerLng)], parseInt(zoom) || 7);
     }
 
-    // === 2. Район ===
     loadMunicipalDistricts(regionId, function() {
         if (municipalDistrictId && municipalDistrictId !== '') {
             const districtSelect = document.getElementById('municipalDistrictSelect');
-            districtSelect.value = municipalDistrictId;
-
-            // === 3. Лесничество ===
+            if (districtSelect) districtSelect.value = municipalDistrictId;
             loadForestries(municipalDistrictId, function() {
                 if (forestryId && forestryId !== '') {
                     const forestrySelect = document.getElementById('forestrySelect');
-                    forestrySelect.value = forestryId;
-
-                    // === 4. Участковое ===
+                    if (forestrySelect) forestrySelect.value = forestryId;
                     loadDistrictForestries(forestryId, function() {
                         if (districtForestryId && districtForestryId !== '') {
                             const districtSelect2 = document.getElementById('districtForestrySelect');
-                            districtSelect2.value = districtForestryId;
-
-                            // === 5. Техучасток ===
+                            if (districtSelect2) districtSelect2.value = districtForestryId;
                             loadTechnicalUnits(districtForestryId, function() {
                                 if (technicalUnitId && technicalUnitId !== '') {
                                     const techSelect = document.getElementById('technicalUnitSelect');
-                                    techSelect.value = technicalUnitId;
-
-                                    // === 6. Квартал ===
+                                    if (techSelect) techSelect.value = technicalUnitId;
                                     loadQuarters(technicalUnitId, function() {
                                         if (quarterId && quarterId !== '') {
                                             fetch('/api/quarters/' + quarterId)
@@ -165,7 +304,9 @@ function loadUISettingsFromServer() {
                                                 .then(quarter => {
                                                     if (quarter && quarter.number) {
                                                         const input = document.getElementById('quarterInput');
-                                                        input.value = 'Кв. ' + quarter.number + (quarter.name ? ' (' + quarter.name + ')' : '');
+                                                        if (input) {
+                                                            input.value = 'Кв. ' + quarter.number + (quarter.name ? ' (' + quarter.name + ')' : '');
+                                                        }
                                                         document.getElementById('quarterId').value = quarterId;
                                                         console.log('✅ Установлен квартал:', quarter.number);
                                                     }
@@ -196,7 +337,6 @@ function loadUISettingsFromServer() {
 // ==========================================
 
 function onRegionChange(regionId) {
-    // Сбрасываем ВСЕ зависимые селекты
     resetAllDependentSelects();
 
     if (!regionId) {
@@ -271,39 +411,47 @@ function onTechnicalUnitChange(technicalUnitId) {
 // ==========================================
 
 function resetAllDependentSelects() {
-    // Муниципальный район
     const districtSelect = document.getElementById('municipalDistrictSelect');
-    districtSelect.innerHTML = '<option value="">-- Сначала выберите регион --</option>';
-    districtSelect.disabled = true;
-    districtSelect.classList.remove('loading');
+    if (districtSelect) {
+        districtSelect.innerHTML = '<option value="">-- Сначала выберите регион --</option>';
+        districtSelect.disabled = true;
+        districtSelect.classList.remove('loading');
+    }
 
-    // Лесничество
     const forestrySelect = document.getElementById('forestrySelect');
-    forestrySelect.innerHTML = '<option value="">-- Сначала выберите район --</option>';
-    forestrySelect.disabled = true;
-    forestrySelect.classList.remove('loading');
+    if (forestrySelect) {
+        forestrySelect.innerHTML = '<option value="">-- Сначала выберите район --</option>';
+        forestrySelect.disabled = true;
+        forestrySelect.classList.remove('loading');
+    }
 
-    // Участковое лесничество
     const districtForestrySelect = document.getElementById('districtForestrySelect');
-    districtForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-    districtForestrySelect.disabled = true;
-    districtForestrySelect.classList.remove('loading');
+    if (districtForestrySelect) {
+        districtForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+        districtForestrySelect.disabled = true;
+        districtForestrySelect.classList.remove('loading');
+    }
 
-    // Технический участок
     const techSelect = document.getElementById('technicalUnitSelect');
-    techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-    techSelect.disabled = true;
-    techSelect.classList.remove('loading');
+    if (techSelect) {
+        techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+        techSelect.disabled = true;
+        techSelect.classList.remove('loading');
+    }
 
-    // Квартал
-    document.getElementById('quarterInput').disabled = true;
-    document.getElementById('quarterInput').value = '';
-    document.getElementById('quarterId').value = '';
-    document.getElementById('quarterSuggestions').style.display = 'none';
+    const quarterInput = document.getElementById('quarterInput');
+    if (quarterInput) {
+        quarterInput.disabled = true;
+        quarterInput.value = '';
+    }
+    const quarterId = document.getElementById('quarterId');
+    if (quarterId) quarterId.value = '';
+    const suggestions = document.getElementById('quarterSuggestions');
+    if (suggestions) suggestions.style.display = 'none';
 }
 
 // ==========================================
-// ЗАГРУЗКА ЗАВИСИМЫХ СПИСКОВ
+// ЗАГРУЗКА ЗАВИСИМЫХ СПИСКОВ (С CALLBACK)
 // ==========================================
 
 function loadMunicipalDistricts(regionId, callback) {
@@ -314,6 +462,8 @@ function loadMunicipalDistricts(regionId, callback) {
     }
 
     const select = document.getElementById('municipalDistrictSelect');
+    if (!select) return;
+
     select.classList.add('loading');
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
@@ -372,6 +522,8 @@ function loadForestries(municipalDistrictId, callback) {
     }
 
     const select = document.getElementById('forestrySelect');
+    if (!select) return;
+
     select.classList.add('loading');
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
@@ -425,6 +577,8 @@ function loadDistrictForestries(forestryId, callback) {
     }
 
     const select = document.getElementById('districtForestrySelect');
+    if (!select) return;
+
     select.classList.add('loading');
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
@@ -478,6 +632,8 @@ function loadTechnicalUnits(districtForestryId, callback) {
     }
 
     const select = document.getElementById('technicalUnitSelect');
+    if (!select) return;
+
     select.classList.add('loading');
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
@@ -530,17 +686,25 @@ function loadTechnicalUnits(districtForestryId, callback) {
 }
 
 function loadQuarters(technicalUnitId, callback) {
+    const quarterInput = document.getElementById('quarterInput');
+    const quarterId = document.getElementById('quarterId');
+    const suggestions = document.getElementById('quarterSuggestions');
+
     if (!technicalUnitId) {
-        document.getElementById('quarterInput').disabled = true;
-        document.getElementById('quarterInput').value = '';
-        document.getElementById('quarterId').value = '';
-        document.getElementById('quarterSuggestions').style.display = 'none';
+        if (quarterInput) {
+            quarterInput.disabled = true;
+            quarterInput.value = '';
+        }
+        if (quarterId) quarterId.value = '';
+        if (suggestions) suggestions.style.display = 'none';
         if (callback) callback();
         return;
     }
 
-    document.getElementById('quarterInput').disabled = false;
-    document.getElementById('quarterInput').placeholder = 'Введите номер квартала...';
+    if (quarterInput) {
+        quarterInput.disabled = false;
+        quarterInput.placeholder = 'Введите номер квартала...';
+    }
     if (callback) callback();
 }
 
@@ -551,28 +715,32 @@ function loadQuarters(technicalUnitId, callback) {
 let quarterSearchTimeout = null;
 
 function searchQuarters(query) {
-    const technicalUnitId = document.getElementById('technicalUnitSelect').value;
+    const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const suggestionsDiv = document.getElementById('quarterSuggestions');
     const quarterInput = document.getElementById('quarterInput');
 
     if (!technicalUnitId) {
-        suggestionsDiv.innerHTML = '<div class="no-results">Сначала выберите технический участок</div>';
-        suggestionsDiv.style.display = 'block';
-        quarterInput.disabled = true;
+        if (suggestionsDiv) {
+            suggestionsDiv.innerHTML = '<div class="no-results">Сначала выберите технический участок</div>';
+            suggestionsDiv.style.display = 'block';
+        }
+        if (quarterInput) quarterInput.disabled = true;
         return;
     }
 
-    quarterInput.disabled = false;
+    if (quarterInput) quarterInput.disabled = false;
 
     if (!query || query.trim().length === 0) {
-        suggestionsDiv.style.display = 'none';
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
         return;
     }
 
     clearTimeout(quarterSearchTimeout);
     quarterSearchTimeout = setTimeout(() => {
-        suggestionsDiv.innerHTML = '<div class="loading-suggestions">Поиск...</div>';
-        suggestionsDiv.style.display = 'block';
+        if (suggestionsDiv) {
+            suggestionsDiv.innerHTML = '<div class="loading-suggestions">Поиск...</div>';
+            suggestionsDiv.style.display = 'block';
+        }
 
         fetch('/api/quarters/search?technicalUnitId=' + technicalUnitId + '&query=' + encodeURIComponent(query.trim()))
             .then(response => {
@@ -580,6 +748,8 @@ function searchQuarters(query) {
                 return response.json();
             })
             .then(data => {
+                if (!suggestionsDiv) return;
+
                 if (!Array.isArray(data) || data.length === 0) {
                     suggestionsDiv.innerHTML = '<div class="no-results">Кварталы не найдены</div>';
                     return;
@@ -603,7 +773,9 @@ function searchQuarters(query) {
             })
             .catch(error => {
                 console.error('Ошибка поиска кварталов:', error);
-                suggestionsDiv.innerHTML = '<div class="no-results">❌ Ошибка загрузки</div>';
+                if (suggestionsDiv) {
+                    suggestionsDiv.innerHTML = '<div class="no-results">❌ Ошибка загрузки</div>';
+                }
             });
     }, 300);
 }
@@ -613,9 +785,11 @@ function selectQuarter(id, number, name) {
     const quarterIdInput = document.getElementById('quarterId');
     const suggestionsDiv = document.getElementById('quarterSuggestions');
 
-    quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
-    quarterIdInput.value = id;
-    suggestionsDiv.style.display = 'none';
+    if (quarterInput) {
+        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
+    }
+    if (quarterIdInput) quarterIdInput.value = id;
+    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
 
     saveUISetting('quarter', id);
 
@@ -633,19 +807,28 @@ function selectQuarter(id, number, name) {
 function resetDependentSelects(level) {
     if (!level || level === 'district' || level === 'technical' || level === 'quarter') {
         const districtSelect = document.getElementById('districtForestrySelect');
-        districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-        districtSelect.disabled = true;
+        if (districtSelect) {
+            districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+            districtSelect.disabled = true;
+        }
     }
     if (!level || level === 'technical' || level === 'quarter') {
         const techSelect = document.getElementById('technicalUnitSelect');
-        techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
-        techSelect.disabled = true;
+        if (techSelect) {
+            techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            techSelect.disabled = true;
+        }
     }
     if (!level || level === 'quarter') {
-        document.getElementById('quarterInput').disabled = true;
-        document.getElementById('quarterInput').value = '';
-        document.getElementById('quarterId').value = '';
-        document.getElementById('quarterSuggestions').style.display = 'none';
+        const quarterInput = document.getElementById('quarterInput');
+        if (quarterInput) {
+            quarterInput.disabled = true;
+            quarterInput.value = '';
+        }
+        const quarterId = document.getElementById('quarterId');
+        if (quarterId) quarterId.value = '';
+        const suggestions = document.getElementById('quarterSuggestions');
+        if (suggestions) suggestions.style.display = 'none';
     }
 }
 
@@ -653,7 +836,8 @@ function resetDependentSelects(level) {
 document.addEventListener('click', function(e) {
     const container = document.getElementById('quarterInput')?.closest('.autocomplete-wrapper');
     if (container && !container.contains(e.target)) {
-        document.getElementById('quarterSuggestions').style.display = 'none';
+        const suggestions = document.getElementById('quarterSuggestions');
+        if (suggestions) suggestions.style.display = 'none';
     }
 });
 
@@ -675,14 +859,17 @@ document.addEventListener('DOMContentLoaded', function() {
         loadPlots();
 
         const regionSelect = document.getElementById('regionSelect');
-        const options = regionSelect.querySelectorAll('option');
-        const regionOptions = Array.from(options).filter(opt => opt.value !== '');
-
-        if (regionOptions.length === 1 && !regionSelect.value) {
-            const regionId = regionOptions[0].value;
-            regionSelect.value = regionId;
-            onRegionChange(regionId);
+        if (regionSelect) {
+            const options = regionSelect.querySelectorAll('option');
+            const regionOptions = Array.from(options).filter(opt => opt.value !== '');
+            if (regionOptions.length === 1 && !regionSelect.value) {
+                const regionId = regionOptions[0].value;
+                regionSelect.value = regionId;
+                onRegionChange(regionId);
+            }
         }
+
+        updateCoordCounter();
     } catch (e) {
         console.error('Ошибка инициализации карты:', e);
     }
@@ -706,10 +893,11 @@ function loadPlots() {
                         if (geojson.type === 'Polygon' && geojson.coordinates) {
                             const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
                             const polygon = L.polygon(coords, {
-                                color: plot.verified ? '#2e7d32' : '#f57c00',
+                                color: '#d32f2f',        // ← КРАСНАЯ ГРАНИЦА
                                 weight: 2,
-                                opacity: 0.8,
-                                fillOpacity: 0.3
+                                opacity: 0.9,
+                                fillColor: '#d32f2f',    // ← КРАСНАЯ ЗАЛИВКА
+                                fillOpacity: 0.2
                             }).addTo(map);
 
                             polygon.bindPopup(`
@@ -728,31 +916,136 @@ function loadPlots() {
         .catch(error => console.error('Error loading plots:', error));
 }
 
+
+// ==========================================
+// ПРОВЕРКА ВСЕХ ДЕЛЯН (БЕЗ ПЕРЕЗАГРУЗКИ)
+// ==========================================
+
 function checkAll() {
     UIkit.notification({
-        message: 'Запуск проверки всех делян...',
+        message: '🔍 Запуск проверки всех делян...',
         status: 'primary',
-        timeout: 2000
+        timeout: 3000
     });
 
     fetch('/api/plots/validate-all', {
-        method: 'POST'
-    }).then(response => {
-        if (response.ok) {
-            window.location.reload();
-        } else {
-            UIkit.notification({
-                message: 'Ошибка при проверке',
-                status: 'danger',
-                timeout: 3000
-            });
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
         }
-    }).catch(error => {
-        console.error('Error:', error);
-        UIkit.notification({
-            message: 'Ошибка: ' + error.message,
-            status: 'danger',
-            timeout: 3000
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
+        .then(conflicts => {
+            UIkit.notification.closeAll();
+
+            if (conflicts.length === 0) {
+                UIkit.notification({
+                    message: '✅ Все деляны проверены! Пересечений не обнаружено.',
+                    status: 'success',
+                    timeout: 5000
+                });
+                // Обновляем карту и список
+                loadPlots();
+                loadUISettingsFromServer();
+                // Скрываем блок конфликтов
+                const conflictBlock = document.getElementById('conflictResults');
+                if (conflictBlock) {
+                    conflictBlock.style.display = 'none';
+                }
+            } else {
+                UIkit.notification({
+                    message: '⚠️ Найдено ' + conflicts.length + ' пересечений! Проверьте список ниже.',
+                    status: 'warning',
+                    timeout: 5000
+                });
+                showConflicts(conflicts);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при проверке:', error);
+            UIkit.notification({
+                message: '❌ Ошибка при проверке: ' + error.message,
+                status: 'danger',
+                timeout: 5000
+            });
         });
-    });
 }
+
+// ==========================================
+// ОТОБРАЖЕНИЕ КОНФЛИКТОВ
+// ==========================================
+
+function showConflicts(conflicts) {
+    let conflictBlock = document.getElementById('conflictResults');
+
+    if (!conflictBlock) {
+        conflictBlock = document.createElement('div');
+        conflictBlock.id = 'conflictResults';
+        conflictBlock.className = 'uk-card uk-card-default uk-card-body uk-margin';
+        conflictBlock.style.borderLeft = '4px solid #f57c00';
+
+        const header = document.querySelector('.uk-heading-divider');
+        if (header) {
+            header.parentNode.insertBefore(conflictBlock, header.nextSibling);
+        }
+    }
+
+    let html = `
+        <h3 class="uk-card-title" style="color: #f57c00;">
+            <span uk-icon="icon: warning; ratio: 1.2"></span>
+            Обнаружены пересечения!
+            <span class="uk-badge uk-badge-danger uk-margin-left">${conflicts.length} конф.</span>
+        </h3>
+        <div class="conflict-list">
+            <table class="uk-table uk-table-striped uk-table-hover uk-table-small">
+                <thead>
+                    <tr>
+                        <th>Деляна 1</th>
+                        <th>Деляна 2</th>
+                        <th>Площадь (м²)</th>
+                        <th>Серьёзность</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    conflicts.forEach(conflict => {
+        const severityClass = conflict.severity === 'CRITICAL' ? 'severity-critical' :
+            conflict.severity === 'WARNING' ? 'severity-warning' : 'severity-ok';
+        const severityIcon = conflict.severity === 'CRITICAL' ? 'ban' :
+            conflict.severity === 'WARNING' ? 'warning' : 'check';
+
+        html += `
+            <tr>
+                <td><strong>${conflict.plot1Number || 'ID:' + conflict.plot1Id}</strong></td>
+                <td><strong>${conflict.plot2Number || 'ID:' + conflict.plot2Id}</strong></td>
+                <td>${(conflict.overlapArea || 0).toFixed(2)}</td>
+                <td>
+                    <span class="${severityClass}">
+                        <span uk-icon="icon: ${severityIcon}"></span>
+                        ${conflict.severity || 'OK'}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    conflictBlock.innerHTML = html;
+    conflictBlock.style.display = 'block';
+
+    if (window.UIkit) {
+        UIkit.icon(conflictBlock);
+    }
+}
+
