@@ -2,6 +2,7 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.PlotDto;
 import com.alhrb.forestry.service.PlotService;
+import com.alhrb.forestry.service.RegionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
