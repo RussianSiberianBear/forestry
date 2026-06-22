@@ -1,10 +1,8 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.dto.IntersectionReport;
-import com.alhrb.forestry.model.Plot;
-import com.alhrb.forestry.model.Quarter;
+import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.PlotRepository;
-import com.alhrb.forestry.repository.QuarterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +20,11 @@ import java.util.Optional;
 public class PlotService {
 
     private final PlotRepository plotRepository;
-    private final QuarterRepository quarterRepository;
+    private final QuarterService quarterService;
+    private final RegionService regionService;
+    private final MunicipalDistrictService municipalDistrictService;
+    private final ForestryService forestryService;
+    private final DistrictForestryService districtForestryService;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
 
@@ -40,8 +42,8 @@ public class PlotService {
         return plotRepository.findAll();
     }
 
-    public Plot findById(Long id) {
-        return plotRepository.findById(id).orElse(null);
+    public Optional<Plot> findById(Long id) {
+        return plotRepository.findById(id);
     }
 
     public Optional<Plot> findByFullNumber(String fullNumber) {
@@ -52,16 +54,111 @@ public class PlotService {
         return plotRepository.findByQuarterIdOrderByNumberInQuarter(quarterId);
     }
 
-    // ===== СОХРАНЕНИЕ С ПРОВЕРКОЙ =====
+    public List<Plot> findByForestryId(Long forestryId) {
+        return plotRepository.findByForestryId(forestryId);
+    }
+
+    public List<Plot> findByMunicipalDistrictId(Long municipalDistrictId) {
+        return plotRepository.findByMunicipalDistrictId(municipalDistrictId);
+    }
+
+    public List<Plot> findByRegionId(Long regionId) {
+        return plotRepository.findByRegionId(regionId);
+    }
+
+    // ===== СОЗДАНИЕ ДЕЛЯНЫ С ПРОВЕРКОЙ =====
 
     @Transactional
-    public List<IntersectionReport> saveWithValidation(Plot plot) {
+    public List<IntersectionReport> createPlotWithValidation(
+            String numberInQuarter,
+            String plots,
+            String description,
+            Polygon geometry,
+            Long quarterId,
+            Integer yearOfCut,
+            String cutType) {
+
         // 1. Проверка геометрии
-        if (plot.getGeometry() == null) {
+        if (geometry == null) {
             throw new IllegalArgumentException("Геометрия деляны не задана");
         }
 
         // 2. Проверка на "бабочку"
+        if (!geometryService.isValid(geometry)) {
+            throw new IllegalArgumentException(
+                    "⚠️ Деляна имеет некорректную геометрию! " +
+                            "Возможна 'бабочка' (самопересечение)."
+            );
+        }
+
+        // 3. Получаем квартал
+        Quarter quarter = quarterService.findById(quarterId)
+                .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
+
+        // 4. Проверка, что деляна внутри квартала
+        if (quarter.getGeometry() != null) {
+            geometryService.validatePlotInsideQuarter(
+                    geometry,
+                    quarter.getGeometry(),
+                    numberInQuarter,
+                    quarter.getNumber()
+            );
+        }
+
+        // 5. Проверка уникальности номера внутри квартала
+        Optional<Plot> existing = plotRepository.findByQuarterIdAndNumberInQuarter(quarterId, numberInQuarter);
+        if (existing.isPresent()) {
+            throw new IllegalArgumentException(
+                    String.format("❌ Деляна с номером '%s' уже существует в квартале %d!",
+                            numberInQuarter, quarter.getNumber())
+            );
+        }
+
+        // 6. Создаём деляну
+        Plot plot = new Plot();
+        plot.setNumberInQuarter(numberInQuarter);
+        plot.setPlots(plots);
+        plot.setDescription(description);
+        plot.setGeometry(geometry);
+        plot.setQuarter(quarter);
+        plot.setYearOfCut(yearOfCut);
+        plot.setCutType(cutType);
+
+        // 7. Заполняем иерархию из квартала
+        if (quarter.getDistrictForestry() != null) {
+            plot.setDistrictForestry(quarter.getDistrictForestry());
+
+            if (quarter.getDistrictForestry().getForestry() != null) {
+                plot.setForestry(quarter.getDistrictForestry().getForestry());
+
+                if (quarter.getDistrictForestry().getForestry().getMunicipalDistrict() != null) {
+                    plot.setMunicipalDistrict(quarter.getDistrictForestry().getForestry().getMunicipalDistrict());
+
+                    if (quarter.getDistrictForestry().getForestry().getMunicipalDistrict().getRegion() != null) {
+                        plot.setRegion(quarter.getDistrictForestry().getForestry().getMunicipalDistrict().getRegion());
+                    }
+                }
+            }
+        }
+
+        // 8. Сохраняем
+        Plot saved = plotRepository.save(plot);
+        log.info("Сохранена деляна: {} (ID: {}, площадь: {} м²)",
+                saved.getFullNumber(), saved.getId(), saved.getAreaM2());
+
+        // 9. Проверяем пересечения
+        return validatePlot(saved);
+    }
+
+    // ===== СТАРЫЙ МЕТОД ДЛЯ СОВМЕСТИМОСТИ =====
+
+    @Transactional
+    public List<IntersectionReport> saveWithValidation(Plot plot) {
+        // Проверка геометрии
+        if (plot.getGeometry() == null) {
+            throw new IllegalArgumentException("Геометрия деляны не задана");
+        }
+
         if (!geometryService.isValid(plot.getGeometry())) {
             throw new IllegalArgumentException(
                     "⚠️ Деляна имеет некорректную геометрию! " +
@@ -69,12 +166,12 @@ public class PlotService {
             );
         }
 
-        // 3. Проверка номера деляны
+        // Проверка номера
         if (plot.getNumberInQuarter() == null || plot.getNumberInQuarter().isEmpty()) {
             throw new IllegalArgumentException("Номер деляны в квартале обязателен!");
         }
 
-        // 4. Проверка уникальности номера внутри квартала
+        // Проверка уникальности
         if (plot.getQuarter() != null) {
             Optional<Plot> existing = plotRepository.findByQuarterIdAndNumberInQuarter(
                     plot.getQuarter().getId(),
@@ -88,7 +185,7 @@ public class PlotService {
             }
         }
 
-        // 5. Проверка, что деляна внутри квартала
+        // Проверка внутри квартала
         if (plot.getQuarter() != null && plot.getQuarter().getGeometry() != null) {
             geometryService.validatePlotInsideQuarter(
                     plot.getGeometry(),
@@ -98,12 +195,27 @@ public class PlotService {
             );
         }
 
-        // 6. Сохраняем
+        // Заполняем иерархию из квартала, если не заполнена
+        if (plot.getQuarter() != null) {
+            Quarter quarter = plot.getQuarter();
+            if (quarter.getDistrictForestry() != null) {
+                plot.setDistrictForestry(quarter.getDistrictForestry());
+                if (quarter.getDistrictForestry().getForestry() != null) {
+                    plot.setForestry(quarter.getDistrictForestry().getForestry());
+                    if (quarter.getDistrictForestry().getForestry().getMunicipalDistrict() != null) {
+                        plot.setMunicipalDistrict(quarter.getDistrictForestry().getForestry().getMunicipalDistrict());
+                        if (quarter.getDistrictForestry().getForestry().getMunicipalDistrict().getRegion() != null) {
+                            plot.setRegion(quarter.getDistrictForestry().getForestry().getMunicipalDistrict().getRegion());
+                        }
+                    }
+                }
+            }
+        }
+
         Plot saved = plotRepository.save(plot);
         log.info("Сохранена деляна: {} (ID: {}, площадь: {} м²)",
                 saved.getFullNumber(), saved.getId(), saved.getAreaM2());
 
-        // 7. Проверяем пересечения
         return validatePlot(saved);
     }
 

@@ -10,25 +10,26 @@ import java.util.List;
 @Data
 public class PlotDto {
 
-    // ===== ИЕРАРХИЯ =====
+    // ===== ИЕРАРХИЯ (выбирается из списков) =====
     private Long regionId;
+    private Long municipalDistrictId;
     private Long forestryId;
     private Long districtForestryId;
     private Long quarterId;
 
-    // ===== НОМЕР ДЕЛЯНЫ (ВВОДИТСЯ ВРУЧНУЮ!) =====
+    // ===== НОМЕР ДЕЛЯНЫ В КВАРТАЛЕ =====
     @NotBlank(message = "Номер деляны в квартале обязателен")
-    private String numberInQuarter; // ← String! Например: "12", "12а", "12/1"
+    private String numberInQuarter;
 
-    private String fullNumber; // Полный номер (генерируется)
+    // ===== ВЫДЕЛЫ =====
+    private String plots; // Например: "1, 2, 3-5, 7"
 
     // ===== ОПИСАНИЕ =====
-    private String name;
     private String description;
 
     // ===== КООРДИНАТЫ =====
     @NotNull(message = "Координаты обязательны")
-    @Size(min = 4, message = "Необходимо минимум 4 точки для полигона")
+    @Size(min = 3, message = "Необходимо минимум 3 точки для полигона")
     private List<CoordinateDto> coordinates;
 
     // ===== ДОПОЛНИТЕЛЬНО =====

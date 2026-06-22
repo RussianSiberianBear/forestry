@@ -12,11 +12,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ViewController {
 
     private final PlotService plotService;
+    private final RegionService regionService;
 
     @GetMapping("/")
     public String index(Model model) {
         model.addAttribute("plotDto", new PlotDto());
         model.addAttribute("plots", plotService.findAll());
+        model.addAttribute("regions", regionService.findAll());
         return "index";
     }
 
