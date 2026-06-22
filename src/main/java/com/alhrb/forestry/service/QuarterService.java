@@ -55,7 +55,6 @@ public class QuarterService {
         return quarterRepository.findByDistrictForestryIdAndNumber(districtForestryId, number);
     }
 
-    // ===== НОВЫЙ МЕТОД ПОИСКА ДЛЯ AUTOCOMPLETE =====
     public List<Quarter> searchByTechnicalUnitAndNumber(Long technicalUnitId, String query) {
         if (query == null || query.trim().isEmpty()) {
             return new ArrayList<>();
@@ -80,7 +79,7 @@ public class QuarterService {
         quarter.setNumber(number);
         quarter.setName(name);
         quarter.setTechnicalUnit(technicalUnit);
-        quarter.setDistrictForestry(technicalUnit.getDistrictForestry()); // для быстрых запросов
+        quarter.setDistrictForestry(technicalUnit.getDistrictForestry());
         quarter.setGeometry(geometry);
 
         return quarterRepository.save(quarter);

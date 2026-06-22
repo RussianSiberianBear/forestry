@@ -2,6 +2,8 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.service.*;
+import com.alhrb.forestry.dto.UserUISettingsDto;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +19,13 @@ public class DictionaryController {
     private final MunicipalDistrictService municipalDistrictService;
     private final ForestryService forestryService;
     private final DistrictForestryService districtForestryService;
-    private final TechnicalUnitService technicalUnitService;  // ← НОВЫЙ СЕРВИС!
+    private final TechnicalUnitService technicalUnitService;
     private final QuarterService quarterService;
+    private final UserUISettingsService userUISettingsService;
+
+    // ==========================================
+    // СПРАВОЧНИКИ
+    // ==========================================
 
     @GetMapping("/regions")
     public ResponseEntity<List<Region>> getRegions() {
@@ -40,7 +47,6 @@ public class DictionaryController {
         return ResponseEntity.ok(districtForestryService.findByForestryId(forestryId));
     }
 
-    // ===== НОВЫЙ ЭНДПОИНТ: ТЕХНИЧЕСКИЕ УЧАСТКИ =====
     @GetMapping("/technical-units/by-district/{districtForestryId}")
     public ResponseEntity<List<TechnicalUnit>> getTechnicalUnits(@PathVariable Long districtForestryId) {
         return ResponseEntity.ok(technicalUnitService.findByDistrictForestryId(districtForestryId));
@@ -51,5 +57,57 @@ public class DictionaryController {
             @RequestParam Long technicalUnitId,
             @RequestParam String query) {
         return ResponseEntity.ok(quarterService.searchByTechnicalUnitAndNumber(technicalUnitId, query));
+    }
+
+    @GetMapping("/quarters/{id}")
+    public ResponseEntity<Quarter> getQuarterById(@PathVariable Long id) {
+        return quarterService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ==========================================
+    // НАСТРОЙКИ UI (СЕССИЯ)
+    // ==========================================
+
+    @GetMapping("/ui-settings")
+    public ResponseEntity<UserUISettingsDto> getUISettings(HttpSession session) {
+        return ResponseEntity.ok(userUISettingsService.getSettings(session));
+    }
+
+    @PostMapping("/ui-settings/region/{regionId}")
+    public ResponseEntity<Void> saveRegion(HttpSession session, @PathVariable Long regionId) {
+        userUISettingsService.saveRegion(session, regionId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/ui-settings/municipal-district/{municipalDistrictId}")
+    public ResponseEntity<Void> saveMunicipalDistrict(HttpSession session, @PathVariable Long municipalDistrictId) {
+        userUISettingsService.saveMunicipalDistrict(session, municipalDistrictId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/ui-settings/forestry/{forestryId}")
+    public ResponseEntity<Void> saveForestry(HttpSession session, @PathVariable Long forestryId) {
+        userUISettingsService.saveForestry(session, forestryId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/ui-settings/district-forestry/{districtForestryId}")
+    public ResponseEntity<Void> saveDistrictForestry(HttpSession session, @PathVariable Long districtForestryId) {
+        userUISettingsService.saveDistrictForestry(session, districtForestryId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/ui-settings/technical-unit/{technicalUnitId}")
+    public ResponseEntity<Void> saveTechnicalUnit(HttpSession session, @PathVariable Long technicalUnitId) {
+        userUISettingsService.saveTechnicalUnit(session, technicalUnitId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/ui-settings/quarter/{quarterId}")
+    public ResponseEntity<Void> saveQuarter(HttpSession session, @PathVariable Long quarterId) {
+        userUISettingsService.saveQuarter(session, quarterId);
+        return ResponseEntity.ok().build();
     }
 }

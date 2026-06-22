@@ -29,7 +29,16 @@ public class Region {
     @Column(name = "description", length = 500)
     private String description;
 
-    @JsonIgnore  // ← ДОБАВИТЬ!
+    @Column(name = "center_lat")
+    private Double centerLat;
+
+    @Column(name = "center_lng")
+    private Double centerLng;
+
+    @Column(name = "zoom")
+    private Integer zoom = 7;
+
+    @JsonIgnore
     @OneToMany(mappedBy = "region", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<MunicipalDistrict> municipalDistricts = new ArrayList<>();
 

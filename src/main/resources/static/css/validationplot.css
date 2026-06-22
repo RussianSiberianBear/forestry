@@ -1,0 +1,163 @@
+/* ==========================================
+   ОБЩИЕ СТИЛИ
+   ========================================== */
+
+#map {
+    height: 400px;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* ==========================================
+   КООРДИНАТЫ
+   ========================================== */
+
+.coordinate-row {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.coordinate-row input {
+    width: 140px;
+    display: inline-block;
+}
+
+.coord-input {
+    font-family: 'Courier New', monospace;
+}
+
+/* ==========================================
+   КОНФЛИКТЫ
+   ========================================== */
+
+.conflict-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.severity-critical {
+    color: #d32f2f;
+    font-weight: bold;
+}
+.severity-warning {
+    color: #f57c00;
+    font-weight: bold;
+}
+.severity-ok {
+    color: #388e3c;
+}
+
+/* ==========================================
+   СПИСКИ
+   ========================================== */
+
+.plot-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* ==========================================
+   КАРТОЧКИ
+   ========================================== */
+
+.uk-card {
+    transition: all 0.3s ease;
+}
+.uk-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================
+   ФОРМЫ
+   ========================================== */
+
+.form-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    background: white;
+}
+.form-select:focus {
+    border-color: #1e87f0;
+    outline: none;
+}
+
+.dependent-select.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.required-star {
+    color: #d32f2f;
+    margin-left: 2px;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+/* ==========================================
+   AUTOCOMPLETE
+   ========================================== */
+
+.autocomplete-wrapper {
+    position: relative;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: none;
+}
+
+.autocomplete-suggestions .suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.2s ease;
+}
+
+.autocomplete-suggestions .suggestion-item:hover {
+    background: #e3f0ff;
+}
+
+.autocomplete-suggestions .suggestion-item.active {
+    background: #1e87f0;
+    color: white;
+}
+
+.autocomplete-suggestions .suggestion-item .suggestion-number {
+    font-weight: bold;
+}
+
+.autocomplete-suggestions .suggestion-item .suggestion-name {
+    color: #666;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.autocomplete-suggestions .no-results {
+    padding: 12px;
+    color: #999;
+    text-align: center;
+}
+
+.autocomplete-suggestions .loading-suggestions {
+    padding: 12px;
+    color: #666;
+    text-align: center;
+}
