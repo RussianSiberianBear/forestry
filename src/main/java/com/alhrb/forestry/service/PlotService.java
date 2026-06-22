@@ -5,6 +5,7 @@ import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.PlotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Polygon;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -117,7 +118,7 @@ public class PlotService {
         // 6. Создаём деляну
         Plot plot = new Plot();
         plot.setNumberInQuarter(numberInQuarter);
-        plot.setPlots(plots);
+        plot.setPlots(plots); // ← ТЕПЕРЬ РАБОТАЕТ!
         plot.setDescription(description);
         plot.setGeometry(geometry);
         plot.setQuarter(quarter);

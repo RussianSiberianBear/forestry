@@ -19,7 +19,7 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== ПРЯМЫЕ ССЫЛКИ НА ВСЕ УРОВНИ ИЕРАРХИИ (денормализация) =====
+    // ===== ПРЯМЫЕ ССЫЛКИ НА ВСЕ УРОВНИ ИЕРАРХИИ =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id")
     private Region region;
@@ -42,10 +42,14 @@ public class Plot {
 
     // ===== НОМЕР ДЕЛЯНЫ (ВВОДИТСЯ ВРУЧНУЮ!) =====
     @Column(name = "number_in_quarter", nullable = false, length = 50)
-    private String numberInQuarter; // Например: "12", "12а", "12/1"
+    private String numberInQuarter;
 
     @Column(name = "full_number", length = 200, unique = true)
-    private String fullNumber; // Полный номер (формируется автоматически)
+    private String fullNumber;
+
+    // ===== ВЫДЕЛЫ (НОВОЕ ПОЛЕ!) =====
+    @Column(name = "plots", length = 200)
+    private String plots; // Например: "1, 2, 3-5, 7"
 
     // ===== ОПИСАНИЕ =====
     @Column(name = "name", length = 100)
@@ -97,32 +101,21 @@ public class Plot {
         if (fullNumber == null) {
             StringBuilder sb = new StringBuilder();
 
-            // Регион
             if (region != null) {
                 sb.append(region.getName()).append("/");
             }
-
-            // Муниципальный район
             if (municipalDistrict != null) {
                 sb.append(municipalDistrict.getName()).append("/");
             }
-
-            // Лесничество
             if (forestry != null) {
                 sb.append(forestry.getName()).append("/");
             }
-
-            // Участковое лесничество
             if (districtForestry != null) {
                 sb.append(districtForestry.getName()).append("/");
             }
-
-            // Квартал
             if (quarter != null) {
                 sb.append("Кв.").append(quarter.getNumber()).append("/");
             }
-
-            // Номер деляны
             if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
                 sb.append("Дел.").append(numberInQuarter);
             }
