@@ -376,18 +376,30 @@ function onForestryChange(forestryId) {
 }
 
 function onDistrictForestryChange(districtForestryId) {
-    resetDependentSelects('technical');
+    console.log('🔄 onDistrictForestryChange вызван с districtForestryId:', districtForestryId);
 
     if (!districtForestryId) {
+        // Если сбросили выбор — блокируем техучасток и квартал
+        resetDependentSelects('technical');
         return;
     }
+
+    // Блокируем ТОЛЬКО технический участок и квартал
+    // НЕ ТРОГАЕМ селект участкового лесничества!
+    const techSelect = document.getElementById('technicalUnitSelect');
+    if (techSelect) {
+        techSelect.innerHTML = '<option value="">Загрузка...</option>';
+        techSelect.disabled = true;
+    }
+    document.getElementById('quarterInput').disabled = true;
+    document.getElementById('quarterInput').value = '';
+    document.getElementById('quarterId').value = '';
+    document.getElementById('quarterSuggestions').style.display = 'none';
 
     saveUISetting('district-forestry', districtForestryId);
     loadTechnicalUnits(districtForestryId);
     saveUISetting('technical-unit', 0);
     saveUISetting('quarter', 0);
-
-    updateTerritoryInfo();
 }
 
 function onTechnicalUnitChange(technicalUnitId) {
@@ -648,15 +660,33 @@ function loadDistrictForestries(forestryId, callback) {
         });
 }
 
+// ==========================================
+// ЗАГРУЗКА ТЕХНИЧЕСКИХ УЧАСТКОВ
+// ==========================================
+
 function loadTechnicalUnits(districtForestryId, callback) {
+    console.log('🔍 loadTechnicalUnits вызван с districtForestryId:', districtForestryId);
+
     if (!districtForestryId) {
-        resetDependentSelects('technical');
+        // Блокируем ТОЛЬКО техучасток и квартал, НЕ трогаем участковое лесничество
+        const techSelect = document.getElementById('technicalUnitSelect');
+        if (techSelect) {
+            techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            techSelect.disabled = true;
+        }
+        document.getElementById('quarterInput').disabled = true;
+        document.getElementById('quarterInput').value = '';
+        document.getElementById('quarterId').value = '';
+        document.getElementById('quarterSuggestions').style.display = 'none';
         if (callback) callback();
         return;
     }
 
     const select = document.getElementById('technicalUnitSelect');
-    if (!select) return;
+    if (!select) {
+        console.error('❌ technicalUnitSelect не найден');
+        return;
+    }
 
     select.classList.add('loading');
     select.innerHTML = '<option value="">Загрузка...</option>';
@@ -668,6 +698,7 @@ function loadTechnicalUnits(districtForestryId, callback) {
             return response.json();
         })
         .then(data => {
+            console.log('📥 Получены технические участки:', data);
             select.innerHTML = '';
             if (Array.isArray(data) && data.length > 0) {
                 if (data.length === 1) {
@@ -702,7 +733,7 @@ function loadTechnicalUnits(districtForestryId, callback) {
             if (callback) callback();
         })
         .catch(error => {
-            console.error('Ошибка загрузки технических участков:', error);
+            console.error('❌ Ошибка загрузки технических участков:', error);
             select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
             select.classList.remove('loading');
             select.disabled = true;
@@ -809,33 +840,49 @@ function searchQuarters(query) {
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
 
+// ==========================================
+// СБРОС ЗАВИСИМЫХ СЕЛЕКТОВ (НЕ ТРОГАЕМ ТЕКУЩИЙ!)
+// ==========================================
+
 function resetDependentSelects(level) {
-    if (!level || level === 'district' || level === 'technical' || level === 'quarter') {
+    // Блокируем ТОЛЬКО нижестоящие селекты, НЕ трогаем текущий уровень
+
+    // Если level === 'technical' — блокируем только техучасток и квартал
+    // Если level === 'quarter' — блокируем только квартал
+    // Если level === 'district' — блокируем техучасток и квартал (но не districtForestrySelect!)
+
+    if (!level || level === 'forestry' || level === 'quarter') {
+        // Блокируем участковое лесничество ТОЛЬКО если level === 'forestry' или level === 'quarter'
+        // НЕ блокируем при level === 'district' или level === 'technical'
         const districtSelect = document.getElementById('districtForestrySelect');
         if (districtSelect) {
             districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
             districtSelect.disabled = true;
         }
     }
-    if (!level || level === 'technical' || level === 'quarter') {
+
+    if (!level || level === 'forestry' || level === 'district' || level === 'quarter') {
+        // Блокируем техучасток при level === 'forestry', 'district' или 'quarter'
+        // НЕ блокируем при level === 'technical'
         const techSelect = document.getElementById('technicalUnitSelect');
         if (techSelect) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             techSelect.disabled = true;
         }
     }
-    if (!level || level === 'quarter') {
-        const quarterInput = document.getElementById('quarterInput');
-        if (quarterInput) {
-            quarterInput.disabled = true;
-            quarterInput.value = '';
-        }
-        const quarterId = document.getElementById('quarterId');
-        if (quarterId) quarterId.value = '';
-        const suggestions = document.getElementById('quarterSuggestions');
-        if (suggestions) suggestions.style.display = 'none';
+
+    // Квартал блокируем всегда (при любом level)
+    const quarterInput = document.getElementById('quarterInput');
+    if (quarterInput) {
+        quarterInput.disabled = true;
+        quarterInput.value = '';
     }
+    const quarterId = document.getElementById('quarterId');
+    if (quarterId) quarterId.value = '';
+    const suggestions = document.getElementById('quarterSuggestions');
+    if (suggestions) suggestions.style.display = 'none';
 }
+
 
 // Закрываем подсказки при клике вне
 document.addEventListener('click', function(e) {
