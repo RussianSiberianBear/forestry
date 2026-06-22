@@ -3,8 +3,8 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotDto;
 import com.alhrb.forestry.model.Plot;
-import com.alhrb.forestry.service.GeometryService;
-import com.alhrb.forestry.service.PlotService;
+import com.alhrb.forestry.model.Quarter;
+import com.alhrb.forestry.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +26,7 @@ public class PlotController {
 
     private final PlotService plotService;
     private final GeometryService geometryService;
+    private final QuarterService quarterService;
 
     @PostMapping("/create")
     public String createPlot(@Valid @ModelAttribute("plotDto") PlotDto plotDto,
@@ -40,24 +41,43 @@ public class PlotController {
         }
 
         try {
-            // Создаём полигон
+            // 1. Создаём полигон из координат
             var geometry = geometryService.createPolygon(plotDto.getCoordinates());
 
-            Plot plot = new Plot();
-            plot.setPlotNumber(plotDto.getPlotNumber());
-            plot.setForestryName(plotDto.getForestryName());
-            plot.setDescription(plotDto.getDescription());
-            plot.setGeometry(geometry);
+            // 2. Проверяем, что выбран квартал
+            if (plotDto.getQuarterId() == null) {
+                throw new IllegalArgumentException("Не выбран квартал!");
+            }
 
-            // Сохраняем с проверкой
-            List<IntersectionReport> conflicts = plotService.saveWithValidation(plot);
+            // 3. Получаем квартал
+            Quarter quarter = quarterService.findById(plotDto.getQuarterId())
+                    .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
+
+            // 4. Проверяем, что деляна внутри квартала
+            if (quarter.getGeometry() != null) {
+                geometryService.validatePlotInsideQuarter(
+                        geometry,
+                        quarter.getGeometry(),
+                        plotDto.getNumberInQuarter(),
+                        quarter.getNumber()
+                );
+            }
+
+            // 5. Создаём деляну через сервис
+            List<IntersectionReport> conflicts = plotService.createPlotWithValidation(
+                    plotDto.getNumberInQuarter(),
+                    plotDto.getPlots(),
+                    plotDto.getDescription(),
+                    geometry,
+                    plotDto.getQuarterId(),
+                    plotDto.getYearOfCut(),
+                    plotDto.getCutType()
+            );
 
             if (!conflicts.isEmpty()) {
                 redirectAttributes.addFlashAttribute("conflicts", conflicts);
                 redirectAttributes.addFlashAttribute("warning", "Обнаружены пересечения с существующими делянами!");
             } else {
-                plot.setVerified(true);
-                plotService.save(plot);
                 redirectAttributes.addFlashAttribute("success", "Деляна успешно создана и верифицирована!");
             }
 
@@ -67,17 +87,7 @@ public class PlotController {
 
         } catch (Exception e) {
             log.error("Ошибка при создании деляны", e);
-
-            // Показываем понятное сообщение
-            String errorMessage = e.getMessage();
-            if (errorMessage != null && errorMessage.contains("character varying")) {
-                errorMessage = "⚠️ Номер деляны слишком длинный (максимум 100 символов). " +
-                        "Пожалуйста, сократите номер.";
-            } else if (errorMessage != null && errorMessage.contains("geometry")) {
-                errorMessage = "⚠️ Ошибка геометрии. Проверьте правильность координат.";
-            }
-
-            redirectAttributes.addFlashAttribute("error", "Ошибка: " + errorMessage);
+            redirectAttributes.addFlashAttribute("error", "Ошибка: " + e.getMessage());
         }
 
         return "redirect:/";
