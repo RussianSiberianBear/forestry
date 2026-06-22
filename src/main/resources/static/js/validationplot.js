@@ -7,14 +7,12 @@ function handleCoordInput(event, field, index) {
         event.preventDefault();
 
         if (field === 'lat') {
-            // Enter в поле Широта → переходим на Долготу
             const row = document.getElementById('coord-row-' + index);
             if (row) {
                 const lngInput = row.querySelector('input[placeholder="Долгота"]');
                 if (lngInput) lngInput.focus();
             }
         } else if (field === 'lng') {
-            // Enter в поле Долгота → добавляем новую строку
             addNewCoordinateRow();
         }
     }
@@ -24,7 +22,6 @@ function addNewCoordinateRow() {
     const container = document.getElementById('coordinates-container');
     const index = container.children.length;
 
-    // Проверяем, что последняя строка заполнена
     if (index > 0) {
         const lastRow = container.children[index - 1];
         const latInput = lastRow.querySelector('input[placeholder="Широта"]');
@@ -63,7 +60,6 @@ function addNewCoordinateRow() {
         }
     }
 
-    // Создаём новую строку
     const row = document.createElement('div');
     row.className = 'coordinate-row';
     row.id = 'coord-row-' + index;
@@ -85,7 +81,6 @@ function addNewCoordinateRow() {
     `;
     container.appendChild(row);
 
-    // Ставим фокус на поле Широты новой строки
     const newLatInput = row.querySelector('input[placeholder="Широта"]');
     if (newLatInput) newLatInput.focus();
 
@@ -133,17 +128,14 @@ function clearAllCoordinates() {
         return;
     }
 
-    // Оставляем только 3 точки
     while (container.children.length > 3) {
         container.removeChild(container.lastChild);
     }
     updateIndices();
     updateCoordCounter();
 
-    // Очищаем значения в оставшихся полях
     container.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
 
-    // Ставим фокус на первую строку
     const firstRow = container.children[0];
     if (firstRow) {
         const latInput = firstRow.querySelector('input[placeholder="Широта"]');
@@ -160,10 +152,8 @@ function clearAllCoordinates() {
 function updateIndices() {
     const rows = document.querySelectorAll('#coordinates-container .coordinate-row');
     rows.forEach((row, index) => {
-        // Обновляем id
         row.id = 'coord-row-' + index;
 
-        // Обновляем name атрибуты
         const latInput = row.querySelector('input[placeholder="Широта"]');
         const lngInput = row.querySelector('input[placeholder="Долгота"]');
         if (latInput) {
@@ -175,7 +165,6 @@ function updateIndices() {
             lngInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lng\', ' + index + ')');
         }
 
-        // Обновляем onclick у кнопки
         const btn = row.querySelector('button');
         if (btn) {
             btn.setAttribute('onclick', 'removeCoordinate(' + index + ')');
@@ -206,7 +195,6 @@ function validateCoordInput(input) {
 // ==========================================
 
 function resetForm() {
-    // Оставляем 3 пустые строки
     const container = document.getElementById('coordinates-container');
     while (container.children.length > 3) {
         container.removeChild(container.lastChild);
@@ -846,15 +834,37 @@ document.addEventListener('click', function(e) {
 // ==========================================
 
 let map = null;
+let osmLayer = null;
+let googleSatLayer = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     try {
         map = L.map('map').setView([56.0, 92.0], 6);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        // ===== СЛОЙ OSM (СХЕМА) =====
+        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        });
 
+        // ===== СЛОЙ GOOGLE SATELLITE (СПУТНИК) =====
+        googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps'
+        });
+
+        // ===== ДОБАВЛЯЕМ СЛОИ И ПЕРЕКЛЮЧАТЕЛЬ =====
+        var baseMaps = {
+            "🗺️ Схема": osmLayer,
+            "🛰️ Спутник": googleSatLayer
+        };
+
+        // ✅ По умолчанию показываем СПУТНИК
+        googleSatLayer.addTo(map);
+        L.control.layers(baseMaps).addTo(map);
+
+        // Загружаем настройки и деляны
         loadUISettingsFromServer();
         loadPlots();
 
@@ -875,6 +885,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ==========================================
+// ЗАГРУЗКА ДЕЛЯН НА КАРТУ
+// ==========================================
+
 function loadPlots() {
     fetch('/api/plots/map-data')
         .then(response => {
@@ -886,22 +900,30 @@ function loadPlots() {
         .then(plots => {
             if (!map) return;
 
+            // Удаляем старые полигоны (сохраняем только базовые слои)
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Polygon) {
+                    map.removeLayer(layer);
+                }
+            });
+
             plots.forEach(plot => {
                 if (plot.geometryGeoJson) {
                     try {
                         const geojson = JSON.parse(plot.geometryGeoJson);
                         if (geojson.type === 'Polygon' && geojson.coordinates) {
                             const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
+
                             const polygon = L.polygon(coords, {
-                                color: '#d32f2f',        // ← КРАСНАЯ ГРАНИЦА
-                                weight: 2,
+                                color: '#d32f2f',
+                                weight: 2.5,
                                 opacity: 0.9,
-                                fillColor: '#d32f2f',    // ← КРАСНАЯ ЗАЛИВКА
+                                fillColor: '#d32f2f',
                                 fillOpacity: 0.2
                             }).addTo(map);
 
                             polygon.bindPopup(`
-                                <b>${plot.fullNumber || plot.numberInQuarter}</b><br>
+                                <b style="color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
                                 ${plot.forestryName || 'Без лесничества'}<br>
                                 ${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}<br>
                                 <small>Площадь: ${plot.areaM2 ? (plot.areaM2 / 10000).toFixed(2) + ' га' : 'н/д'}</small>
@@ -916,9 +938,16 @@ function loadPlots() {
         .catch(error => console.error('Error loading plots:', error));
 }
 
+// ==========================================
+// ПРОВЕРКА ВСЕХ ДЕЛЯН
+// ==========================================
 
 // ==========================================
-// ПРОВЕРКА ВСЕХ ДЕЛЯН (БЕЗ ПЕРЕЗАГРУЗКИ)
+// ПРОВЕРКА ВСЕХ ДЕЛЯН (БЕЗ СБРОСА КАРТЫ)
+// ==========================================
+
+// ==========================================
+// ПРОВЕРКА ВСЕХ ДЕЛЯН (БЕЗ КАКИХ-ЛИБО ИЗМЕНЕНИЙ КАРТЫ)
 // ==========================================
 
 function checkAll() {
@@ -949,10 +978,8 @@ function checkAll() {
                     status: 'success',
                     timeout: 5000
                 });
-                // Обновляем карту и список
-                loadPlots();
-                loadUISettingsFromServer();
-                // Скрываем блок конфликтов
+
+                // Скрываем блок конфликтов, если он был открыт
                 const conflictBlock = document.getElementById('conflictResults');
                 if (conflictBlock) {
                     conflictBlock.style.display = 'none';
@@ -963,6 +990,7 @@ function checkAll() {
                     status: 'warning',
                     timeout: 5000
                 });
+
                 showConflicts(conflicts);
             }
         })
@@ -1048,4 +1076,3 @@ function showConflicts(conflicts) {
         UIkit.icon(conflictBlock);
     }
 }
-
