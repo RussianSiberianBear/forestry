@@ -19,7 +19,6 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== ПРЯМЫЕ ССЫЛКИ НА ВСЕ УРОВНИ ИЕРАРХИИ =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id")
     private Region region;
@@ -40,29 +39,24 @@ public class Plot {
     @JoinColumn(name = "quarter_id")
     private Quarter quarter;
 
-    // ===== НОМЕР ДЕЛЯНЫ (ВВОДИТСЯ ВРУЧНУЮ!) =====
     @Column(name = "number_in_quarter", nullable = false, length = 50)
     private String numberInQuarter;
 
     @Column(name = "full_number", length = 200, unique = true)
     private String fullNumber;
 
-    // ===== ВЫДЕЛЫ (НОВОЕ ПОЛЕ!) =====
     @Column(name = "plots", length = 200)
-    private String plots; // Например: "1, 2, 3-5, 7"
+    private String plots;
 
-    // ===== ОПИСАНИЕ =====
     @Column(name = "name", length = 100)
     private String name;
 
     @Column(name = "description", length = 500)
     private String description;
 
-    // ===== ГЕОМЕТРИЯ =====
     @Column(name = "geometry", columnDefinition = "geometry(Polygon,4326)")
     private Polygon geometry;
 
-    // ===== СТАТУСЫ =====
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -72,7 +66,6 @@ public class Plot {
     @Column(name = "area_m2")
     private Double areaM2;
 
-    // ===== ДОПОЛНИТЕЛЬНО =====
     @Column(name = "year_of_cut")
     private Integer yearOfCut;
 
@@ -87,7 +80,6 @@ public class Plot {
             areaM2 = geometry.getArea() * 111319.9 * 111319.9;
         }
 
-        // Проверка: деляна должна быть ВНУТРИ квартала
         if (quarter != null && quarter.getGeometry() != null && geometry != null) {
             if (!quarter.getGeometry().contains(geometry)) {
                 throw new IllegalStateException(
@@ -97,7 +89,6 @@ public class Plot {
             }
         }
 
-        // Формируем полный номер из иерархии
         if (fullNumber == null) {
             StringBuilder sb = new StringBuilder();
 
@@ -122,5 +113,10 @@ public class Plot {
 
             fullNumber = sb.toString();
         }
+    }
+
+    @Override
+    public String toString() {
+        return fullNumber != null ? fullNumber : (numberInQuarter != null ? "Дел." + numberInQuarter : "Новая деляна");
     }
 }

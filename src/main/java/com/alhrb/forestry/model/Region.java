@@ -20,14 +20,19 @@ public class Region {
     private Long id;
 
     @Column(name = "name", nullable = false, unique = true, length = 100)
-    private String name; // Например: "Красноярский край"
+    private String name;
 
     @Column(name = "code", length = 10)
-    private String code; // Код региона (например: "24")
+    private String code;
 
     @Column(name = "description", length = 500)
     private String description;
 
     @OneToMany(mappedBy = "region", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Forestry> forestries = new ArrayList<>();
+    private List<MunicipalDistrict> municipalDistricts = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return name != null ? name : "Без названия";
+    }
 }

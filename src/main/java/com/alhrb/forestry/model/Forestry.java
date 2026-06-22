@@ -20,24 +20,27 @@ public class Forestry {
     private Long id;
 
     @Column(name = "name", nullable = false, length = 100)
-    private String name; // Например: "Емельяновское лесничество"
+    private String name;
 
     @Column(name = "code", length = 20)
-    private String code; // Код лесничества
+    private String code;
 
     @Column(name = "description", length = 500)
     private String description;
 
-    // ===== ПРИВЯЗКА К РАЙОНУ =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "municipal_district_id")
     private MunicipalDistrict municipalDistrict;
 
-    // ===== ПРИВЯЗКА К РЕГИОНУ (дублируем для быстрого доступа) =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id")
     private Region region;
 
     @OneToMany(mappedBy = "forestry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<DistrictForestry> districtForestries = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return name != null ? name : "Без названия";
+    }
 }

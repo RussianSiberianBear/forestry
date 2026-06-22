@@ -21,36 +21,37 @@ public class Quarter {
     private Long id;
 
     @Column(name = "number", nullable = false)
-    private Integer number; // Номер квартала (например: 12)
+    private Integer number;
 
     @Column(name = "name", length = 100)
-    private String name; // Название квартала (опционально)
+    private String name;
 
     @Column(name = "area_ha")
-    private Double areaHa; // Площадь квартала в гектарах
+    private Double areaHa;
 
     @Column(name = "description", length = 500)
     private String description;
 
-    // ===== ГЕОМЕТРИЯ КВАРТАЛА =====
     @Column(name = "geometry", columnDefinition = "geometry(Polygon,4326)")
-    private Polygon geometry; // ← ГРАНИЦЫ КВАРТАЛА!
+    private Polygon geometry;
 
-    // ===== ИЕРАРХИЯ =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "district_forestry_id")
     private DistrictForestry districtForestry;
 
-    // ===== ДЕЛЯНЫ ВНУТРИ КВАРТАЛА =====
     @OneToMany(mappedBy = "quarter", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Plot> plots = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
         if (geometry != null) {
-            // Расчёт площади квартала в гектарах
             double areaM2 = geometry.getArea() * 111319.9 * 111319.9;
             this.areaHa = areaM2 / 10000;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Кв. " + number + (name != null ? " (" + name + ")" : "");
     }
 }

@@ -32,9 +32,6 @@
             width: 140px;
             display: inline-block;
         }
-        .btn-add-coordinate {
-            margin-top: 10px;
-        }
         .conflict-list {
             max-height: 300px;
             overflow-y: auto;
@@ -73,9 +70,6 @@
         .form-select:focus {
             border-color: #1e87f0;
             outline: none;
-        }
-        .dependent-select {
-            transition: opacity 0.3s ease;
         }
         .dependent-select.loading {
             opacity: 0.5;
@@ -140,14 +134,12 @@
     <div th:if="${conflicts != null and !conflicts.empty}"
          class="uk-card uk-card-default uk-card-body uk-margin"
          style="border-left: 4px solid #f57c00;">
-
         <h3 class="uk-card-title" style="color: #f57c00;">
             <span uk-icon="icon: warning; ratio: 1.2"></span>
             Обнаружены пересечения!
             <span class="uk-badge uk-badge-danger uk-margin-left"
                   th:text="${#lists.size(conflicts)} + ' конф.'"></span>
         </h3>
-
         <div class="conflict-list">
             <table class="uk-table uk-table-striped uk-table-hover uk-table-small">
                 <thead>
@@ -195,9 +187,7 @@
 
                 <form th:action="@{/api/plots/create}" th:object="${plotDto}" method="post" id="plotForm">
 
-                    <!-- ========================================== -->
-                    <!-- 1. ИЕРАРХИЯ: РЕГИОН -->
-                    <!-- ========================================== -->
+                    <!-- Регион -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="regionSelect">
                             Регион <span class="required-star">*</span>
@@ -216,9 +206,7 @@
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 2. ИЕРАРХИЯ: МУНИЦИПАЛЬНЫЙ РАЙОН -->
-                    <!-- ========================================== -->
+                    <!-- Муниципальный район -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="municipalDistrictSelect">
                             Муниципальный район <span class="required-star">*</span>
@@ -227,20 +215,13 @@
                             <select class="form-select dependent-select" id="municipalDistrictSelect"
                                     name="municipalDistrictId"
                                     onchange="loadForestries(this.value)"
-                                    th:disabled="${plotDto.regionId == null}">
+                                    disabled>
                                 <option value="">-- Сначала выберите регион --</option>
-                                <option th:each="district : ${municipalDistricts}"
-                                        th:value="${district.id}"
-                                        th:text="${district.name}"
-                                        th:selected="${district.id == plotDto.municipalDistrictId}">
-                                </option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 3. ИЕРАРХИЯ: ЛЕСНИЧЕСТВО -->
-                    <!-- ========================================== -->
+                    <!-- Лесничество -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="forestrySelect">
                             Лесничество <span class="required-star">*</span>
@@ -249,20 +230,13 @@
                             <select class="form-select dependent-select" id="forestrySelect"
                                     name="forestryId"
                                     onchange="loadDistrictForestries(this.value)"
-                                    th:disabled="${plotDto.municipalDistrictId == null}">
+                                    disabled>
                                 <option value="">-- Сначала выберите район --</option>
-                                <option th:each="forestry : ${forestries}"
-                                        th:value="${forestry.id}"
-                                        th:text="${forestry.name}"
-                                        th:selected="${forestry.id == plotDto.forestryId}">
-                                </option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 4. ИЕРАРХИЯ: УЧАСТКОВОЕ ЛЕСНИЧЕСТВО -->
-                    <!-- ========================================== -->
+                    <!-- Участковое лесничество -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="districtForestrySelect">
                             Участковое лесничество <span class="required-star">*</span>
@@ -271,20 +245,13 @@
                             <select class="form-select dependent-select" id="districtForestrySelect"
                                     name="districtForestryId"
                                     onchange="loadQuarters(this.value)"
-                                    th:disabled="${plotDto.forestryId == null}">
+                                    disabled>
                                 <option value="">-- Сначала выберите лесничество --</option>
-                                <option th:each="district : ${districtForestries}"
-                                        th:value="${district.id}"
-                                        th:text="${district.name}"
-                                        th:selected="${district.id == plotDto.districtForestryId}">
-                                </option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 5. ИЕРАРХИЯ: КВАРТАЛ -->
-                    <!-- ========================================== -->
+                    <!-- Квартал -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="quarterSelect">
                             Квартал <span class="required-star">*</span>
@@ -292,13 +259,8 @@
                         <div class="uk-form-controls">
                             <select class="form-select dependent-select" id="quarterSelect"
                                     name="quarterId"
-                                    th:disabled="${plotDto.districtForestryId == null}">
+                                    disabled>
                                 <option value="">-- Сначала выберите участковое лесничество --</option>
-                                <option th:each="quarter : ${quarters}"
-                                        th:value="${quarter.id}"
-                                        th:text="'Кв. ' + ${quarter.number} + (${quarter.name != null ? ' (' + quarter.name + ')' : '')}"
-                                        th:selected="${quarter.id == plotDto.quarterId}">
-                                </option>
                             </select>
                         </div>
                         <div class="field-hint">
@@ -309,9 +271,7 @@
 
                     <hr>
 
-                    <!-- ========================================== -->
-                    <!-- 6. НОМЕР ДЕЛЯНЫ В КВАРТАЛЕ -->
-                    <!-- ========================================== -->
+                    <!-- Номер деляны -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="numberInQuarter">
                             Номер деляны в квартале <span class="required-star">*</span>
@@ -328,13 +288,9 @@
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 7. ВЫДЕЛЫ -->
-                    <!-- ========================================== -->
+                    <!-- Выделы -->
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="plots">
-                            Выделы
-                        </label>
+                        <label class="uk-form-label" for="plots">Выделы</label>
                         <div class="uk-form-controls">
                             <input class="uk-input" type="text" id="plots"
                                    th:field="*{plots}"
@@ -342,13 +298,11 @@
                         </div>
                         <div class="field-hint">
                             <span uk-icon="icon: info"></span>
-                            Несколько выделов через запятую (например: 1, 2, 3-5)
+                            Несколько выделов через запятую
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 8. ОПИСАНИЕ -->
-                    <!-- ========================================== -->
+                    <!-- Описание -->
                     <div class="uk-margin">
                         <label class="uk-form-label" for="description">Описание</label>
                         <div class="uk-form-controls">
@@ -358,9 +312,7 @@
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 9. ДОПОЛНИТЕЛЬНЫЕ ПОЛЯ -->
-                    <!-- ========================================== -->
+                    <!-- Год рубки и тип -->
                     <div class="uk-grid uk-grid-small" uk-grid>
                         <div class="uk-width-1-2">
                             <div class="uk-margin">
@@ -391,16 +343,14 @@
 
                     <hr>
 
-                    <!-- ========================================== -->
-                    <!-- 10. КООРДИНАТЫ -->
-                    <!-- ========================================== -->
+                    <!-- Координаты -->
                     <div class="uk-alert-primary uk-margin-small" uk-alert>
                         <p>
                             <span uk-icon="icon: info"></span>
                             <strong>Как вводить координаты:</strong><br>
-                            1. Введите точки <span class="uk-text-bold">по порядку</span> (по часовой стрелке или против)<br>
-                            2. Используйте <span class="uk-text-bold">ТОЧКУ</span> как разделитель (например, <code>55.123456</code>)<br>
-                            3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система замкнёт полигон автоматически!
+                            1. Введите точки <span class="uk-text-bold">по порядку</span><br>
+                            2. Используйте <span class="uk-text-bold">ТОЧКУ</span> как разделитель<br>
+                            3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система замкнёт сама
                         </p>
                     </div>
 
@@ -446,9 +396,7 @@
                         </div>
                     </div>
 
-                    <!-- ========================================== -->
-                    <!-- 11. КНОПКИ -->
-                    <!-- ========================================== -->
+                    <!-- Кнопки -->
                     <div class="uk-margin">
                         <button type="submit" class="uk-button uk-button-primary">
                             <span uk-icon="icon: check"></span> Создать и проверить
@@ -461,7 +409,7 @@
             </div>
         </div>
 
-        <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА И СПИСОК ===== -->
+        <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА ===== -->
         <div class="uk-width-1-2@m">
             <div class="uk-card uk-card-default uk-card-body">
                 <h3 class="uk-card-title">
@@ -493,7 +441,7 @@
                         <tbody>
                         <tr th:each="plot : ${plots}">
                             <td th:text="${plot.fullNumber}"></td>
-                            <td th:text="${plot.forestryName != null ? plot.forestryName : '-'}"></td>
+                            <td th:text="${plot.forestry != null ? plot.forestry.name : '-'}"></td>
                             <td>
                                 <span th:if="${plot.verified}"
                                       class="uk-badge uk-badge-success">✓ Вериф.</span>
@@ -534,11 +482,11 @@
             <input class="uk-input uk-form-width-small coord-input" type="text"
                    name="coordinates[${index}].lat"
                    placeholder="Широта"
-                   oninput="validateCoordInput(this); updatePreview()">
+                   oninput="validateCoordInput(this)">
             <input class="uk-input uk-form-width-small coord-input" type="text"
                    name="coordinates[${index}].lng"
                    placeholder="Долгота"
-                   oninput="validateCoordInput(this); updatePreview()">
+                   oninput="validateCoordInput(this)">
             <button type="button" class="uk-button uk-button-danger uk-button-small"
                     onclick="removeCoordinate(${index})">
                 <span uk-icon="icon: close"></span>
@@ -549,7 +497,6 @@
         if (window.UIkit) {
             UIkit.icon(div);
         }
-        updatePointCounter();
     }
 
     function removeCoordinate(index) {
@@ -558,7 +505,6 @@
 
         if (element && container.children.length > 3) {
             element.remove();
-            updatePointCounter();
         } else {
             UIkit.notification({
                 message: 'Нельзя удалить последнюю точку (нужно минимум 3)',
@@ -574,13 +520,6 @@
             container.removeChild(container.lastChild);
         }
         container.querySelectorAll('input').forEach(input => input.value = '');
-        updatePointCounter();
-    }
-
-    function updatePointCounter() {
-        const container = document.getElementById('coordinates-container');
-        const count = container.children.length;
-        // Можно добавить счётчик, если нужно
     }
 
     function resetForm() {
@@ -592,14 +531,14 @@
         document.getElementById('cutType').value = '';
         document.getElementById('regionSelect').value = '';
         document.getElementById('municipalDistrictSelect').innerHTML = '<option value="">-- Сначала выберите регион --</option>';
+        document.getElementById('municipalDistrictSelect').disabled = true;
         document.getElementById('forestrySelect').innerHTML = '<option value="">-- Сначала выберите район --</option>';
+        document.getElementById('forestrySelect').disabled = true;
         document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+        document.getElementById('districtForestrySelect').disabled = true;
         document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+        document.getElementById('quarterSelect').disabled = true;
     }
-
-    // ==========================================
-    // ВАЛИДАЦИЯ ВВОДА
-    // ==========================================
 
     function validateCoordInput(input) {
         input.value = input.value.replace(',', '.').trim();
@@ -611,46 +550,55 @@
     }
 
     // ==========================================
-    // ЗАГРУЗКА ЗАВИСИМЫХ СПИСКОВ (AJAX)
+    // ЗАГРУЗКА ЗАВИСИМЫХ СПИСКОВ
     // ==========================================
 
     function loadMunicipalDistricts(regionId) {
         if (!regionId) {
             document.getElementById('municipalDistrictSelect').innerHTML = '<option value="">-- Сначала выберите регион --</option>';
+            document.getElementById('municipalDistrictSelect').disabled = true;
             document.getElementById('forestrySelect').innerHTML = '<option value="">-- Сначала выберите район --</option>';
+            document.getElementById('forestrySelect').disabled = true;
             document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+            document.getElementById('districtForestrySelect').disabled = true;
             document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            document.getElementById('quarterSelect').disabled = true;
             return;
         }
 
         const select = document.getElementById('municipalDistrictSelect');
         select.classList.add('loading');
         select.innerHTML = '<option value="">Загрузка...</option>';
+        select.disabled = true;
 
         fetch('/api/municipal-districts/by-region/' + regionId)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 select.innerHTML = '<option value="">-- Выберите район --</option>';
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = item.name;
-                    select.appendChild(option);
-                });
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name || 'Без названия';
+                        select.appendChild(option);
+                    });
+                    select.disabled = false;
+                } else {
+                    select.innerHTML = '<option value="">-- Районы не найдены --</option>';
+                }
                 select.classList.remove('loading');
-                select.disabled = false;
-
-                // Сброс зависимых списков
-                document.getElementById('forestrySelect').innerHTML = '<option value="">-- Сначала выберите район --</option>';
-                document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-                document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             })
             .catch(error => {
-                console.error('Error:', error);
-                select.innerHTML = '<option value="">Ошибка загрузки</option>';
+                console.error('Ошибка загрузки районов:', error);
+                select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
                 UIkit.notification({
-                    message: 'Ошибка загрузки районов',
+                    message: 'Ошибка загрузки районов: ' + error.message,
                     status: 'danger',
                     timeout: 3000
                 });
@@ -660,98 +608,144 @@
     function loadForestries(municipalDistrictId) {
         if (!municipalDistrictId) {
             document.getElementById('forestrySelect').innerHTML = '<option value="">-- Сначала выберите район --</option>';
+            document.getElementById('forestrySelect').disabled = true;
             document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+            document.getElementById('districtForestrySelect').disabled = true;
             document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            document.getElementById('quarterSelect').disabled = true;
             return;
         }
 
         const select = document.getElementById('forestrySelect');
         select.classList.add('loading');
         select.innerHTML = '<option value="">Загрузка...</option>';
+        select.disabled = true;
 
         fetch('/api/forestries/by-district/' + municipalDistrictId)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 select.innerHTML = '<option value="">-- Выберите лесничество --</option>';
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = item.name;
-                    select.appendChild(option);
-                });
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name || 'Без названия';
+                        select.appendChild(option);
+                    });
+                    select.disabled = false;
+                } else {
+                    select.innerHTML = '<option value="">-- Лесничества не найдены --</option>';
+                }
                 select.classList.remove('loading');
-                select.disabled = false;
-
-                document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-                document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             })
             .catch(error => {
-                console.error('Error:', error);
-                select.innerHTML = '<option value="">Ошибка загрузки</option>';
+                console.error('Ошибка загрузки лесничеств:', error);
+                select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
+                UIkit.notification({
+                    message: 'Ошибка загрузки лесничеств: ' + error.message,
+                    status: 'danger',
+                    timeout: 3000
+                });
             });
     }
 
     function loadDistrictForestries(forestryId) {
         if (!forestryId) {
             document.getElementById('districtForestrySelect').innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+            document.getElementById('districtForestrySelect').disabled = true;
             document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            document.getElementById('quarterSelect').disabled = true;
             return;
         }
 
         const select = document.getElementById('districtForestrySelect');
         select.classList.add('loading');
         select.innerHTML = '<option value="">Загрузка...</option>';
+        select.disabled = true;
 
         fetch('/api/district-forestries/by-forestry/' + forestryId)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 select.innerHTML = '<option value="">-- Выберите участковое лесничество --</option>';
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = item.name;
-                    select.appendChild(option);
-                });
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name || 'Без названия';
+                        select.appendChild(option);
+                    });
+                    select.disabled = false;
+                } else {
+                    select.innerHTML = '<option value="">-- Участковые лесничества не найдены --</option>';
+                }
                 select.classList.remove('loading');
-                select.disabled = false;
-
-                document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             })
             .catch(error => {
-                console.error('Error:', error);
-                select.innerHTML = '<option value="">Ошибка загрузки</option>';
+                console.error('Ошибка загрузки участковых лесничеств:', error);
+                select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
+                UIkit.notification({
+                    message: 'Ошибка загрузки участковых лесничеств: ' + error.message,
+                    status: 'danger',
+                    timeout: 3000
+                });
             });
     }
 
     function loadQuarters(districtForestryId) {
         if (!districtForestryId) {
             document.getElementById('quarterSelect').innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            document.getElementById('quarterSelect').disabled = true;
             return;
         }
 
         const select = document.getElementById('quarterSelect');
         select.classList.add('loading');
         select.innerHTML = '<option value="">Загрузка...</option>';
+        select.disabled = true;
 
         fetch('/api/quarters/by-district/' + districtForestryId)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
                 select.innerHTML = '<option value="">-- Выберите квартал --</option>';
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item.id;
-                    option.textContent = 'Кв. ' + item.number + (item.name ? ' (' + item.name + ')' : '');
-                    select.appendChild(option);
-                });
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = 'Кв. ' + item.number + (item.name ? ' (' + item.name + ')' : '');
+                        select.appendChild(option);
+                    });
+                    select.disabled = false;
+                } else {
+                    select.innerHTML = '<option value="">-- Кварталы не найдены --</option>';
+                }
                 select.classList.remove('loading');
-                select.disabled = false;
             })
             .catch(error => {
-                console.error('Error:', error);
-                select.innerHTML = '<option value="">Ошибка загрузки</option>';
+                console.error('Ошибка загрузки кварталов:', error);
+                select.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
                 select.classList.remove('loading');
+                UIkit.notification({
+                    message: 'Ошибка загрузки кварталов: ' + error.message,
+                    status: 'danger',
+                    timeout: 3000
+                });
             });
     }
 
@@ -762,21 +756,27 @@
     let map = null;
 
     document.addEventListener('DOMContentLoaded', function() {
-        map = L.map('map').setView([56.0, 92.0], 6);
+        try {
+            map = L.map('map').setView([56.0, 92.0], 6);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-        loadPlots();
+            loadPlots();
+        } catch (e) {
+            console.error('Ошибка инициализации карты:', e);
+        }
     });
 
     function loadPlots() {
         fetch('/api/plots/all')
             .then(response => response.json())
             .then(plots => {
+                if (!map) return;
+
                 plots.forEach(plot => {
-                    if (plot.geometry) {
+                    if (plot.geometry && plot.geometry.coordinates) {
                         try {
                             const coords = plot.geometry.coordinates[0].map(c => [c[1], c[0]]);
                             const polygon = L.polygon(coords, {
@@ -787,13 +787,13 @@
                             }).addTo(map);
 
                             polygon.bindPopup(`
-                                <b>${plot.fullNumber || plot.plotNumber}</b><br>
-                                ${plot.forestryName || 'Без лесничества'}<br>
+                                <b>${plot.fullNumber || plot.numberInQuarter}</b><br>
+                                ${plot.forestry ? plot.forestry.name : 'Без лесничества'}<br>
                                 ${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}<br>
                                 <small>Площадь: ${plot.areaM2 ? (plot.areaM2 / 10000).toFixed(2) + ' га' : 'н/д'}</small>
                             `);
                         } catch(e) {
-                            console.error('Ошибка при отображении деляны:', plot.plotNumber, e);
+                            console.error('Ошибка при отображении деляны:', plot.numberInQuarter, e);
                         }
                     }
                 });
@@ -829,15 +829,6 @@
             });
         });
     }
-
-    // ==========================================
-    // ИНИЦИАЛИЗАЦИЯ
-    // ==========================================
-
-    // Обновляем счётчик точек
-    document.addEventListener('DOMContentLoaded', function() {
-        updatePointCounter();
-    });
 </script>
 
 </body>

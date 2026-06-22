@@ -20,7 +20,7 @@ public class DistrictForestry {
     private Long id;
 
     @Column(name = "name", nullable = false, length = 100)
-    private String name; // Например: "Пригородное участковое лесничество"
+    private String name;
 
     @Column(name = "code", length = 20)
     private String code;
@@ -34,4 +34,9 @@ public class DistrictForestry {
 
     @OneToMany(mappedBy = "districtForestry", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Quarter> quarters = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return name != null ? name : "Без названия";
+    }
 }
