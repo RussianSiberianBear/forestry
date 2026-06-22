@@ -11,27 +11,19 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@SuppressWarnings({"SqlResolve", "SqlDialectInspection", "unused"})
 public interface PlotRepository extends JpaRepository<Plot, Long> {
 
-    // Поиск по кварталу и номеру
+    // ===== ПОИСК ПО ИЕРАРХИИ =====
     Optional<Plot> findByQuarterIdAndNumberInQuarter(Long quarterId, String numberInQuarter);
-
-    // Поиск по полному номеру
     Optional<Plot> findByFullNumber(String fullNumber);
 
-    // Все деляны квартала
     List<Plot> findByQuarterIdOrderByNumberInQuarter(Long quarterId);
-
-    // Все деляны лесничества
     List<Plot> findByForestryId(Long forestryId);
-
-    // Все деляны района
     List<Plot> findByMunicipalDistrictId(Long municipalDistrictId);
-
-    // Все деляны региона
     List<Plot> findByRegionId(Long regionId);
 
-    // Проверка пересечений
+    // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """
         SELECT 
             b.id, 
@@ -48,7 +40,6 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
             @Param("minArea") Double minArea
     );
 
-    // Массовая проверка
     @Query(value = """
         WITH candidates AS (
             SELECT 
