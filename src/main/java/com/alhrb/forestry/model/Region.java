@@ -1,5 +1,6 @@
 package com.alhrb.forestry.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class Region {
     @Column(name = "description", length = 500)
     private String description;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @OneToMany(mappedBy = "region", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<MunicipalDistrict> municipalDistricts = new ArrayList<>();
 

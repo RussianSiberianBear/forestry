@@ -1,5 +1,6 @@
 package com.alhrb.forestry.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,22 +20,27 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "region_id")
     private Region region;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "municipal_district_id")
     private MunicipalDistrict municipalDistrict;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "forestry_id")
     private Forestry forestry;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "district_forestry_id")
     private DistrictForestry districtForestry;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quarter_id")
     private Quarter quarter;

@@ -1,5 +1,6 @@
 package com.alhrb.forestry.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,10 +36,12 @@ public class Quarter {
     @Column(name = "geometry", columnDefinition = "geometry(Polygon,4326)")
     private Polygon geometry;
 
+    @JsonIgnore  // ← ДОБАВИТЬ!
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "district_forestry_id")
     private DistrictForestry districtForestry;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "quarter", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Plot> plots = new ArrayList<>();
 
