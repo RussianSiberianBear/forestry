@@ -43,7 +43,7 @@ public class Plot {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "technical_unit_id")  // ← НОВОЕ ПОЛЕ!
+    @JoinColumn(name = "technical_unit_id")
     private TechnicalUnit technicalUnit;
 
     @JsonIgnore
@@ -55,7 +55,7 @@ public class Plot {
     @Column(name = "number_in_quarter", nullable = false, length = 50)
     private String numberInQuarter;
 
-    @Column(name = "full_number", length = 300, unique = true)  // ← увеличил до 300
+    @Column(name = "full_number", length = 300, unique = true)
     private String fullNumber;
 
     @Column(name = "plots", length = 200)
@@ -76,8 +76,12 @@ public class Plot {
     @Column(name = "verified")
     private Boolean verified = false;
 
-    @Column(name = "area_m2")
-    private Double areaM2;
+    // УДАЛЯЕМ area_m2 — больше не нужен, используем area_ha из БД
+    // @Column(name = "area_m2")
+    // private Double areaM2;
+
+    @Column(name = "area_ha")
+    private Double areaHa;  // ← НОВОЕ ПОЛЕ
 
     @Column(name = "year_of_cut")
     private Integer yearOfCut;
@@ -89,9 +93,9 @@ public class Plot {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
 
-        if (geometry != null) {
-            areaM2 = geometry.getArea() * 111319.9 * 111319.9;
-        }
+        // ===== УБИРАЕМ РУЧНОЙ РАСЧЁТ ПЛОЩАДИ =====
+        // Теперь площадь считается триггером в БД
+        // area_ha автоматически заполняется при INSERT/UPDATE
 
         // Проверка внутри квартала
         if (quarter != null && quarter.getGeometry() != null && geometry != null) {
@@ -103,7 +107,7 @@ public class Plot {
             }
         }
 
-        // Формируем полный номер с учётом технического участка
+        // Формируем полный номер
         if (fullNumber == null) {
             StringBuilder sb = new StringBuilder();
 

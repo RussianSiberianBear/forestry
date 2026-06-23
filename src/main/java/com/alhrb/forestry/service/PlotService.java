@@ -84,7 +84,7 @@ public class PlotService {
     }
 
     // ==========================================
-    // МЕТОД ДЛЯ КАРТЫ
+    // МЕТОД ДЛЯ КАРТЫ (ОБНОВЛЁННЫЙ)
     // ==========================================
 
     public List<PlotMapDto> getAllPlotsForMap() {
@@ -100,8 +100,25 @@ public class PlotService {
         dto.setFullNumber(plot.getFullNumber());
         dto.setNumberInQuarter(plot.getNumberInQuarter());
         dto.setVerified(plot.getVerified());
-        dto.setAreaM2(plot.getAreaM2());
 
+        // ===== БЕРЁМ ПЛОЩАДЬ ИЗ БД (area_ha) =====
+        dto.setAreaHa(plot.getAreaHa());
+        // areaM2 — для обратной совместимости (если нужно)
+        if (plot.getAreaHa() != null) {
+            dto.setAreaM2(plot.getAreaHa() * 10000);
+        }
+
+        // Номер квартала
+        if (plot.getQuarter() != null) {
+            dto.setQuarterNumber(plot.getQuarter().getNumber());
+        }
+
+        // Лесничество
+        if (plot.getForestry() != null) {
+            dto.setForestryName(plot.getForestry().getName());
+        }
+
+        // Геометрия
         if (plot.getGeometry() != null) {
             try {
                 GeoJsonWriter writer = new GeoJsonWriter();
@@ -112,15 +129,11 @@ public class PlotService {
             }
         }
 
-        if (plot.getForestry() != null) {
-            dto.setForestryName(plot.getForestry().getName());
-        }
-
         return dto;
     }
 
     // ==========================================
-    // СОЗДАНИЕ ДЕЛЯНЫ С ПРОВЕРКОЙ
+    // ОСТАЛЬНЫЕ МЕТОДЫ (БЕЗ ИЗМЕНЕНИЙ)
     // ==========================================
 
     @Transactional
@@ -189,10 +202,6 @@ public class PlotService {
         return saveWithValidation(plot);
     }
 
-    // ==========================================
-    // СОХРАНЕНИЕ С ПРОВЕРКОЙ
-    // ==========================================
-
     @Transactional
     public List<IntersectionReport> saveWithValidation(Plot plot) {
         if (plot.getGeometry() == null) {
@@ -249,8 +258,8 @@ public class PlotService {
         }
 
         Plot saved = plotRepository.save(plot);
-        log.info("Сохранена деляна: {} (ID: {}, площадь: {} м²)",
-                saved.getFullNumber(), saved.getId(), saved.getAreaM2());
+        log.info("Сохранена деляна: {} (ID: {}, площадь: {} га)",
+                saved.getFullNumber(), saved.getId(), saved.getAreaHa());
 
         List<IntersectionReport> conflicts = validatePlot(saved);
 
@@ -266,10 +275,6 @@ public class PlotService {
 
         return conflicts;
     }
-
-    // ==========================================
-    // ВАЛИДАЦИЯ
-    // ==========================================
 
     @Transactional
     public List<IntersectionReport> validatePlot(Plot plot) {
@@ -359,10 +364,6 @@ public class PlotService {
         return reports;
     }
 
-    // ==========================================
-    // ПРОВЕРКА КОНКРЕТНОГО СПИСКА ДЕЛЯН
-    // ==========================================
-
     @Transactional
     public List<IntersectionReport> validatePlots(List<Plot> plots) {
         List<IntersectionReport> allReports = new ArrayList<>();
@@ -387,10 +388,6 @@ public class PlotService {
 
         return uniqueReports;
     }
-
-    // ==========================================
-    // ИМПОРТ ИЗ EXCEL
-    // ==========================================
 
     @Transactional
     public List<IntersectionReport> importFromExcel(MultipartFile file) {

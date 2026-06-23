@@ -374,7 +374,7 @@
 
                 <div id="map"></div>
 
-                <!-- ===== УПРАВЛЕНИЕ ПРОВЕРКОЙ ===== -->
+                <!-- ===== УПРАВЛЕНИЕ КАРТОЙ ===== -->
                 <div class="uk-margin-top">
                     <div class="uk-alert-primary uk-margin-small" uk-alert>
                         <p>
@@ -393,6 +393,16 @@
                             </button>
                             <button class="uk-button uk-button-secondary uk-button-small" onclick="checkAll()">
                                 <span uk-icon="icon: search"></span> Проверить все
+                            </button>
+                            <!-- ===== КНОПКА ПОКАЗАТЬ/СКРЫТЬ МЕТКИ ===== -->
+                            <button class="uk-button uk-button-default uk-button-small"
+                                    id="toggleLabelsBtn"
+                                    onclick="toggleLabels()">
+                                <span uk-icon="icon: eye"></span>
+                                <span id="toggleLabelsText">Скрыть метки</span>
+                            </button>
+                            <button class="uk-button uk-button-default uk-button-small" onclick="refreshMap()">
+                                <span uk-icon="icon: refresh"></span> Обновить карту
                             </button>
                         </div>
                         <span class="uk-text-meta uk-text-small" id="checkInfo">
