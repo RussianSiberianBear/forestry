@@ -385,10 +385,22 @@ function onDistrictForestryChange(districtForestryId) {
     console.log('🔄 onDistrictForestryChange вызван с districtForestryId:', districtForestryId);
 
     if (!districtForestryId) {
-        resetDependentSelects('technical');
+        // Блокируем ТОЛЬКО технический участок и квартал
+        // НЕ ТРОГАЕМ участковое лесничество!
+        const techSelect = document.getElementById('technicalUnitSelect');
+        if (techSelect) {
+            techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
+            techSelect.disabled = true;
+        }
+        document.getElementById('quarterInput').disabled = true;
+        document.getElementById('quarterInput').value = '';
+        document.getElementById('quarterId').value = '';
+        document.getElementById('quarterSuggestions').style.display = 'none';
         return;
     }
 
+    // Блокируем ТОЛЬКО технический участок и квартал
+    // НЕ ТРОГАЕМ участковое лесничество!
     const techSelect = document.getElementById('technicalUnitSelect');
     if (techSelect) {
         techSelect.innerHTML = '<option value="">Загрузка...</option>';
@@ -406,7 +418,14 @@ function onDistrictForestryChange(districtForestryId) {
 }
 
 function onTechnicalUnitChange(technicalUnitId) {
-    resetDependentSelects('quarter');
+    // Блокируем ТОЛЬКО квартал, НЕ трогаем участковое лесничество и техучасток
+    const quarterInput = document.getElementById('quarterInput');
+    if (quarterInput) {
+        quarterInput.disabled = true;
+        quarterInput.value = '';
+    }
+    document.getElementById('quarterId').value = '';
+    document.getElementById('quarterSuggestions').style.display = 'none';
 
     if (!technicalUnitId) {
         return;
@@ -839,19 +858,29 @@ function searchQuarters(query) {
 }
 
 // ==========================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (ИСПРАВЛЕННЫЕ!)
 // ==========================================
 
 function resetDependentSelects(level) {
-    if (!level || level === 'forestry' || level === 'quarter') {
+    // Блокируем ТОЛЬКО нижестоящие селекты, НЕ трогаем текущий уровень
+
+    // Если level === 'technical' — блокируем только техучасток и квартал
+    // Если level === 'quarter' — блокируем только квартал
+    // Если level === 'district' — блокируем техучасток и квартал (но не districtForestrySelect!)
+
+    if (!level || level === 'forestry') {
+        // Блокируем участковое лесничество ТОЛЬКО при level === 'forestry'
         const districtSelect = document.getElementById('districtForestrySelect');
         if (districtSelect) {
             districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
             districtSelect.disabled = true;
         }
     }
+    // Убираем условие, которое блокировало участковое лесничество при level === 'quarter' или 'technical'
 
-    if (!level || level === 'forestry' || level === 'district' || level === 'quarter') {
+    if (!level || level === 'forestry' || level === 'district') {
+        // Блокируем техучасток при level === 'forestry' или 'district'
+        // НЕ блокируем при level === 'technical'
         const techSelect = document.getElementById('technicalUnitSelect');
         if (techSelect) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
@@ -859,6 +888,7 @@ function resetDependentSelects(level) {
         }
     }
 
+    // Квартал блокируем всегда (при любом level)
     const quarterInput = document.getElementById('quarterInput');
     if (quarterInput) {
         quarterInput.disabled = true;
@@ -1217,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ==========================================
-// ЗАГРУЗКА ДЕЛЯН НА КАРТУ (С УЧЁТОМ showLabels)
+// ЗАГРУЗКА ДЕЛЯН НА КАРТУ
 // ==========================================
 
 function loadPlots() {
@@ -1254,16 +1284,13 @@ function loadPlots() {
                                 fillOpacity: 0.2
                             }).addTo(map);
 
-                            // ===== ПЛОЩАДЬ С 2 ЗНАКАМИ =====
                             let areaHa = 'н/д';
                             if (plot.areaHa !== undefined && plot.areaHa !== null) {
                                 areaHa = plot.areaHa.toFixed(2);
                             } else if (plot.areaM2) {
                                 areaHa = (plot.areaM2 / 10000).toFixed(2);
                             }
-                            // ==============================
 
-                            // Попап с 2 знаками
                             polygon.bindPopup(`
                                 <div style="min-width: 220px;">
                                     <b style="font-size: 16px; color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
@@ -1277,7 +1304,6 @@ function loadPlots() {
                                 </div>
                             `);
 
-                            // ===== МЕТКА С 2 ЗНАКАМИ =====
                             if (showLabels) {
                                 const center = getPolygonCenter(coords);
 
