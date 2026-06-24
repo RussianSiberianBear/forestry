@@ -6,95 +6,11 @@
     <title>Массовая загрузка делян</title>
 
     <!-- UIKit -->
-    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css" />
+    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
     <script src="/webjars/uikit/js/uikit.min.js"></script>
     <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
 
-    <style>
-        .upload-area {
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background-color: #fafafa;
-        }
-        .upload-area:hover {
-            border-color: #1e87f0;
-            background-color: #f0f7ff;
-        }
-        .upload-area.dragover {
-            border-color: #1e87f0;
-            background-color: #e3f0ff;
-            transform: scale(1.02);
-        }
-        .upload-icon {
-            font-size: 48px;
-            color: #999;
-        }
-        .file-info {
-            margin-top: 10px;
-            color: #666;
-        }
-        .file-name {
-            font-weight: bold;
-            color: #1e87f0;
-        }
-        .conflict-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .severity-critical {
-            color: #d32f2f;
-            font-weight: bold;
-        }
-        .severity-warning {
-            color: #f57c00;
-            font-weight: bold;
-        }
-        .severity-ok {
-            color: #388e3c;
-        }
-        .stats-number {
-            font-size: 28px;
-            font-weight: bold;
-            display: block;
-        }
-        .stats-label {
-            color: #666;
-            font-size: 14px;
-        }
-        .stats-critical {
-            color: #d32f2f;
-        }
-        .stats-warning {
-            color: #f57c00;
-        }
-        .stats-success {
-            color: #388e3c;
-        }
-        .template-download {
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
-        }
-        .template-download code {
-            background-color: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .progress-bar {
-            margin-top: 15px;
-            display: none;
-        }
-        .progress-bar.active {
-            display: block;
-        }
-    </style>
+
 </head>
 <body>
 
@@ -104,9 +20,12 @@
 <nav class="uk-navbar-container" uk-navbar>
     <div class="uk-navbar-left">
         <ul class="uk-navbar-nav">
-            <li><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
-            <li class="uk-active"><a href="/mass-load"><span uk-icon="icon: upload"></span> Массовая загрузка</a></li>
-        </ul>
+            <ul class="uk-navbar-nav">
+                <li><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
+                <li><a href="/forest-ploat"><span uk-icon="icon: grid"></span>Деляны</a></li>
+                <li class="uk-active"><a href="/mass-load"><span uk-icon="icon: upload"></span> Массовая загрузка</a>
+                </li>
+            </ul>
     </div>
     <div class="uk-navbar-right">
         <span class="uk-navbar-item uk-text-meta">🌲 Лесное хозяйство v1.0</span>
@@ -368,7 +287,8 @@
                         </div>
                         <div class="uk-width-1-2">
                             <div style="text-align: center; padding: 5px;">
-                                <span class="stats-number" style="font-size: 24px; color: #d32f2f;" id="conflictCount">0</span>
+                                <span class="stats-number" style="font-size: 24px; color: #d32f2f;"
+                                      id="conflictCount">0</span>
                                 <span class="stats-label">Конфликтов</span>
                             </div>
                         </div>
@@ -400,171 +320,7 @@
 <!-- ============================================ -->
 <!-- JAVASCRIPT -->
 <!-- ============================================ -->
-<script>
-    // ==========================================
-    // РАБОТА С ФАЙЛАМИ
-    // ==========================================
 
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-    const fileName = document.getElementById('fileName');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const progressBar = document.getElementById('progressBar');
-    const uploadProgress = document.getElementById('uploadProgress');
-    const progressText = document.getElementById('progressText');
-
-    dropZone.addEventListener('click', function(e) {
-        if (e.target.tagName !== 'BUTTON') {
-            fileInput.click();
-        }
-    });
-
-    fileInput.addEventListener('change', function(e) {
-        if (this.files && this.files[0]) {
-            handleFile(this.files[0]);
-        }
-    });
-
-    dropZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        this.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        this.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        this.classList.remove('dragover');
-
-        const files = e.dataTransfer.files;
-        if (files && files[0]) {
-            const file = files[0];
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (ext === 'xlsx' || ext === 'xls') {
-                fileInput.files = files;
-                handleFile(file);
-            } else {
-                UIkit.notification({
-                    message: 'Загрузите файл Excel (.xlsx или .xls)',
-                    status: 'danger',
-                    timeout: 3000
-                });
-            }
-        }
-    });
-
-    function handleFile(file) {
-        fileName.textContent = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-        uploadBtn.disabled = false;
-        dropZone.style.borderColor = '#1e87f0';
-
-        UIkit.notification({
-            message: 'Файл "' + file.name + '" выбран',
-            status: 'success',
-            timeout: 2000
-        });
-    }
-
-    function resetUpload() {
-        fileInput.value = '';
-        fileName.textContent = 'Файл не выбран';
-        uploadBtn.disabled = true;
-        dropZone.style.borderColor = '#ccc';
-        progressBar.classList.remove('active');
-        uploadProgress.value = 0;
-        progressText.textContent = 'Загрузка... 0%';
-    }
-
-    // ==========================================
-    // ОТПРАВКА ФОРМЫ
-    // ==========================================
-
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-        const file = fileInput.files[0];
-        if (!file) {
-            e.preventDefault();
-            UIkit.notification({
-                message: 'Выберите файл для загрузки',
-                status: 'warning',
-                timeout: 3000
-            });
-            return;
-        }
-
-        progressBar.classList.add('active');
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<span uk-icon="icon: spinner; ratio: 1.2"></span> Загрузка...';
-
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 10;
-            if (progress > 90) {
-                progress = 90;
-                clearInterval(interval);
-            }
-            uploadProgress.value = progress;
-            progressText.textContent = 'Загрузка... ' + Math.round(progress) + '%';
-        }, 100);
-    });
-
-    // ==========================================
-    // ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ
-    // ==========================================
-
-    function checkAll() {
-        UIkit.notification({
-            message: 'Запуск проверки...',
-            status: 'primary',
-            timeout: 2000
-        });
-
-        fetch('/api/plots/validate-all', { method: 'POST' })
-            .then(response => {
-                if (response.ok) window.location.reload();
-                else throw new Error('Ошибка проверки');
-            })
-            .catch(error => {
-                UIkit.notification({
-                    message: 'Ошибка: ' + error.message,
-                    status: 'danger',
-                    timeout: 3000
-                });
-            });
-    }
-
-    function downloadTemplate() {
-        const template = 'plot_number,forestry_name,description,wkt_geometry\n' +
-            'Л-12-2024,Пригородное,Участок 12,"POLYGON((30.1 50.2, 30.2 50.3, 30.0 50.1, 30.1 50.2))"\n' +
-            'Л-13-2024,Пригородное,Участок 13,"POLYGON((30.3 50.3, 30.4 50.4, 30.2 50.2, 30.3 50.3))"\n';
-
-        const blob = new Blob(['\uFEFF' + template], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'template_import.csv';
-        link.click();
-        URL.revokeObjectURL(link.href);
-
-        UIkit.notification({
-            message: 'Шаблон скачан!',
-            status: 'success',
-            timeout: 2000
-        });
-    }
-
-    // ==========================================
-    // ИНИЦИАЛИЗАЦИЯ
-    // ==========================================
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const conflictRows = document.querySelectorAll('.conflict-list tbody tr');
-        if (conflictRows.length > 0) {
-            document.getElementById('conflictCount').textContent = conflictRows.length;
-        }
-    });
-</script>
 
 </body>
 </html>

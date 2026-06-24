@@ -388,8 +388,6 @@ function onDistrictForestryChange(districtForestryId) {
     console.log('🔄 onDistrictForestryChange вызван с districtForestryId:', districtForestryId);
 
     if (!districtForestryId) {
-        // Блокируем ТОЛЬКО технический участок и квартал
-        // НЕ ТРОГАЕМ участковое лесничество!
         const techSelect = document.getElementById('technicalUnitSelect');
         if (techSelect) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
@@ -402,8 +400,6 @@ function onDistrictForestryChange(districtForestryId) {
         return;
     }
 
-    // Блокируем ТОЛЬКО технический участок и квартал
-    // НЕ ТРОГАЕМ участковое лесничество!
     const techSelect = document.getElementById('technicalUnitSelect');
     if (techSelect) {
         techSelect.innerHTML = '<option value="">Загрузка...</option>';
@@ -421,7 +417,6 @@ function onDistrictForestryChange(districtForestryId) {
 }
 
 function onTechnicalUnitChange(technicalUnitId) {
-    // Блокируем ТОЛЬКО квартал, НЕ трогаем участковое лесничество и техучасток
     const quarterInput = document.getElementById('quarterInput');
     if (quarterInput) {
         quarterInput.disabled = true;
@@ -861,29 +856,19 @@ function searchQuarters(query) {
 }
 
 // ==========================================
-// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (ИСПРАВЛЕННЫЕ!)
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
 
 function resetDependentSelects(level) {
-    // Блокируем ТОЛЬКО нижестоящие селекты, НЕ трогаем текущий уровень
-
-    // Если level === 'technical' — блокируем только техучасток и квартал
-    // Если level === 'quarter' — блокируем только квартал
-    // Если level === 'district' — блокируем техучасток и квартал (но не districtForestrySelect!)
-
     if (!level || level === 'forestry') {
-        // Блокируем участковое лесничество ТОЛЬКО при level === 'forestry'
         const districtSelect = document.getElementById('districtForestrySelect');
         if (districtSelect) {
             districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
             districtSelect.disabled = true;
         }
     }
-    // Убираем условие, которое блокировало участковое лесничество при level === 'quarter' или 'technical'
 
     if (!level || level === 'forestry' || level === 'district') {
-        // Блокируем техучасток при level === 'forestry' или 'district'
-        // НЕ блокируем при level === 'technical'
         const techSelect = document.getElementById('technicalUnitSelect');
         if (techSelect) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
@@ -891,7 +876,6 @@ function resetDependentSelects(level) {
         }
     }
 
-    // Квартал блокируем всегда (при любом level)
     const quarterInput = document.getElementById('quarterInput');
     if (quarterInput) {
         quarterInput.disabled = true;
@@ -1204,50 +1188,55 @@ let map = null;
 let osmLayer = null;
 let googleSatLayer = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+function initMap() {
     try {
-        map = L.map('map').setView([56.0, 92.0], 6);
+        if (document.getElementById('map')) {
+            map = L.map('map').setView([56.0, 92.0], 6);
 
-        osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        });
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            });
 
-        googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-            attribution: '© Google Maps'
-        });
+            googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            });
 
-        var baseMaps = {
-            "🗺️ Схема": osmLayer,
-            "🛰️ Спутник": googleSatLayer
-        };
+            var baseMaps = {
+                "🗺️ Схема": osmLayer,
+                "🛰️ Спутник": googleSatLayer
+            };
 
-        googleSatLayer.addTo(map);
-        L.control.layers(baseMaps).addTo(map);
+            googleSatLayer.addTo(map);
+            L.control.layers(baseMaps).addTo(map);
 
-        loadUISettingsFromServer();
-        loadPlots();
+            loadUISettingsFromServer();
+            loadPlots();
 
-        const regionSelect = document.getElementById('regionSelect');
-        if (regionSelect) {
-            const options = regionSelect.querySelectorAll('option');
-            const regionOptions = Array.from(options).filter(opt => opt.value !== '');
-            if (regionOptions.length === 1 && !regionSelect.value) {
-                const regionId = regionOptions[0].value;
-                regionSelect.value = regionId;
-                onRegionChange(regionId);
+            const regionSelect = document.getElementById('regionSelect');
+            if (regionSelect) {
+                const options = regionSelect.querySelectorAll('option');
+                const regionOptions = Array.from(options).filter(opt => opt.value !== '');
+                if (regionOptions.length === 1 && !regionSelect.value) {
+                    const regionId = regionOptions[0].value;
+                    regionSelect.value = regionId;
+                    onRegionChange(regionId);
+                }
             }
+
+            updateCoordCounter();
+            updateTerritoryInfo();
+
+            console.log('✅ Карта инициализирована');
+        } else {
+            console.warn('⚠️ Элемент #map не найден на странице');
         }
-
-        updateCoordCounter();
-        updateTerritoryInfo();
-
     } catch (e) {
-        console.error('Ошибка инициализации карты:', e);
+        console.error('❌ Ошибка инициализации карты:', e);
     }
-});
+}
 
 // ==========================================
 // ЗАГРУЗКА ДЕЛЯН НА КАРТУ
@@ -1262,8 +1251,8 @@ function loadPlots() {
             return response.json();
         })
         .then(plots => {
-            cachedPlots = plots;  // ← СОХРАНЯЕМ В КЭШ
-            renderPlots(plots);   // ← ОТРИСОВЫВАЕМ
+            cachedPlots = plots;
+            renderPlots(plots);
         })
         .catch(error => console.error('Error loading plots:', error));
 }
@@ -1271,7 +1260,6 @@ function loadPlots() {
 function renderPlots(plots) {
     if (!map) return;
 
-    // Удаляем старые слои
     if (polygonLayer) {
         map.removeLayer(polygonLayer);
         polygonLayer = null;
@@ -1281,7 +1269,6 @@ function renderPlots(plots) {
         labelLayer = null;
     }
 
-    // Создаём слои
     polygonLayer = L.layerGroup().addTo(map);
     labelLayer = L.layerGroup().addTo(map);
 
@@ -1292,7 +1279,6 @@ function renderPlots(plots) {
                 if (geojson.type === 'Polygon' && geojson.coordinates) {
                     const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
 
-                    // ===== ПОЛИГОН =====
                     const polygon = L.polygon(coords, {
                         color: '#d32f2f',
                         weight: 2.5,
@@ -1301,7 +1287,6 @@ function renderPlots(plots) {
                         fillOpacity: 0.2
                     }).addTo(polygonLayer);
 
-                    // ===== ПЛОЩАДЬ =====
                     let areaHa = 'н/д';
                     if (plot.areaHa !== undefined && plot.areaHa !== null) {
                         areaHa = plot.areaHa.toFixed(2);
@@ -1309,7 +1294,6 @@ function renderPlots(plots) {
                         areaHa = (plot.areaM2 / 10000).toFixed(2);
                     }
 
-                    // ===== ПОПАП =====
                     polygon.bindPopup(`
                         <div style="min-width: 220px;">
                             <b style="font-size: 16px; color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
@@ -1323,7 +1307,6 @@ function renderPlots(plots) {
                         </div>
                     `);
 
-                    // ===== МЕТКА (ЕСЛИ ВКЛЮЧЕНА) =====
                     if (showLabels) {
                         const center = getPolygonCenter(coords);
 
@@ -1380,7 +1363,6 @@ function renderPlots(plots) {
                             zIndexOffset: 1000
                         }).addTo(labelLayer);
 
-                        // ===== ПРИ НАВЕДЕНИИ =====
                         polygon.on('mouseover', function(e) {
                             this.setStyle({ fillOpacity: 0.4, weight: 3 });
                             const labelEl = label._icon;
@@ -1513,11 +1495,9 @@ function toggleLabels() {
         }
     }
 
-    // ===== ПЕРЕРИСОВЫВАЕМ ИЗ КЭША (БЕЗ ЗАПРОСА К СЕРВЕРУ) =====
     if (cachedPlots) {
         renderPlots(cachedPlots);
     } else {
-        // Если кэша нет — загружаем с сервера
         loadPlots();
     }
 
@@ -1528,13 +1508,11 @@ function toggleLabels() {
     });
 }
 
-
 // ==========================================
 // ОБНОВЛЕНИЕ КАРТЫ
 // ==========================================
 
 function refreshMap() {
-    // Загружаем свежие данные с сервера
     loadPlots();
     UIkit.notification({
         message: '🗺️ Карта обновлена',
@@ -1551,7 +1529,6 @@ function loadRegions() {
     const regionSelect = document.getElementById('regionSelect');
     if (!regionSelect) return;
 
-    // Если в селекте уже есть опции (кроме "Выберите регион") — не перезагружаем
     if (regionSelect.options.length > 1) {
         console.log('✅ Регионы уже загружены');
         return;
@@ -1578,7 +1555,6 @@ function loadRegions() {
 
             console.log('✅ Загружено ' + regions.length + ' регионов');
 
-            // После загрузки регионов — применяем сохранённые настройки
             const uiRegionId = document.getElementById('uiRegionId')?.value;
             if (uiRegionId) {
                 regionSelect.value = uiRegionId;
@@ -1592,10 +1568,59 @@ function loadRegions() {
 }
 
 // ==========================================
-// ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+// ИНИЦИАЛИЗАЦИЯ КАРТЫ И РЕГИОНОВ
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Загружаем регионы
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('✅ Инициализация страницы forest-ploat.html');
+
+    // Проверяем функции
+    if (typeof initMap === 'undefined') {
+        console.error('❌ Функция initMap не найдена! Проверь подключение validationplot.js');
+        return;
+    }
+
+    if (typeof loadRegions === 'undefined') {
+        console.error('❌ Функция loadRegions не найдена! Проверь подключение validationplot.js');
+        return;
+    }
+
+    // Загружаем регионы (это не зависит от карты)
     loadRegions();
+
+    // Обновляем счётчик координат
+    if (typeof updateCoordCounter === 'function') {
+        updateCoordCounter();
+    }
+
+    // Обновляем информацию о территории
+    if (typeof updateTerritoryInfo === 'function') {
+        updateTerritoryInfo();
+    }
+
+    // Подсвечиваем конфликты
+    const conflictRows = document.querySelectorAll('.conflict-list tbody tr');
+    if (conflictRows.length > 0) {
+        const conflictCount = document.getElementById('conflictCount');
+        if (conflictCount) {
+            conflictCount.textContent = conflictRows.length;
+        }
+    }
+
+    // ===== ГЛАВНЫЙ ФОКУС: ИНИЦИАЛИЗИРУЕМ КАРТУ ПОСЛЕ ЗАГРУЗКИ ВКЛАДКИ =====
+    // Ждём, пока UIkit полностью отрендерит переключатель
+    setTimeout(function() {
+        console.log('🔄 Запускаем initMap с задержкой 300мс...');
+        initMap();
+
+        // Дополнительно принудительно обновляем размер карты через 500мс
+        setTimeout(function() {
+            if (map) {
+                map.invalidateSize();
+                console.log('🔄 Размер карты принудительно обновлён');
+            }
+        }, 500);
+    }, 300);
+
+    console.log('✅ Инициализация завершена');
 });

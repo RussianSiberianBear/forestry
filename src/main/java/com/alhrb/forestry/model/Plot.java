@@ -76,12 +76,11 @@ public class Plot {
     @Column(name = "verified")
     private Boolean verified = false;
 
-    // УДАЛЯЕМ area_m2 — больше не нужен, используем area_ha из БД
-    // @Column(name = "area_m2")
-    // private Double areaM2;
+    @Column(name = "area_m2")
+    private Double areaM2;
 
     @Column(name = "area_ha")
-    private Double areaHa;  // ← НОВОЕ ПОЛЕ
+    private Double areaHa;
 
     @Column(name = "year_of_cut")
     private Integer yearOfCut;

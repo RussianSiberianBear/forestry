@@ -39,7 +39,7 @@ public class PlotController {
         if (result.hasErrors()) {
             model.addAttribute("error", "Проверьте правильность заполнения формы");
             model.addAttribute("plots", plotService.findAll());
-            return "index";
+            return "forest-ploat";
         }
 
         try {
