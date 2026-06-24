@@ -1259,158 +1259,162 @@ function loadPlots() {
             return response.json();
         })
         .then(plots => {
-            if (!map) return;
-
-            map.eachLayer(function(layer) {
-                if (layer instanceof L.Polygon || layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
-            });
-
-            const labelGroup = L.layerGroup().addTo(map);
-
-            plots.forEach(plot => {
-                if (plot.geometryGeoJson) {
-                    try {
-                        const geojson = JSON.parse(plot.geometryGeoJson);
-                        if (geojson.type === 'Polygon' && geojson.coordinates) {
-                            const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
-
-                            const polygon = L.polygon(coords, {
-                                color: '#d32f2f',
-                                weight: 2.5,
-                                opacity: 0.9,
-                                fillColor: '#d32f2f',
-                                fillOpacity: 0.2
-                            }).addTo(map);
-
-                            let areaHa = 'н/д';
-                            if (plot.areaHa !== undefined && plot.areaHa !== null) {
-                                areaHa = plot.areaHa.toFixed(2);
-                            } else if (plot.areaM2) {
-                                areaHa = (plot.areaM2 / 10000).toFixed(2);
-                            }
-
-                            polygon.bindPopup(`
-                                <div style="min-width: 220px;">
-                                    <b style="font-size: 16px; color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
-                                    <span style="color: #666;">${plot.forestryName || 'Без лесничества'}</span><br>
-                                    <span style="font-weight: bold;">${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}</span><br>
-                                    <hr style="margin: 6px 0;">
-                                    <small>
-                                        <strong>Площадь:</strong> ${areaHa} га<br>
-                                        <strong>Квартал:</strong> ${plot.quarterNumber || 'н/д'}
-                                    </small>
-                                </div>
-                            `);
-
-                            if (showLabels) {
-                                const center = getPolygonCenter(coords);
-
-                                let labelText = '';
-                                if (plot.quarterNumber) {
-                                    labelText += `Кв.${plot.quarterNumber}`;
-                                }
-                                if (plot.numberInQuarter) {
-                                    labelText += labelText ? ` / Дел.${plot.numberInQuarter}` : `Дел.${plot.numberInQuarter}`;
-                                }
-                                if (areaHa !== 'н/д') {
-                                    labelText += labelText ? ` / ${areaHa} га` : `${areaHa} га`;
-                                }
-
-                                if (!labelText) {
-                                    labelText = `ID:${plot.id}`;
-                                }
-
-                                const labelHtml = `
-                                    <div style="
-                                        background: rgba(255, 255, 255, 0.92);
-                                        color: #1a1a1a;
-                                        font-weight: 600;
-                                        font-size: 11px;
-                                        padding: 3px 10px;
-                                        border-radius: 12px;
-                                        border: 2px solid #d32f2f;
-                                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-                                        text-shadow: 0 0 4px rgba(255,255,255,0.8);
-                                        pointer-events: none;
-                                        white-space: nowrap;
-                                        font-family: 'Segoe UI', Arial, sans-serif;
-                                        transition: all 0.2s ease;
-                                        line-height: 1.4;
-                                        text-align: center;
-                                    ">
-                                        <div style="font-weight: 700; font-size: 12px; color: #d32f2f;">
-                                            ${labelText}
-                                        </div>
-                                    </div>
-                                `;
-
-                                const icon = L.divIcon({
-                                    className: 'plot-label',
-                                    html: labelHtml,
-                                    iconSize: [0, 0],
-                                    iconAnchor: [0, 0]
-                                });
-
-                                const label = L.marker([center.lat, center.lng], {
-                                    icon: icon,
-                                    interactive: false,
-                                    keyboard: false,
-                                    zIndexOffset: 1000
-                                });
-
-                                labelGroup.addLayer(label);
-
-                                polygon.on('mouseover', function(e) {
-                                    this.setStyle({
-                                        fillOpacity: 0.4,
-                                        weight: 3
-                                    });
-                                    if (showLabels) {
-                                        const labelEl = label._icon;
-                                        if (labelEl) {
-                                            const div = labelEl.querySelector('div');
-                                            if (div) {
-                                                div.style.transform = 'scale(1.15)';
-                                                div.style.boxShadow = '0 4px 16px rgba(0,0,0,0.35)';
-                                                div.style.borderColor = '#b71c1c';
-                                            }
-                                        }
-                                    }
-                                    this._container.style.cursor = 'pointer';
-                                });
-
-                                polygon.on('mouseout', function(e) {
-                                    this.setStyle({
-                                        fillOpacity: 0.2,
-                                        weight: 2.5
-                                    });
-                                    if (showLabels) {
-                                        const labelEl = label._icon;
-                                        if (labelEl) {
-                                            const div = labelEl.querySelector('div');
-                                            if (div) {
-                                                div.style.transform = 'scale(1)';
-                                                div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.25)';
-                                                div.style.borderColor = '#d32f2f';
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    } catch(e) {
-                        console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
-                    }
-                }
-            });
-
-            updateLegend();
-
+            cachedPlots = plots;  // ← СОХРАНЯЕМ В КЭШ
+            renderPlots(plots);   // ← ОТРИСОВЫВАЕМ
         })
         .catch(error => console.error('Error loading plots:', error));
 }
+
+function renderPlots(plots) {
+    if (!map) return;
+
+    // Удаляем старые слои
+    if (polygonLayer) {
+        map.removeLayer(polygonLayer);
+        polygonLayer = null;
+    }
+    if (labelLayer) {
+        map.removeLayer(labelLayer);
+        labelLayer = null;
+    }
+
+    // Создаём слои
+    polygonLayer = L.layerGroup().addTo(map);
+    labelLayer = L.layerGroup().addTo(map);
+
+    plots.forEach(plot => {
+        if (plot.geometryGeoJson) {
+            try {
+                const geojson = JSON.parse(plot.geometryGeoJson);
+                if (geojson.type === 'Polygon' && geojson.coordinates) {
+                    const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
+
+                    // ===== ПОЛИГОН =====
+                    const polygon = L.polygon(coords, {
+                        color: '#d32f2f',
+                        weight: 2.5,
+                        opacity: 0.9,
+                        fillColor: '#d32f2f',
+                        fillOpacity: 0.2
+                    }).addTo(polygonLayer);
+
+                    // ===== ПЛОЩАДЬ =====
+                    let areaHa = 'н/д';
+                    if (plot.areaHa !== undefined && plot.areaHa !== null) {
+                        areaHa = plot.areaHa.toFixed(2);
+                    } else if (plot.areaM2) {
+                        areaHa = (plot.areaM2 / 10000).toFixed(2);
+                    }
+
+                    // ===== ПОПАП =====
+                    polygon.bindPopup(`
+                        <div style="min-width: 220px;">
+                            <b style="font-size: 16px; color: #d32f2f;">${plot.fullNumber || plot.numberInQuarter}</b><br>
+                            <span style="color: #666;">${plot.forestryName || 'Без лесничества'}</span><br>
+                            <span style="font-weight: bold;">${plot.verified ? '✅ Верифицирована' : '⏳ Не проверена'}</span><br>
+                            <hr style="margin: 6px 0;">
+                            <small>
+                                <strong>Площадь:</strong> ${areaHa} га<br>
+                                <strong>Квартал:</strong> ${plot.quarterNumber || 'н/д'}
+                            </small>
+                        </div>
+                    `);
+
+                    // ===== МЕТКА (ЕСЛИ ВКЛЮЧЕНА) =====
+                    if (showLabels) {
+                        const center = getPolygonCenter(coords);
+
+                        let labelText = '';
+                        if (plot.quarterNumber) {
+                            labelText += `Кв.${plot.quarterNumber}`;
+                        }
+                        if (plot.numberInQuarter) {
+                            labelText += labelText ? ` / Дел.${plot.numberInQuarter}` : `Дел.${plot.numberInQuarter}`;
+                        }
+                        if (areaHa !== 'н/д') {
+                            labelText += labelText ? ` / ${areaHa} га` : `${areaHa} га`;
+                        }
+
+                        if (!labelText) {
+                            labelText = `ID:${plot.id}`;
+                        }
+
+                        const labelHtml = `
+                            <div style="
+                                background: rgba(255, 255, 255, 0.92);
+                                color: #1a1a1a;
+                                font-weight: 600;
+                                font-size: 11px;
+                                padding: 3px 10px;
+                                border-radius: 12px;
+                                border: 2px solid #d32f2f;
+                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+                                text-shadow: 0 0 4px rgba(255,255,255,0.8);
+                                pointer-events: none;
+                                white-space: nowrap;
+                                font-family: 'Segoe UI', Arial, sans-serif;
+                                transition: all 0.2s ease;
+                                line-height: 1.4;
+                                text-align: center;
+                            ">
+                                <div style="font-weight: 700; font-size: 12px; color: #d32f2f;">
+                                    ${labelText}
+                                </div>
+                            </div>
+                        `;
+
+                        const icon = L.divIcon({
+                            className: 'plot-label',
+                            html: labelHtml,
+                            iconSize: [0, 0],
+                            iconAnchor: [0, 0]
+                        });
+
+                        const label = L.marker([center.lat, center.lng], {
+                            icon: icon,
+                            interactive: false,
+                            keyboard: false,
+                            zIndexOffset: 1000
+                        }).addTo(labelLayer);
+
+                        // ===== ПРИ НАВЕДЕНИИ =====
+                        polygon.on('mouseover', function(e) {
+                            this.setStyle({ fillOpacity: 0.4, weight: 3 });
+                            const labelEl = label._icon;
+                            if (labelEl) {
+                                const div = labelEl.querySelector('div');
+                                if (div) {
+                                    div.style.transform = 'scale(1.15)';
+                                    div.style.boxShadow = '0 4px 16px rgba(0,0,0,0.35)';
+                                    div.style.borderColor = '#b71c1c';
+                                }
+                            }
+                            this._container.style.cursor = 'pointer';
+                        });
+
+                        polygon.on('mouseout', function(e) {
+                            this.setStyle({ fillOpacity: 0.2, weight: 2.5 });
+                            const labelEl = label._icon;
+                            if (labelEl) {
+                                const div = labelEl.querySelector('div');
+                                if (div) {
+                                    div.style.transform = 'scale(1)';
+                                    div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.25)';
+                                    div.style.borderColor = '#d32f2f';
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch(e) {
+                console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
+            }
+        }
+    });
+
+    updateLegend();
+}
+
 
 // ==========================================
 // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ: ЦЕНТР ПОЛИГОНА
@@ -1506,7 +1510,13 @@ function toggleLabels() {
         }
     }
 
-    loadPlots();
+    // ===== ПЕРЕРИСОВЫВАЕМ ИЗ КЭША (БЕЗ ЗАПРОСА К СЕРВЕРУ) =====
+    if (cachedPlots) {
+        renderPlots(cachedPlots);
+    } else {
+        // Если кэша нет — загружаем с сервера
+        loadPlots();
+    }
 
     UIkit.notification({
         message: showLabels ? '✅ Метки включены' : '❌ Метки скрыты',
@@ -1515,11 +1525,13 @@ function toggleLabels() {
     });
 }
 
+
 // ==========================================
 // ОБНОВЛЕНИЕ КАРТЫ
 // ==========================================
 
 function refreshMap() {
+    // Загружаем свежие данные с сервера
     loadPlots();
     UIkit.notification({
         message: '🗺️ Карта обновлена',
@@ -1527,3 +1539,4 @@ function refreshMap() {
         timeout: 2000
     });
 }
+
