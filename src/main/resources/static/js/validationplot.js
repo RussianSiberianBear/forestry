@@ -1054,7 +1054,7 @@ function checkSelected() {
 // ПРОВЕРКА ВСЕХ ДЕЛЯН (ГЛОБАЛЬНО)
 // ==========================================
 
-function checkAll() {
+function checkIntersectAll() {
     UIkit.notification({
         message: '🔍 Запуск глобальной проверки всех делян...',
         status: 'primary',
