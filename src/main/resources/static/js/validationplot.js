@@ -1543,3 +1543,59 @@ function refreshMap() {
     });
 }
 
+// ==========================================
+// ЗАГРУЗКА РЕГИОНОВ ПРИ СТАРТЕ
+// ==========================================
+
+function loadRegions() {
+    const regionSelect = document.getElementById('regionSelect');
+    if (!regionSelect) return;
+
+    // Если в селекте уже есть опции (кроме "Выберите регион") — не перезагружаем
+    if (regionSelect.options.length > 1) {
+        console.log('✅ Регионы уже загружены');
+        return;
+    }
+
+    console.log('📥 Загружаем список регионов...');
+
+    fetch('/api/regions')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
+        .then(regions => {
+            regionSelect.innerHTML = '<option value="">-- Выберите регион --</option>';
+
+            regions.forEach(region => {
+                const option = document.createElement('option');
+                option.value = region.id;
+                option.textContent = region.name;
+                regionSelect.appendChild(option);
+            });
+
+            console.log('✅ Загружено ' + regions.length + ' регионов');
+
+            // После загрузки регионов — применяем сохранённые настройки
+            const uiRegionId = document.getElementById('uiRegionId')?.value;
+            if (uiRegionId) {
+                regionSelect.value = uiRegionId;
+                onRegionChange(uiRegionId);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Ошибка загрузки регионов:', error);
+            regionSelect.innerHTML = '<option value="">❌ Ошибка загрузки</option>';
+        });
+}
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем регионы
+    loadRegions();
+});

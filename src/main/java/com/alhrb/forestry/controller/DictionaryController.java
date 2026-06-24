@@ -1,5 +1,6 @@
 package com.alhrb.forestry.controller;
 
+import com.alhrb.forestry.dto.RegionDto;
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.service.*;
 import com.alhrb.forestry.dto.UserUISettingsDto;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -28,8 +30,22 @@ public class DictionaryController {
     // ==========================================
 
     @GetMapping("/regions")
-    public ResponseEntity<List<Region>> getRegions() {
-        return ResponseEntity.ok(regionService.findAll());
+    public ResponseEntity<List<RegionDto>> getRegions() {
+        List<Region> regions = regionService.findAll();
+        List<RegionDto> dtos = regions.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    private RegionDto convertToDto(Region region) {
+        RegionDto dto = new RegionDto();
+        dto.setId(region.getId());
+        dto.setName(region.getName());
+        dto.setCenterLat(region.getCenterLat());
+        dto.setCenterLng(region.getCenterLng());
+        dto.setZoom(region.getZoom());
+        return dto;
     }
 
     @GetMapping("/municipal-districts/by-region/{regionId}")
