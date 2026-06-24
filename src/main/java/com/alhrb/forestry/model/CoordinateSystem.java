@@ -6,32 +6,32 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "region")
+@Table(name = "coordinate_system")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Region {
+public class CoordinateSystem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "code", nullable = false, unique = true, length = 20)
+    private String code;
+
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Column(name = "epsg_code", nullable = false)
+    private Integer epsgCode;
 
     @Column(name = "description", length = 500)
     private String description;
 
-    @OneToMany(mappedBy = "region")
-    private List<MunicipalDistrict> municipalDistricts;
-
-    // ===== НОВОЕ ПОЛЕ =====
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coordinate_system_id")
-    private CoordinateSystem coordinateSystem;
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
