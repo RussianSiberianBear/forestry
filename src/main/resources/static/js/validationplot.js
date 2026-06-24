@@ -3,6 +3,9 @@
 // ==========================================
 
 let showLabels = true;  // По умолчанию метки включены
+let cachedPlots = null;
+let polygonLayer = null;
+let labelLayer = null;
 
 // ==========================================
 // КООРДИНАТЫ - ДОБАВЛЕНИЕ НОВЫХ СТРОК ПО ENTER
