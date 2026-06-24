@@ -18,10 +18,9 @@ public class UserUISettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    // ===== ИЕРАРХИЯ =====
     @Column(name = "region_id")
     private Long regionId;
 
@@ -40,7 +39,6 @@ public class UserUISettings {
     @Column(name = "quarter_id")
     private Long quarterId;
 
-    // ===== КООРДИНАТЫ КАРТЫ =====
     @Column(name = "center_lat")
     private Double centerLat;
 

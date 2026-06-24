@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class UserUISettingsDto {
+
     private Long id;
     private Long userId;
     private Long regionId;

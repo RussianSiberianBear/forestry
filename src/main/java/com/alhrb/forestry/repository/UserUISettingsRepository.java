@@ -9,9 +9,9 @@ import java.util.Optional;
 @Repository
 public interface UserUISettingsRepository extends JpaRepository<UserUISettings, Long> {
 
-    // ===== ПОИСК ПО USER_ID =====
     Optional<UserUISettings> findByUserId(Long userId);
 
-    // ===== УДАЛЕНИЕ ПО USER_ID =====
     void deleteByUserId(Long userId);
+
+    boolean existsByUserId(Long userId);
 }
