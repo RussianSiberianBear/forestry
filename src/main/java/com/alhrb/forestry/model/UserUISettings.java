@@ -1,6 +1,5 @@
 package com.alhrb.forestry.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,43 +18,50 @@ public class UserUISettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, length = 100)
-    private String userId = "default";
+    @Column(name = "user_id")
+    private Long userId;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_region_id")
-    private Region lastRegion;
+    // ===== ИЕРАРХИЯ =====
+    @Column(name = "region_id")
+    private Long regionId;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_municipal_district_id")
-    private MunicipalDistrict lastMunicipalDistrict;
+    @Column(name = "municipal_district_id")
+    private Long municipalDistrictId;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_forestry_id")
-    private Forestry lastForestry;
+    @Column(name = "forestry_id")
+    private Long forestryId;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_district_forestry_id")
-    private DistrictForestry lastDistrictForestry;
+    @Column(name = "district_forestry_id")
+    private Long districtForestryId;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_technical_unit_id")
-    private TechnicalUnit lastTechnicalUnit;
+    @Column(name = "technical_unit_id")
+    private Long technicalUnitId;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_quarter_id")
-    private Quarter lastQuarter;
+    @Column(name = "quarter_id")
+    private Long quarterId;
+
+    // ===== КООРДИНАТЫ КАРТЫ =====
+    @Column(name = "center_lat")
+    private Double centerLat;
+
+    @Column(name = "center_lng")
+    private Double centerLng;
+
+    @Column(name = "zoom")
+    private Integer zoom;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

@@ -8,5 +8,10 @@ import java.util.Optional;
 
 @Repository
 public interface UserUISettingsRepository extends JpaRepository<UserUISettings, Long> {
-    Optional<UserUISettings> findByUserId(String userId);
+
+    // ===== ПОИСК ПО USER_ID =====
+    Optional<UserUISettings> findByUserId(Long userId);
+
+    // ===== УДАЛЕНИЕ ПО USER_ID =====
+    void deleteByUserId(Long userId);
 }

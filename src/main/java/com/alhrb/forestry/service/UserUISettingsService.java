@@ -1,7 +1,8 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.dto.UserUISettingsDto;
-import com.alhrb.forestry.model.*;
+import com.alhrb.forestry.model.Region;
+import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.repository.UserUISettingsRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -16,196 +17,117 @@ import java.util.Optional;
 @Slf4j
 public class UserUISettingsService {
 
-    private final UserUISettingsRepository settingsRepository;
+    private final UserUISettingsRepository userUISettingsRepository;
     private final RegionService regionService;
-    private final MunicipalDistrictService municipalDistrictService;
-    private final ForestryService forestryService;
-    private final DistrictForestryService districtForestryService;
-    private final TechnicalUnitService technicalUnitService;
-    private final QuarterService quarterService;
 
-    private static final String SESSION_KEY = "UI_SETTINGS";
+    private static final String USER_ID_SESSION_KEY = "userId";
 
     // ==========================================
-    // ПОЛУЧЕНИЕ НАСТРОЕК (ИЗ СЕССИИ)
+    // ПОЛУЧЕНИЕ НАСТРОЕК ПО СЕССИИ
     // ==========================================
 
     public UserUISettingsDto getSettings(HttpSession session) {
-        // Пытаемся достать из сессии
-        UserUISettingsDto settings = (UserUISettingsDto) session.getAttribute(SESSION_KEY);
+        Long userId = (Long) session.getAttribute(USER_ID_SESSION_KEY);
+        return getSettings(userId);
+    }
 
-        if (settings == null) {
-            // Если в сессии нет — загружаем из БД или создаём дефолтные
-            settings = loadFromDatabaseOrDefault();
-            session.setAttribute(SESSION_KEY, settings);
-            log.info("Настройки загружены в сессию");
+    // ==========================================
+    // ПОЛУЧЕНИЕ НАСТРОЕК ПО ID ПОЛЬЗОВАТЕЛЯ
+    // ==========================================
+
+    public UserUISettingsDto getSettings(Long userId) {
+        UserUISettings settings = userUISettingsRepository.findByUserId(userId)
+                .orElseGet(() -> createDefaultSettings(userId));
+
+        return convertToDto(settings);
+    }
+
+    // ==========================================
+    // СОЗДАНИЕ НАСТРОЕК ПО УМОЛЧАНИЮ
+    // ==========================================
+
+    @Transactional
+    public UserUISettings createDefaultSettings(Long userId) {
+        UserUISettings settings = new UserUISettings();
+        settings.setUserId(userId);
+
+        // Находим первый регион
+        var regions = regionService.findAll();
+        if (!regions.isEmpty()) {
+            Region firstRegion = regions.get(0);
+            settings.setRegionId(firstRegion.getId());
+            settings.setCenterLat(firstRegion.getCenterLat());
+            settings.setCenterLng(firstRegion.getCenterLng());
+            settings.setZoom(firstRegion.getZoom() != null ? firstRegion.getZoom() : 6);
+        } else {
+            // Координаты по умолчанию для России
+            settings.setCenterLat(56.0);
+            settings.setCenterLng(92.0);
+            settings.setZoom(4);
         }
 
-        return settings;
+        return userUISettingsRepository.save(settings);
     }
 
     // ==========================================
-    // СОХРАНЕНИЕ НАСТРОЕК (В СЕССИЮ И БД)
+    // КОНВЕРТАЦИЯ В DTO
     // ==========================================
-
-    public void saveSettings(HttpSession session, UserUISettingsDto settings) {
-        // Сохраняем в сессию
-        session.setAttribute(SESSION_KEY, settings);
-        log.info("Настройки сохранены в сессию");
-
-        // Сохраняем в БД (опционально, для постоянства)
-        saveToDatabase(settings);
-    }
-
-    // ==========================================
-    // СОХРАНЕНИЕ ОТДЕЛЬНЫХ УРОВНЕЙ
-    // ==========================================
-
-    public void saveRegion(HttpSession session, Long regionId) {
-        UserUISettingsDto settings = getSettings(session);
-        settings.setRegionId(regionId);
-
-        // Сбрасываем нижестоящие уровни
-        settings.setMunicipalDistrictId(null);
-        settings.setForestryId(null);
-        settings.setDistrictForestryId(null);
-        settings.setTechnicalUnitId(null);
-        settings.setQuarterId(null);
-
-        // Обновляем координаты региона
-        regionService.findById(regionId).ifPresent(region -> {
-            settings.setCenterLat(region.getCenterLat());
-            settings.setCenterLng(region.getCenterLng());
-            settings.setZoom(region.getZoom());
-        });
-
-        saveSettings(session, settings);
-    }
-
-    public void saveMunicipalDistrict(HttpSession session, Long municipalDistrictId) {
-        UserUISettingsDto settings = getSettings(session);
-        settings.setMunicipalDistrictId(municipalDistrictId);
-        // Сбрасываем нижестоящие уровни
-        settings.setForestryId(null);
-        settings.setDistrictForestryId(null);
-        settings.setTechnicalUnitId(null);
-        settings.setQuarterId(null);
-        saveSettings(session, settings);
-    }
-
-    public void saveForestry(HttpSession session, Long forestryId) {
-        UserUISettingsDto settings = getSettings(session);
-        settings.setForestryId(forestryId);
-        settings.setDistrictForestryId(null);
-        settings.setTechnicalUnitId(null);
-        settings.setQuarterId(null);
-        saveSettings(session, settings);
-    }
-
-    public void saveDistrictForestry(HttpSession session, Long districtForestryId) {
-        UserUISettingsDto settings = getSettings(session);
-        settings.setDistrictForestryId(districtForestryId);
-        settings.setTechnicalUnitId(null);
-        settings.setQuarterId(null);
-        saveSettings(session, settings);
-    }
-
-    public void saveTechnicalUnit(HttpSession session, Long technicalUnitId) {
-        UserUISettingsDto settings = getSettings(session);
-        settings.setTechnicalUnitId(technicalUnitId);
-        settings.setQuarterId(null);
-        saveSettings(session, settings);
-    }
-
-    public void saveQuarter(HttpSession session, Long quarterId) {
-        UserUISettingsDto settings = getSettings(session);
-        settings.setQuarterId(quarterId);
-        saveSettings(session, settings);
-    }
-
-    // ==========================================
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    // ==========================================
-
-    private UserUISettingsDto loadFromDatabaseOrDefault() {
-        // Пытаемся загрузить из БД (для 'default' пользователя)
-        Optional<UserUISettings> dbSettings = settingsRepository.findByUserId("default");
-
-        if (dbSettings.isPresent()) {
-            return convertToDto(dbSettings.get());
-        }
-
-        // Если в БД нет — создаём дефолтные (первый регион)
-        return getDefaultSettings();
-    }
 
     private UserUISettingsDto convertToDto(UserUISettings settings) {
         UserUISettingsDto dto = new UserUISettingsDto();
-
-        if (settings.getLastRegion() != null) {
-            dto.setRegionId(settings.getLastRegion().getId());
-            dto.setCenterLat(settings.getLastRegion().getCenterLat());
-            dto.setCenterLng(settings.getLastRegion().getCenterLng());
-            dto.setZoom(settings.getLastRegion().getZoom());
-        }
-        if (settings.getLastMunicipalDistrict() != null) {
-            dto.setMunicipalDistrictId(settings.getLastMunicipalDistrict().getId());
-        }
-        if (settings.getLastForestry() != null) {
-            dto.setForestryId(settings.getLastForestry().getId());
-        }
-        if (settings.getLastDistrictForestry() != null) {
-            dto.setDistrictForestryId(settings.getLastDistrictForestry().getId());
-        }
-        if (settings.getLastTechnicalUnit() != null) {
-            dto.setTechnicalUnitId(settings.getLastTechnicalUnit().getId());
-        }
-        if (settings.getLastQuarter() != null) {
-            dto.setQuarterId(settings.getLastQuarter().getId());
-        }
-
+        dto.setId(settings.getId());
+        dto.setUserId(settings.getUserId());
+        dto.setRegionId(settings.getRegionId());
+        dto.setMunicipalDistrictId(settings.getMunicipalDistrictId());
+        dto.setForestryId(settings.getForestryId());
+        dto.setDistrictForestryId(settings.getDistrictForestryId());
+        dto.setTechnicalUnitId(settings.getTechnicalUnitId());
+        dto.setQuarterId(settings.getQuarterId());
+        dto.setCenterLat(settings.getCenterLat());
+        dto.setCenterLng(settings.getCenterLng());
+        dto.setZoom(settings.getZoom());
         return dto;
     }
 
-    private UserUISettingsDto getDefaultSettings() {
-        UserUISettingsDto dto = new UserUISettingsDto();
-        regionService.findAll().stream()
-                .findFirst()
-                .ifPresent(region -> {
-                    dto.setRegionId(region.getId());
-                    dto.setCenterLat(region.getCenterLat() != null ? region.getCenterLat() : 56.0);
-                    dto.setCenterLng(region.getCenterLng() != null ? region.getCenterLng() : 92.0);
-                    dto.setZoom(region.getZoom() != null ? region.getZoom() : 7);
-                });
-        return dto;
-    }
+    // ==========================================
+    // СОХРАНЕНИЕ НАСТРОЕК
+    // ==========================================
 
-    private void saveToDatabase(UserUISettingsDto dto) {
-        UserUISettings settings = settingsRepository.findByUserId("default")
+    @Transactional
+    public UserUISettingsDto saveSettings(UserUISettingsDto dto) {
+        UserUISettings settings = userUISettingsRepository.findByUserId(dto.getUserId())
                 .orElse(new UserUISettings());
 
-        settings.setUserId("default");
+        settings.setUserId(dto.getUserId());
+        settings.setRegionId(dto.getRegionId());
+        settings.setMunicipalDistrictId(dto.getMunicipalDistrictId());
+        settings.setForestryId(dto.getForestryId());
+        settings.setDistrictForestryId(dto.getDistrictForestryId());
+        settings.setTechnicalUnitId(dto.getTechnicalUnitId());
+        settings.setQuarterId(dto.getQuarterId());
+        settings.setCenterLat(dto.getCenterLat());
+        settings.setCenterLng(dto.getCenterLng());
+        settings.setZoom(dto.getZoom());
 
-        if (dto.getRegionId() != null) {
-            settings.setLastRegion(regionService.findById(dto.getRegionId()).orElse(null));
-        }
-        if (dto.getMunicipalDistrictId() != null) {
-            settings.setLastMunicipalDistrict(municipalDistrictService.findById(dto.getMunicipalDistrictId()).orElse(null));
-        }
-        if (dto.getForestryId() != null) {
-            settings.setLastForestry(forestryService.findById(dto.getForestryId()).orElse(null));
-        }
-        if (dto.getDistrictForestryId() != null) {
-            settings.setLastDistrictForestry(districtForestryService.findById(dto.getDistrictForestryId()).orElse(null));
-        }
-        if (dto.getTechnicalUnitId() != null) {
-            settings.setLastTechnicalUnit(technicalUnitService.findById(dto.getTechnicalUnitId()).orElse(null));
-        }
-        if (dto.getQuarterId() != null) {
-            settings.setLastQuarter(quarterService.findById(dto.getQuarterId()).orElse(null));
-        }
+        UserUISettings saved = userUISettingsRepository.save(settings);
+        return convertToDto(saved);
+    }
 
-        settingsRepository.save(settings);
-        log.info("Настройки сохранены в БД");
+    public void saveRegion(HttpSession session, Long regionId) {
+    }
+
+    public void saveForestry(HttpSession session, Long forestryId) {
+    }
+
+    public void saveMunicipalDistrict(HttpSession session, Long municipalDistrictId) {
+    }
+
+    public void saveDistrictForestry(HttpSession session, Long districtForestryId) {
+    }
+
+    public void saveTechnicalUnit(HttpSession session, Long technicalUnitId) {
+    }
+
+    public void saveQuarter(HttpSession session, Long quarterId) {
     }
 }

@@ -22,16 +22,29 @@ public class Region {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column(name = "code", unique = true, length = 20)
+    private String code;
+
     @Column(name = "description", length = 500)
     private String description;
 
     @OneToMany(mappedBy = "region")
     private List<MunicipalDistrict> municipalDistricts;
 
-    // ===== НОВОЕ ПОЛЕ =====
+    // ===== СИСТЕМА КООРДИНАТ =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coordinate_system_id")
     private CoordinateSystem coordinateSystem;
+
+    // ===== КООРДИНАТЫ ЦЕНТРА =====
+    @Column(name = "center_lat")
+    private Double centerLat;
+
+    @Column(name = "center_lng")
+    private Double centerLng;
+
+    @Column(name = "zoom")
+    private Integer zoom;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
