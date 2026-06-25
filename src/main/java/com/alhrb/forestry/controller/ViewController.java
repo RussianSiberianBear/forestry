@@ -33,7 +33,6 @@ public class ViewController {
         List<Plot> plots = plotService.findAll();
 
         model.addAttribute("plots", plots);
-        model.addAttribute("plots", plotService.findAll());
         model.addAttribute("plotDto", new PlotDto());
         model.addAttribute("uiSettings", uiSettings);
 
@@ -44,18 +43,7 @@ public class ViewController {
 
         model.addAttribute("latestPlots", latestPlots);
 
-
         return "forest-ploat";
     }
 
-    @GetMapping("/mass-load")
-    public String massLoad(Model model, HttpSession session) {
-        // Получаем настройки UI
-        UserUISettingsDto uiSettings = userUISettingsService.getSettings(session);
-
-        model.addAttribute("plots", plotService.findAll());
-        model.addAttribute("uiSettings", uiSettings);
-
-        return "mass-load";
-    }
 }
