@@ -91,6 +91,7 @@ public class TerritoryUnitController {
         return ResponseEntity.ok(dtos);
     }
 
+    /*
     // ===== КВАРТАЛЫ ПО ТЕХУЧАСТКУ =====
     @GetMapping("/quarters/by-technical/{technicalUnitId}")
     public ResponseEntity<List<TerritoryUnitDto>> getQuartersByTechnical(@PathVariable Long technicalUnitId) {
@@ -104,7 +105,7 @@ public class TerritoryUnitController {
 
         return ResponseEntity.ok(dtos);
     }
-
+*/
     // ===== ПОИСК КВАРТАЛОВ (AUTOCOMPLETE) =====
     @GetMapping("/quarters/search")
     public ResponseEntity<List<TerritoryUnitDto>> searchQuarters(

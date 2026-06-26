@@ -34,7 +34,6 @@ public interface TerritoryUnitRepository extends JpaRepository<TerritoryUnit, Lo
             @Param("parentId") Long parentId
     );
 
-
     @Query("SELECT tu FROM TerritoryUnit tu WHERE tu.type = :type AND tu.parent.id = :parentId AND tu.number = :number")
     List<TerritoryUnit> findByTypeAndParentIdAndNumber(
             @Param("type") TerritoryType type,
