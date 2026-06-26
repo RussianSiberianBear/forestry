@@ -151,8 +151,8 @@ public class PlotController {
             @RequestParam(required = false) String cutType,
             @RequestParam(required = false) Integer yearOfCut) {
 
-        log.info("📡 Запрос фильтрованных делян: regionId={}, forestryId={}, cutType={}, yearOfCut={}",
-                regionId, forestryId, cutType, yearOfCut);
+        log.info("📡 Запрос фильтрованных делян: regionId={}, municipalDistrictId={}, forestryId={}, districtForestryId={}, technicalUnitId={}, quarterId={}, cutType={}, yearOfCut={}",
+                regionId, municipalDistrictId, forestryId, districtForestryId, technicalUnitId, quarterId, cutType, yearOfCut);
 
         List<PlotMapDto> plots = plotService.getFilteredPlotsForMap(
                 regionId, municipalDistrictId, forestryId,

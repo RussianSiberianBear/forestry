@@ -283,7 +283,9 @@
                                         <div class="uk-form-controls">
                                             <input class="uk-input" type="number" id="yearOfCut"
                                                    th:field="*{yearOfCut}"
-                                                   placeholder="2024">
+                                                   placeholder="2024"
+                                                   onchange="onYearOfCutChange(this.value)"
+                                                   oninput="onYearOfCutChange(this.value)">
                                         </div>
                                     </div>
                                 </div>
@@ -292,7 +294,8 @@
                                         <label class="uk-form-label" for="cutType">Тип рубки</label>
                                         <div class="uk-form-controls">
                                             <select class="form-select" id="cutType"
-                                                    th:field="*{cutType}">
+                                                    th:field="*{cutType}"
+                                                    onchange="onCutTypeChange(this.value)">
                                                 <option value="">-- Выберите --</option>
                                                 <option value="Сплошная">Сплошная</option>
                                                 <option value="Выборочная">Выборочная</option>
@@ -385,50 +388,8 @@
                         <h3 class="uk-card-title">
                             <span uk-icon="icon: location"></span>
                             Существующие деляны
+                            <span class="uk-badge" id="filterInfo" style="background: #1e87f0; margin-left: 10px;">Все деляны</span>
                         </h3>
-
-                        <!-- ===== ФИЛЬТРЫ ДЛЯ КАРТЫ (над картой) ===== -->
-                        <div class="uk-card uk-card-default uk-card-body uk-card-small uk-margin-bottom" style="background: #f8f9fa;">
-                            <div class="uk-grid uk-grid-small uk-flex uk-flex-middle" uk-grid>
-                                <div class="uk-width-auto">
-                                    <span uk-icon="icon: filter" style="color: #1e87f0;"></span>
-                                    <span style="font-weight: 600; font-size: 14px;">Фильтры карты:</span>
-                                </div>
-                                <div class="uk-width-expand">
-                                    <div class="uk-grid uk-grid-small" uk-grid>
-                                        <div class="uk-width-1-4">
-                                            <select class="form-select" id="filterCutType" onchange="onFilterCutTypeChange(this.value)">
-                                                <option value="">Все типы рубки</option>
-                                                <option value="Сплошная">Сплошная</option>
-                                                <option value="Выборочная">Выборочная</option>
-                                                <option value="Постепенная">Постепенная</option>
-                                                <option value="Санитарная">Санитарная</option>
-                                            </select>
-                                        </div>
-                                        <div class="uk-width-1-4">
-                                            <input class="uk-input" type="number" id="filterYearOfCut"
-                                                   placeholder="Год рубки"
-                                                   onchange="onFilterYearOfCutChange(this.value)"
-                                                   oninput="onFilterYearOfCutChange(this.value)"
-                                                   style="height: 38px;">
-                                        </div>
-                                        <div class="uk-width-auto">
-                                            <button class="uk-button uk-button-primary uk-button-small" onclick="applyFilters()">
-                                                <span uk-icon="icon: search"></span> Применить
-                                            </button>
-                                        </div>
-                                        <div class="uk-width-auto">
-                                            <button class="uk-button uk-button-default uk-button-small" onclick="clearFilters()">
-                                                <span uk-icon="icon: close"></span> Сбросить
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="uk-width-auto">
-                                    <span class="uk-badge" id="filterInfo" style="background: #1e87f0;">Все деляны</span>
-                                </div>
-                            </div>
-                        </div>
 
                         <div id="map"></div>
 
@@ -437,10 +398,8 @@
                             <div class="uk-alert-primary uk-margin-small" uk-alert>
                                 <p>
                                     <span uk-icon="icon: info"></span>
-                                    <strong>Выборочная проверка:</strong>
-                                    Использует выбранные в форме значения
-                                    <span class="uk-text-bold">(регион → район → лесничество → участковое → техучасток → квартал)</span>.
-                                    Проверяются деляны только выбранной территории.
+                                    <strong>Карта автоматически обновляется</strong> при выборе региона, района, лесничества,
+                                    квартала, а также при изменении года рубки и типа рубки в левой панели.
                                 </p>
                             </div>
 
@@ -453,7 +412,6 @@
                                     <button class="uk-button uk-button-secondary uk-button-small" onclick="checkIntersectAll()">
                                         <span uk-icon="icon: search"></span> Проверить все
                                     </button>
-                                    <!-- ===== КНОПКА ПОКАЗАТЬ/СКРЫТЬ МЕТКИ ===== -->
                                     <button class="uk-button uk-button-default uk-button-small"
                                             id="toggleLabelsBtn"
                                             onclick="toggleLabels()">
@@ -465,9 +423,9 @@
                                     </button>
                                 </div>
                                 <span class="uk-text-meta uk-text-small" id="checkInfo">
-                            <span uk-icon="icon: info"></span>
-                            Выбрано: <span id="selectedTerritoryName" style="font-weight: bold; color: #1e87f0;">не выбрано</span>
-                        </span>
+                                    <span uk-icon="icon: info"></span>
+                                    Выбрано: <span id="selectedTerritoryName" style="font-weight: bold; color: #1e87f0;">не выбрано</span>
+                                </span>
                             </div>
                         </div>
 
@@ -477,6 +435,8 @@
                                 <tr>
                                     <th>№</th>
                                     <th>Лесничество</th>
+                                    <th>Тип рубки</th>
+                                    <th>Год</th>
                                     <th>Статус</th>
                                 </tr>
                                 </thead>
@@ -484,6 +444,8 @@
                                 <tr th:each="plot : ${plots}">
                                     <td th:text="${plot.fullNumber}"></td>
                                     <td th:text="${plot.forestry != null ? plot.forestry.name : '-'}"></td>
+                                    <td th:text="${plot.cutType != null ? plot.cutType : '-'}"></td>
+                                    <td th:text="${plot.yearOfCut != null ? plot.yearOfCut : '-'}"></td>
                                     <td>
                                     <span th:if="${plot.verified}"
                                           class="uk-badge uk-badge-success">✓ Вериф.</span>
@@ -492,7 +454,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${plots == null or plots.empty}">
-                                    <td colspan="3" class="uk-text-center uk-text-muted">
+                                    <td colspan="5" class="uk-text-center uk-text-muted">
                                         Нет добавленных делян
                                     </td>
                                 </tr>

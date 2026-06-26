@@ -19,11 +19,22 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
     Optional<Plot> findByFullNumber(String fullNumber);
 
     List<Plot> findByQuarterIdOrderByNumberInQuarter(Long quarterId);
-    List<Plot> findByForestryId(Long forestryId);
-    List<Plot> findByMunicipalDistrictId(Long municipalDistrictId);
-    List<Plot> findByRegionId(Long regionId);
-    List<Plot> findByDistrictForestryId(Long districtForestryId);
-    List<Plot> findByTechnicalUnitId(Long technicalUnitId);
+
+    // ===== МЕТОДЫ ДЛЯ ФИЛЬТРАЦИИ (JPQL) =====
+    @Query("SELECT p FROM Plot p WHERE p.forestry.id = :forestryId")
+    List<Plot> findByForestryId(@Param("forestryId") Long forestryId);
+
+    @Query("SELECT p FROM Plot p WHERE p.municipalDistrict.id = :municipalDistrictId")
+    List<Plot> findByMunicipalDistrictId(@Param("municipalDistrictId") Long municipalDistrictId);
+
+    @Query("SELECT p FROM Plot p WHERE p.region.id = :regionId")
+    List<Plot> findByRegionId(@Param("regionId") Long regionId);
+
+    @Query("SELECT p FROM Plot p WHERE p.districtForestry.id = :districtForestryId")
+    List<Plot> findByDistrictForestryId(@Param("districtForestryId") Long districtForestryId);
+
+    @Query("SELECT p FROM Plot p WHERE p.technicalUnit.id = :technicalUnitId")
+    List<Plot> findByTechnicalUnitId(@Param("technicalUnitId") Long technicalUnitId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """
