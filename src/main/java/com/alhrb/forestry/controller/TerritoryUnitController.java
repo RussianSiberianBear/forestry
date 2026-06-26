@@ -1,5 +1,6 @@
 package com.alhrb.forestry.controller;
 
+import com.alhrb.forestry.dto.TerritoryUnitDto;
 import com.alhrb.forestry.model.TerritoryType;
 import com.alhrb.forestry.model.TerritoryUnit;
 import com.alhrb.forestry.service.TerritoryUnitService;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/territory")
@@ -18,66 +20,136 @@ public class TerritoryUnitController {
 
     private final TerritoryUnitService territoryUnitService;
 
-    // ===== ФЕДЕРАЛЬНЫЕ ОКРУГА =====
-    @GetMapping("/federal-districts")
-    public ResponseEntity<List<TerritoryUnit>> getFederalDistricts() {
-        return ResponseEntity.ok(territoryUnitService.findByType(TerritoryType.FEDERAL_DISTRICT));
-    }
-
-    // ===== РЕГИОНЫ =====
-    @GetMapping("/regions/by-federal/{federalDistrictId}")
-    public ResponseEntity<List<TerritoryUnit>> getRegionsByFederalDistrict(@PathVariable Long federalDistrictId) {
-        return ResponseEntity.ok(territoryUnitService.findByParentId(federalDistrictId));
-    }
-
+    // ===== ВСЕ РЕГИОНЫ =====
     @GetMapping("/regions")
-    public ResponseEntity<List<TerritoryUnit>> getAllRegions() {
-        return ResponseEntity.ok(territoryUnitService.findByType(TerritoryType.REGION));
+    public ResponseEntity<List<TerritoryUnitDto>> getRegions() {
+        log.info("📡 Запрос всех регионов");
+        List<TerritoryUnit> regions = territoryUnitService.findByType(TerritoryType.REGION);
+        log.info("📊 Найдено {} регионов", regions.size());
+
+        List<TerritoryUnitDto> dtos = regions.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-    // ===== РАЙОНЫ =====
+    // ===== РАЙОНЫ ПО РЕГИОНУ =====
     @GetMapping("/municipal-districts/by-region/{regionId}")
-    public ResponseEntity<List<TerritoryUnit>> getMunicipalDistrictsByRegion(@PathVariable Long regionId) {
-        return ResponseEntity.ok(territoryUnitService.findByParentId(regionId));
+    public ResponseEntity<List<TerritoryUnitDto>> getMunicipalDistrictsByRegion(@PathVariable Long regionId) {
+        log.info("📡 Запрос районов для региона ID: {}", regionId);
+        List<TerritoryUnit> districts = territoryUnitService.findByParentId(regionId);
+        log.info("📊 Найдено {} районов", districts.size());
+
+        List<TerritoryUnitDto> dtos = districts.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-    // ===== ЛЕСНИЧЕСТВА =====
+    // ===== ЛЕСНИЧЕСТВА ПО РАЙОНУ =====
     @GetMapping("/forestries/by-district/{districtId}")
-    public ResponseEntity<List<TerritoryUnit>> getForestriesByDistrict(@PathVariable Long districtId) {
-        return ResponseEntity.ok(territoryUnitService.findByParentId(districtId));
+    public ResponseEntity<List<TerritoryUnitDto>> getForestriesByDistrict(@PathVariable Long districtId) {
+        log.info("📡 Запрос лесничеств для района ID: {}", districtId);
+        List<TerritoryUnit> forestries = territoryUnitService.findByParentId(districtId);
+        log.info("📊 Найдено {} лесничеств", forestries.size());
+
+        List<TerritoryUnitDto> dtos = forestries.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-    // ===== УЧАСТКОВЫЕ ЛЕСНИЧЕСТВА =====
+    // ===== УЧАСТКОВЫЕ ЛЕСНИЧЕСТВА ПО ЛЕСНИЧЕСТВУ =====
     @GetMapping("/district-forestries/by-forestry/{forestryId}")
-    public ResponseEntity<List<TerritoryUnit>> getDistrictForestriesByForestry(@PathVariable Long forestryId) {
-        return ResponseEntity.ok(territoryUnitService.findByParentId(forestryId));
+    public ResponseEntity<List<TerritoryUnitDto>> getDistrictForestriesByForestry(@PathVariable Long forestryId) {
+        log.info("📡 Запрос участковых лесничеств для лесничества ID: {}", forestryId);
+        List<TerritoryUnit> districtForestries = territoryUnitService.findByParentId(forestryId);
+        log.info("📊 Найдено {} участковых лесничеств", districtForestries.size());
+
+        List<TerritoryUnitDto> dtos = districtForestries.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-    // ===== ТЕХНИЧЕСКИЕ УЧАСТКИ =====
+    // ===== ТЕХНИЧЕСКИЕ УЧАСТКИ ПО УЧАСТКОВОМУ =====
     @GetMapping("/technical-units/by-district/{districtForestryId}")
-    public ResponseEntity<List<TerritoryUnit>> getTechnicalUnitsByDistrict(@PathVariable Long districtForestryId) {
-        return ResponseEntity.ok(territoryUnitService.findByParentId(districtForestryId));
+    public ResponseEntity<List<TerritoryUnitDto>> getTechnicalUnitsByDistrict(@PathVariable Long districtForestryId) {
+        log.info("📡 Запрос техучастков для участкового лесничества ID: {}", districtForestryId);
+        List<TerritoryUnit> technicalUnits = territoryUnitService.findByParentId(districtForestryId);
+        log.info("📊 Найдено {} техучастков", technicalUnits.size());
+
+        List<TerritoryUnitDto> dtos = technicalUnits.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-    // ===== КВАРТАЛЫ =====
+    // ===== КВАРТАЛЫ ПО ТЕХУЧАСТКУ =====
     @GetMapping("/quarters/by-technical/{technicalUnitId}")
-    public ResponseEntity<List<TerritoryUnit>> getQuartersByTechnical(@PathVariable Long technicalUnitId) {
-        return ResponseEntity.ok(territoryUnitService.findByParentId(technicalUnitId));
+    public ResponseEntity<List<TerritoryUnitDto>> getQuartersByTechnical(@PathVariable Long technicalUnitId) {
+        log.info("📡 Запрос кварталов для техучастка ID: {}", technicalUnitId);
+        List<TerritoryUnit> quarters = territoryUnitService.findByParentId(technicalUnitId);
+        log.info("📊 Найдено {} кварталов", quarters.size());
+
+        List<TerritoryUnitDto> dtos = quarters.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
     // ===== ПОИСК КВАРТАЛОВ (AUTOCOMPLETE) =====
     @GetMapping("/quarters/search")
-    public ResponseEntity<List<TerritoryUnit>> searchQuarters(
+    public ResponseEntity<List<TerritoryUnitDto>> searchQuarters(
             @RequestParam Long technicalUnitId,
             @RequestParam String query) {
-        return ResponseEntity.ok(territoryUnitService.searchQuarters(technicalUnitId, query));
+        log.info("📡 Поиск кварталов для техучастка ID: {}, запрос: {}", technicalUnitId, query);
+        List<TerritoryUnit> quarters = territoryUnitService.searchQuarters(technicalUnitId, query);
+        log.info("📊 Найдено {} кварталов", quarters.size());
+
+        List<TerritoryUnitDto> dtos = quarters.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
-    // ===== ПОЛУЧИТЬ ОДНУ ТЕРРИТОРИАЛЬНУЮ ЕДИНИЦУ =====
+    // ===== ПОЛУЧИТЬ ОДНУ ТЕРРИТОРИЮ =====
     @GetMapping("/{id}")
-    public ResponseEntity<TerritoryUnit> getById(@PathVariable Long id) {
+    public ResponseEntity<TerritoryUnitDto> getById(@PathVariable Long id) {
+        log.info("📡 Запрос территории ID: {}", id);
         return territoryUnitService.findById(id)
+                .map(this::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ===== МЕТОД ПРЕОБРАЗОВАНИЯ В DTO =====
+    private TerritoryUnitDto toDto(TerritoryUnit unit) {
+        if (unit == null) {
+            return null;
+        }
+
+        TerritoryUnitDto dto = new TerritoryUnitDto();
+        dto.setId(unit.getId());
+        dto.setName(unit.getName());
+        dto.setType(unit.getType().name());
+        dto.setCode(unit.getCode());
+        dto.setNumber(unit.getNumber());
+        dto.setIsMain(unit.getIsMain());
+        dto.setAreaHa(unit.getAreaHa());
+
+        if (unit.getParent() != null) {
+            dto.setParentId(unit.getParent().getId());
+            dto.setParentName(unit.getParent().getName());
+        }
+
+        return dto;
     }
 }

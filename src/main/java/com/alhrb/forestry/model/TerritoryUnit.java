@@ -24,6 +24,7 @@ public class TerritoryUnit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @JsonIgnore  // ← ДОБАВИТЬ!
     private TerritoryUnit parent;
 
     @Column(nullable = false)
@@ -37,6 +38,7 @@ public class TerritoryUnit {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TerritoryUnit> children = new ArrayList<>();
 
+    @JsonIgnore  // ← ДОБАВИТЬ! geometry не нужна в JSON для списка регионов
     @Column(columnDefinition = "geometry")
     private Geometry geometry;
 
@@ -53,7 +55,7 @@ public class TerritoryUnit {
     private Double areaHa;
 
     @Column(name = "number")
-    private String number; // для кварталов
+    private String number;
 
     @PrePersist
     protected void onCreate() {
