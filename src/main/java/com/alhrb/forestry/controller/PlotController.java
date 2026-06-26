@@ -136,6 +136,34 @@ public class PlotController {
         return ResponseEntity.ok(plotService.getAllPlotsForMap());
     }
 
+    /**
+     * Эндпоинт для получения отфильтрованных делян для карты
+     */
+    @GetMapping("/map-data-filtered")
+    @ResponseBody
+    public ResponseEntity<List<PlotMapDto>> getFilteredPlotsForMap(
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) Long municipalDistrictId,
+            @RequestParam(required = false) Long forestryId,
+            @RequestParam(required = false) Long districtForestryId,
+            @RequestParam(required = false) Long technicalUnitId,
+            @RequestParam(required = false) Long quarterId,
+            @RequestParam(required = false) String cutType,
+            @RequestParam(required = false) Integer yearOfCut) {
+
+        log.info("📡 Запрос фильтрованных делян: regionId={}, municipalDistrictId={}, forestryId={}, districtForestryId={}, technicalUnitId={}, quarterId={}, cutType={}, yearOfCut={}",
+                regionId, municipalDistrictId, forestryId, districtForestryId, technicalUnitId, quarterId, cutType, yearOfCut);
+
+        List<PlotMapDto> plots = plotService.getFilteredPlotsForMap(
+                regionId, municipalDistrictId, forestryId,
+                districtForestryId, technicalUnitId, quarterId,
+                cutType, yearOfCut
+        );
+
+        log.info("📊 Найдено {} делян по фильтру", plots.size());
+        return ResponseEntity.ok(plots);
+    }
+
     @PostMapping("/validate-all")
     @ResponseBody
     public ResponseEntity<List<IntersectionReport>> validateAll() {
@@ -208,6 +236,4 @@ public class PlotController {
 
         return ResponseEntity.ok(conflicts);
     }
-
-
 }

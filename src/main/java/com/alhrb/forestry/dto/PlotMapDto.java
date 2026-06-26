@@ -7,10 +7,12 @@ public class PlotMapDto {
     private Long id;
     private String fullNumber;
     private String numberInQuarter;
-    private Integer quarterNumber;
+    private String quarterNumber;
     private String forestryName;
     private Boolean verified;
-    private Double areaHa;        // ← площадь в гектарах (из БД)
-    private Double areaM2;        // ← оставляем для обратной совместимости (можно удалить)
+    private Double areaHa;
+    private Double areaM2;
     private String geometryGeoJson;
+    private String cutType;
+    private Integer yearOfCut;
 }
