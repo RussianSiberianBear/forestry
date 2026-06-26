@@ -36,4 +36,8 @@ public class TerritoryUnitService {
     public List<TerritoryUnit> searchQuarters(Long technicalUnitId, String query) {
         return territoryUnitRepository.searchQuarters(technicalUnitId, query);
     }
+
+    public List<TerritoryUnit> findTechnicalUnit(Long districtForestryId) {
+        return territoryUnitRepository.findByTypeAndParentId(TerritoryType.TECHNICAL_UNIT,districtForestryId);
+    }
 }

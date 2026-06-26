@@ -80,7 +80,8 @@ public class TerritoryUnitController {
     @GetMapping("/technical-units/by-district/{districtForestryId}")
     public ResponseEntity<List<TerritoryUnitDto>> getTechnicalUnitsByDistrict(@PathVariable Long districtForestryId) {
         log.info("📡 Запрос техучастков для участкового лесничества ID: {}", districtForestryId);
-        List<TerritoryUnit> technicalUnits = territoryUnitService.findByParentId(districtForestryId);
+        List<TerritoryUnit> technicalUnits = territoryUnitService.findTechnicalUnit(districtForestryId);
+
         log.info("📊 Найдено {} техучастков", technicalUnits.size());
 
         List<TerritoryUnitDto> dtos = technicalUnits.stream()
@@ -107,11 +108,15 @@ public class TerritoryUnitController {
     // ===== ПОИСК КВАРТАЛОВ (AUTOCOMPLETE) =====
     @GetMapping("/quarters/search")
     public ResponseEntity<List<TerritoryUnitDto>> searchQuarters(
-            @RequestParam Long technicalUnitId,
+            @RequestParam(required = false) Long technicalUnitId,
+            @RequestParam(required = false) Long parentId,
             @RequestParam String query) {
-        log.info("📡 Поиск кварталов для техучастка ID: {}, запрос: {}", technicalUnitId, query);
-        List<TerritoryUnit> quarters = territoryUnitService.searchQuarters(technicalUnitId, query);
-        log.info("📊 Найдено {} кварталов", quarters.size());
+
+        // Если передан parentId - используем его, иначе technicalUnitId
+        Long searchParentId = parentId != null ? parentId : technicalUnitId;
+
+        log.info("📡 Поиск кварталов для родителя ID: {}, запрос: {}", searchParentId, query);
+        List<TerritoryUnit> quarters = territoryUnitService.searchQuarters(searchParentId, query);
 
         List<TerritoryUnitDto> dtos = quarters.stream()
                 .map(this::toDto)

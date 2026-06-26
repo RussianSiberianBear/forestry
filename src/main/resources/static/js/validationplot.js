@@ -914,7 +914,8 @@ function searchQuarters(query) {
             suggestionsDiv.style.display = 'block';
         }
 
-        const url = '/api/territory/quarters/search?parentId=' + parentId + '&query=' + encodeURIComponent(query.trim());
+        // Используем параметр technicalUnitId как требует контроллер
+        const url = '/api/territory/quarters/search?technicalUnitId=' + parentId + '&query=' + encodeURIComponent(query.trim());
 
         fetch(url)
             .then(response => {
