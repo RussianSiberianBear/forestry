@@ -23,7 +23,7 @@
 <!-- НАВИГАЦИЯ -->
 <!-- ============================================ -->
 <nav class="uk-navbar-container" uk-navbar>
-    <div class="uk-navbar-left">
+    <div class="uk-navbar-left uk-margin-left">
         <ul class="uk-navbar-nav">
             <li><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
             <li class="uk-active"><a href="/"><span uk-icon="icon: grid"></span>Деляны</a></li>
@@ -37,7 +37,7 @@
 <!-- ============================================ -->
 <!-- ОСНОВНОЙ КОНТЕНТ -->
 <!-- ============================================ -->
-<div class="uk-container uk-container-large uk-margin-top">
+<div class="uk-container uk-width-1-1 uk-margin-top">
     <div th:if="${warning}" class="uk-alert-warning" uk-alert>
         <a class="uk-alert-close" uk-close></a>
         <p><span uk-icon="icon: warning"></span> <span th:text="${warning}"></span></p>
@@ -90,7 +90,6 @@
         </div>
     </div>
 
-
     <!-- ===== FLASH СООБЩЕНИЯ ===== -->
     <div th:if="${success}" class="uk-alert-success" uk-alert>
         <a class="uk-alert-close" uk-close></a>
@@ -115,12 +114,12 @@
                 Валидатор лесных делян
             </h1>
             <!-- ========================================== -->
-            <!-- ДВЕ КОЛОНКИ (1/3 : 2/3) -->
+            <!-- ДВЕ КОЛОНКИ (1/4 : 3/4) -->
             <!-- ========================================== -->
             <div class="uk-grid uk-margin-top" uk-grid>
 
-                <!-- ===== ЛЕВАЯ КОЛОНКА - ФОРМА (1/3) ===== -->
-                <div class="uk-width-1-3@m">
+                <!-- ===== ЛЕВАЯ КОЛОНКА - ФОРМА (1/4) ===== -->
+                <div class="uk-width-1-4@m">
                     <div class="uk-card uk-card-default uk-card-body">
                         <h3 class="uk-card-title">
                             <span uk-icon="icon: pencil"></span>
@@ -270,9 +269,9 @@
                             <div class="uk-margin">
                                 <label class="uk-form-label" for="description">Описание</label>
                                 <div class="uk-form-controls">
-                            <textarea class="uk-textarea" id="description"
-                                      th:field="*{description}" rows="2"
-                                      placeholder="Дополнительная информация"></textarea>
+                                    <textarea class="uk-textarea" id="description"
+                                              th:field="*{description}" rows="2"
+                                              placeholder="Дополнительная информация"></textarea>
                                 </div>
                             </div>
 
@@ -284,7 +283,9 @@
                                         <div class="uk-form-controls">
                                             <input class="uk-input" type="number" id="yearOfCut"
                                                    th:field="*{yearOfCut}"
-                                                   placeholder="2024">
+                                                   placeholder="2024"
+                                                   onchange="onYearOfCutChange(this.value)"
+                                                   oninput="onYearOfCutChange(this.value)">
                                         </div>
                                     </div>
                                 </div>
@@ -293,7 +294,8 @@
                                         <label class="uk-form-label" for="cutType">Тип рубки</label>
                                         <div class="uk-form-controls">
                                             <select class="form-select" id="cutType"
-                                                    th:field="*{cutType}">
+                                                    th:field="*{cutType}"
+                                                    onchange="onCutTypeChange(this.value)">
                                                 <option value="">-- Выберите --</option>
                                                 <option value="Сплошная">Сплошная</option>
                                                 <option value="Выборочная">Выборочная</option>
@@ -315,8 +317,7 @@
                                     1. Введите <span class="uk-text-bold">Широту</span> и <span
                                         class="uk-text-bold">Долготу</span><br>
                                     2. Нажмите <span class="uk-text-bold">Enter</span> в поле "Долгота" — добавится
-                                    новая строка
-                                    для следующей точки<br>
+                                    новая строка для следующей точки<br>
                                     3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система
                                     замкнёт сама
                                 </p>
@@ -381,12 +382,13 @@
                     </div>
                 </div>
 
-                <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА (2/3) ===== -->
-                <div class="uk-width-2-3@m">
+                <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА (3/4) ===== -->
+                <div class="uk-width-3-4@m">
                     <div class="uk-card uk-card-default uk-card-body">
                         <h3 class="uk-card-title">
                             <span uk-icon="icon: location"></span>
                             Существующие деляны
+                            <span class="uk-badge" id="filterInfo" style="background: #1e87f0; margin-left: 10px;">Все деляны</span>
                         </h3>
 
                         <div id="map"></div>
@@ -396,10 +398,8 @@
                             <div class="uk-alert-primary uk-margin-small" uk-alert>
                                 <p>
                                     <span uk-icon="icon: info"></span>
-                                    <strong>Выборочная проверка:</strong>
-                                    Использует выбранные в форме значения
-                                    <span class="uk-text-bold">(регион → район → лесничество → участковое → техучасток → квартал)</span>.
-                                    Проверяются деляны только выбранной территории.
+                                    <strong>Карта автоматически обновляется</strong> при выборе региона, района, лесничества,
+                                    квартала, а также при изменении года рубки и типа рубки в левой панели.
                                 </p>
                             </div>
 
@@ -412,7 +412,6 @@
                                     <button class="uk-button uk-button-secondary uk-button-small" onclick="checkIntersectAll()">
                                         <span uk-icon="icon: search"></span> Проверить все
                                     </button>
-                                    <!-- ===== КНОПКА ПОКАЗАТЬ/СКРЫТЬ МЕТКИ ===== -->
                                     <button class="uk-button uk-button-default uk-button-small"
                                             id="toggleLabelsBtn"
                                             onclick="toggleLabels()">
@@ -424,9 +423,9 @@
                                     </button>
                                 </div>
                                 <span class="uk-text-meta uk-text-small" id="checkInfo">
-                            <span uk-icon="icon: info"></span>
-                            Выбрано: <span id="selectedTerritoryName" style="font-weight: bold; color: #1e87f0;">не выбрано</span>
-                        </span>
+                                    <span uk-icon="icon: info"></span>
+                                    Выбрано: <span id="selectedTerritoryName" style="font-weight: bold; color: #1e87f0;">не выбрано</span>
+                                </span>
                             </div>
                         </div>
 
@@ -436,6 +435,8 @@
                                 <tr>
                                     <th>№</th>
                                     <th>Лесничество</th>
+                                    <th>Тип рубки</th>
+                                    <th>Год</th>
                                     <th>Статус</th>
                                 </tr>
                                 </thead>
@@ -443,6 +444,8 @@
                                 <tr th:each="plot : ${plots}">
                                     <td th:text="${plot.fullNumber}"></td>
                                     <td th:text="${plot.forestry != null ? plot.forestry.name : '-'}"></td>
+                                    <td th:text="${plot.cutType != null ? plot.cutType : '-'}"></td>
+                                    <td th:text="${plot.yearOfCut != null ? plot.yearOfCut : '-'}"></td>
                                     <td>
                                     <span th:if="${plot.verified}"
                                           class="uk-badge uk-badge-success">✓ Вериф.</span>
@@ -451,7 +454,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${plots == null or plots.empty}">
-                                    <td colspan="3" class="uk-text-center uk-text-muted">
+                                    <td colspan="5" class="uk-text-center uk-text-muted">
                                         Нет добавленных делян
                                     </td>
                                 </tr>
