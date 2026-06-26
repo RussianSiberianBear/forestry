@@ -296,40 +296,9 @@ public class PlotService {
             }
         }
 
-        // Устанавливаем технический участок
-        // 1. Сначала пробуем взять из квартала
+        // Устанавливаем технический участок (если есть)
         if (quarter.getTechnicalUnit() != null) {
             plot.setTechnicalUnit(quarter.getTechnicalUnit());
-            log.info("✅ Техучасток установлен из квартала: {}", quarter.getTechnicalUnit().getName());
-        } else if (quarter.getDistrictForestry() != null) {
-            // 2. Если у квартала нет техучастка, ищем основной техучасток участкового лесничества
-            DistrictForestry districtForestry = quarter.getDistrictForestry();
-            // Проходим по всем техническим участкам участкового лесничества
-            if (districtForestry.getTechnicalUnits() != null && !districtForestry.getTechnicalUnits().isEmpty()) {
-                // Ищем основной (isMain = true)
-                TechnicalUnit mainUnit = districtForestry.getTechnicalUnits().stream()
-                        .filter(tu -> tu.getIsMain() != null && tu.getIsMain())
-                        .findFirst()
-                        .orElse(null);
-
-                if (mainUnit != null) {
-                    plot.setTechnicalUnit(mainUnit);
-                    log.info("✅ Техучасток установлен из участкового лесничества (основной): {}", mainUnit.getName());
-                } else {
-                    // Если основного нет, берем первый попавшийся
-                    TechnicalUnit firstUnit = districtForestry.getTechnicalUnits().stream().findFirst().orElse(null);
-                    if (firstUnit != null) {
-                        plot.setTechnicalUnit(firstUnit);
-                        log.info("✅ Техучасток установлен из участкового лесничества (первый): {}", firstUnit.getName());
-                    } else {
-                        log.warn("⚠️ В участковом лесничестве {} нет технических участков", districtForestry.getName());
-                    }
-                }
-            } else {
-                log.warn("⚠️ В участковом лесничестве {} нет технических участков", districtForestry.getName());
-            }
-        } else {
-            log.warn("⚠️ У квартала {} нет участкового лесничества", quarter.getId());
         }
 
         log.info("🏷️ Заполнена иерархия для деляны: region={}, municipalDistrict={}, forestry={}, districtForestry={}, technicalUnit={}",
@@ -385,9 +354,9 @@ public class PlotService {
         }
 
         Plot saved = plotRepository.save(plot);
-        log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, technicalUnit: {})",
+        log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, districtForestry: {})",
                 saved.getFullNumber(), saved.getId(), saved.getAreaHa(),
-                saved.getTechnicalUnit() != null ? saved.getTechnicalUnit().getName() : "null");
+                saved.getDistrictForestry() != null ? saved.getDistrictForestry().getName() : "null");
 
         List<IntersectionReport> conflicts = validatePlot(saved);
 
@@ -569,21 +538,10 @@ public class PlotService {
         int fixed = 0;
 
         for (Plot plot : plots) {
-            if (plot.getQuarter() != null) {
-                boolean needFix = false;
-
-                if (plot.getDistrictForestry() == null) {
-                    needFix = true;
-                }
-                if (plot.getTechnicalUnit() == null) {
-                    needFix = true;
-                }
-
-                if (needFix) {
-                    fillHierarchyFromQuarter(plot, plot.getQuarter());
-                    plotRepository.save(plot);
-                    fixed++;
-                }
+            if (plot.getQuarter() != null && plot.getDistrictForestry() == null) {
+                fillHierarchyFromQuarter(plot, plot.getQuarter());
+                plotRepository.save(plot);
+                fixed++;
             }
         }
 
