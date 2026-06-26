@@ -12,11 +12,34 @@ import java.util.List;
 @Repository
 public interface TerritoryUnitRepository extends JpaRepository<TerritoryUnit, Long> {
 
+    // ===== ОСНОВНЫЕ МЕТОДЫ =====
     List<TerritoryUnit> findByType(TerritoryType type);
-
     List<TerritoryUnit> findByParentId(Long parentId);
+    List<TerritoryUnit> findByParentIdIsNull();
 
-    List<TerritoryUnit> findByTypeAndParentId(TerritoryType type, Long parentId);
+    // ===== ПОИСК ПО ТИПУ И ИМЕНИ =====
+    @Query("SELECT tu FROM TerritoryUnit tu WHERE tu.type = :type AND tu.name = :name")
+    List<TerritoryUnit> findByTypeAndName(@Param("type") TerritoryType type, @Param("name") String name);
+
+    @Query("SELECT tu FROM TerritoryUnit tu WHERE tu.type = :type AND tu.parent.id = :parentId AND tu.name = :name")
+    List<TerritoryUnit> findByTypeAndParentIdAndName(
+            @Param("type") TerritoryType type,
+            @Param("parentId") Long parentId,
+            @Param("name") String name
+    );
+
+    @Query("SELECT tu FROM TerritoryUnit tu WHERE tu.type = :type AND tu.parent.id = :parentId AND tu.number = :number")
+    List<TerritoryUnit> findByTypeAndParentIdAndNumber(
+            @Param("type") TerritoryType type,
+            @Param("parentId") Long parentId,
+            @Param("number") String number
+    );
+
+    @Query("SELECT tu FROM TerritoryUnit tu WHERE tu.type = :type AND tu.number = :number")
+    List<TerritoryUnit> findByTypeAndNumber(
+            @Param("type") TerritoryType type,
+            @Param("number") String number
+    );
 
     // ===== ПОИСК КВАРТАЛОВ ДЛЯ AUTOCOMPLETE =====
     @Query("""

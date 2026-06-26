@@ -4,10 +4,12 @@ import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotDto;
 import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.Plot;
+import com.alhrb.forestry.model.TerritoryUnit;
 import com.alhrb.forestry.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Polygon;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,7 +29,7 @@ public class PlotController {
 
     private final PlotService plotService;
     private final GeometryService geometryService;
-    private final QuarterService quarterService;
+    private final TerritoryUnitService territoryUnitService;  // ← вместо QuarterService
 
     @PostMapping("/create")
     public String createPlot(@Valid @ModelAttribute("plotDto") PlotDto plotDto,
@@ -44,19 +46,25 @@ public class PlotController {
         try {
             var geometry = geometryService.createPolygon(plotDto.getCoordinates());
 
-            if (plotDto.getQuarterId() == null) {
+            if (plotDto.getTerritoryUnitId() == null) {
                 throw new IllegalArgumentException("Не выбран квартал!");
             }
 
-            Quarter quarter = quarterService.findById(plotDto.getQuarterId())
+            // Получаем территориальную единицу (квартал)
+            TerritoryUnit territoryUnit = territoryUnitService.findById(plotDto.getTerritoryUnitId())
                     .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
-            if (quarter.getGeometry() != null) {
+            // Проверяем, что это квартал
+            if (!territoryUnit.isQuarter()) {
+                throw new IllegalArgumentException("Выбранная территория не является кварталом!");
+            }
+
+            if (territoryUnit.getGeometry() != null) {
                 geometryService.validatePlotInsideQuarter(
                         geometry,
-                        quarter.getGeometry(),
+                        (Polygon) territoryUnit.getGeometry(),
                         plotDto.getNumberInQuarter(),
-                        quarter.getNumber()
+                        territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName()
                 );
             }
 
@@ -65,7 +73,7 @@ public class PlotController {
                     plotDto.getPlots(),
                     plotDto.getDescription(),
                     geometry,
-                    plotDto.getQuarterId(),
+                    plotDto.getTerritoryUnitId(),
                     plotDto.getYearOfCut(),
                     plotDto.getCutType()
             );
@@ -141,6 +149,7 @@ public class PlotController {
     @GetMapping("/map-data-filtered")
     @ResponseBody
     public ResponseEntity<List<PlotMapDto>> getFilteredPlotsForMap(
+            @RequestParam(required = false) Long federalDistrictId,
             @RequestParam(required = false) Long regionId,
             @RequestParam(required = false) Long municipalDistrictId,
             @RequestParam(required = false) Long forestryId,
@@ -150,13 +159,21 @@ public class PlotController {
             @RequestParam(required = false) String cutType,
             @RequestParam(required = false) Integer yearOfCut) {
 
-        log.info("📡 Запрос фильтрованных делян: regionId={}, municipalDistrictId={}, forestryId={}, districtForestryId={}, technicalUnitId={}, quarterId={}, cutType={}, yearOfCut={}",
-                regionId, municipalDistrictId, forestryId, districtForestryId, technicalUnitId, quarterId, cutType, yearOfCut);
+        log.info("📡 Запрос фильтрованных делян:");
+        log.info("   federalDistrictId={}", federalDistrictId);
+        log.info("   regionId={}", regionId);
+        log.info("   municipalDistrictId={}", municipalDistrictId);
+        log.info("   forestryId={}", forestryId);
+        log.info("   districtForestryId={}", districtForestryId);
+        log.info("   technicalUnitId={}", technicalUnitId);
+        log.info("   quarterId={}", quarterId);
+        log.info("   cutType={}", cutType);
+        log.info("   yearOfCut={}", yearOfCut);
 
         List<PlotMapDto> plots = plotService.getFilteredPlotsForMap(
-                regionId, municipalDistrictId, forestryId,
-                districtForestryId, technicalUnitId, quarterId,
-                cutType, yearOfCut
+                federalDistrictId, regionId, municipalDistrictId,
+                forestryId, districtForestryId, technicalUnitId,
+                quarterId, cutType, yearOfCut
         );
 
         log.info("📊 Найдено {} делян по фильтру", plots.size());
@@ -179,29 +196,30 @@ public class PlotController {
         List<Plot> plots = new ArrayList<>();
         String territoryName = "";
 
+        // Используем рекурсивные методы для поиска по иерархии
         switch (type) {
             case "REGION":
-                plots = plotService.findByRegionId(id);
+                plots = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "региону";
                 break;
             case "MUNICIPAL_DISTRICT":
-                plots = plotService.findByMunicipalDistrictId(id);
+                plots = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "муниципальному району";
                 break;
             case "FORESTRY":
-                plots = plotService.findByForestryId(id);
+                plots = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "лесничеству";
                 break;
             case "DISTRICT_FORESTRY":
-                plots = plotService.findByDistrictForestryId(id);
+                plots = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "участковому лесничеству";
                 break;
             case "TECHNICAL_UNIT":
-                plots = plotService.findByTechnicalUnitId(id);
+                plots = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "техническому участку";
                 break;
             case "QUARTER":
-                plots = plotService.findByQuarterId(id);
+                plots = plotService.findByTerritoryUnitId(id);
                 territoryName = "кварталу";
                 break;
             default:

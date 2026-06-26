@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему</title>
+
+    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
+    <script src="/webjars/uikit/js/uikit.min.js"></script>
+    <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
+
+    <style>
+        body {
+            background: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .login-card .uk-card-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .login-card .uk-card-title span {
+            color: #1e87f0;
+        }
+        .login-card .uk-button-primary {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .login-card .uk-alert {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="uk-card-title">
+        <span uk-icon="icon: tree; ratio: 2"></span>
+        <h2 style="margin-top: 10px;">Вход в систему</h2>
+        <p class="uk-text-meta">Лесное хозяйство</p>
+    </div>
+
+    <!-- Сообщения об ошибках -->
+    <div th:if="${param.error}" class="uk-alert-danger" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: warning"></span> Неверное имя пользователя или пароль</p>
+    </div>
+
+    <div th:if="${param.logout}" class="uk-alert-success" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: check"></span> Вы вышли из системы</p>
+    </div>
+
+    <div th:if="${param.registered}" class="uk-alert-success" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: check"></span> Регистрация прошла успешно! Войдите в систему.</p>
+    </div>
+
+    <!-- Форма входа -->
+    <form th:action="@{/login}" method="post">
+        <div class="uk-margin">
+            <label class="uk-form-label" for="username">Имя пользователя</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="text" id="username" name="username"
+                       placeholder="Введите имя пользователя" required autofocus>
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label" for="password">Пароль</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="password" id="password" name="password"
+                       placeholder="Введите пароль" required>
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <button type="submit" class="uk-button uk-button-primary">
+                <span uk-icon="icon: sign-in"></span> Войти
+            </button>
+        </div>
+
+        <div class="uk-text-center uk-text-meta">
+            Ещё нет аккаунта?
+            <a href="/register">Зарегистрироваться</a>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

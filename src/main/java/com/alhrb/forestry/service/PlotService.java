@@ -34,10 +34,6 @@ public class PlotService {
     @Value("${forest.validation.min-area:0.01}")
     private double minArea;
 
-    // ==========================================
-    // БАЗОВЫЕ ОПЕРАЦИИ
-    // ==========================================
-
     @Transactional
     public Plot save(Plot plot) {
         return plotRepository.save(plot);
@@ -63,7 +59,6 @@ public class PlotService {
         return plotRepository.findByTerritoryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
     }
 
-    // ===== ПОИСК ПО ТЕРРИТОРИИ (рекурсивно) =====
     public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
         return plotRepository.findByTerritoryUnitRecursive(unitId);
     }
@@ -100,7 +95,6 @@ public class PlotService {
 
         List<Plot> plots = new ArrayList<>();
 
-        // Определяем самый глубокий уровень и делаем рекурсивный запрос
         if (quarterId != null) {
             plots = plotRepository.findByTerritoryUnitRecursive(quarterId);
             log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, plots.size());
@@ -127,7 +121,6 @@ public class PlotService {
             log.info("📊 Фильтр не применен, всего {} делян", plots.size());
         }
 
-        // Дополнительная фильтрация по типу рубки
         if (cutType != null && !cutType.isEmpty()) {
             int before = plots.size();
             plots = plots.stream()
@@ -136,7 +129,6 @@ public class PlotService {
             log.info("📊 После фильтра по типу рубки '{}': {} -> {} делян", cutType, before, plots.size());
         }
 
-        // Дополнительная фильтрация по году рубки
         if (yearOfCut != null) {
             int before = plots.size();
             plots = plots.stream()
@@ -169,24 +161,21 @@ public class PlotService {
         dto.setCutType(plot.getCutType());
         dto.setYearOfCut(plot.getYearOfCut());
 
-        // Площадь
         dto.setAreaHa(plot.getAreaHa());
         if (plot.getAreaHa() != null) {
             dto.setAreaM2(plot.getAreaHa() * 10000);
         }
 
-        // Информация из территориальной единицы
         if (plot.getTerritoryUnit() != null) {
             TerritoryUnit unit = plot.getTerritoryUnit();
 
-            // Номер квартала
+            // number уже String, просто передаем
             if (unit.isQuarter()) {
-                dto.setQuarterNumber(unit.getNumber());
+                dto.setQuarterNumber(unit.getNumber() != null ? unit.getNumber() : unit.getName());
             } else {
                 dto.setQuarterNumber(unit.getName());
             }
 
-            // Ищем лесничество в иерархии
             TerritoryUnit current = unit;
             while (current != null) {
                 if (current.isForestry()) {
@@ -197,7 +186,6 @@ public class PlotService {
             }
         }
 
-        // Геометрия
         if (plot.getGeometry() != null) {
             try {
                 GeoJsonWriter writer = new GeoJsonWriter();
@@ -231,37 +219,43 @@ public class PlotService {
 
         if (!geometryService.isValid(geometry)) {
             throw new IllegalArgumentException(
-                    "⚠️ Деляна имеет некорректную геометрию! " +
-                            "Возможна 'бабочка' (самопересечение)."
+                    "⚠️ Деляна имеет некорректную геометрию! Возможна 'бабочка' (самопересечение)."
             );
         }
 
-        // Получаем территориальную единицу (квартал)
         TerritoryUnit territoryUnit = territoryUnitRepository.findById(territoryUnitId)
                 .orElseThrow(() -> new IllegalArgumentException("Территориальная единица не найдена"));
 
-        // Проверяем, что это квартал
         if (!territoryUnit.isQuarter()) {
             throw new IllegalArgumentException("Деляна может быть привязана только к кварталу!");
         }
 
         // Проверяем геометрию квартала
         if (territoryUnit.getGeometry() != null) {
-            geometryService.validatePlotInsideQuarter(
-                    geometry,
-                    territoryUnit.getGeometry(),
-                    numberInQuarter,
-                    territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName()
-            );
+            if (territoryUnit.getGeometry() instanceof Polygon) {
+                // quarterNumber уже String, просто передаем
+                String quarterNumber = territoryUnit.getNumber() != null ?
+                        territoryUnit.getNumber() :
+                        territoryUnit.getName();
+
+                geometryService.validatePlotInsideQuarter(
+                        geometry,
+                        (Polygon) territoryUnit.getGeometry(),
+                        numberInQuarter,
+                        quarterNumber  // ← String
+                );
+            } else {
+                log.warn("⚠️ Геометрия квартала не является Polygon, проверка пропущена");
+            }
         }
 
-        // Проверяем уникальность номера в квартале
         Optional<Plot> existing = plotRepository.findByTerritoryUnitIdAndNumberInQuarter(
                 territoryUnitId, numberInQuarter);
         if (existing.isPresent()) {
             throw new IllegalArgumentException(
                     String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
-                            numberInQuarter, territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName())
+                            numberInQuarter,
+                            territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName())
             );
         }
 
@@ -285,8 +279,7 @@ public class PlotService {
 
         if (!geometryService.isValid(plot.getGeometry())) {
             throw new IllegalArgumentException(
-                    "⚠️ Деляна имеет некорректную геометрию! " +
-                            "Возможна 'бабочка' (самопересечение)."
+                    "⚠️ Деляна имеет некорректную геометрию! Возможна 'бабочка' (самопересечение)."
             );
         }
 
@@ -311,14 +304,18 @@ public class PlotService {
         }
 
         if (plot.getTerritoryUnit() != null && plot.getTerritoryUnit().getGeometry() != null) {
-            geometryService.validatePlotInsideQuarter(
-                    plot.getGeometry(),
-                    plot.getTerritoryUnit().getGeometry(),
-                    plot.getFullNumber() != null ? plot.getFullNumber() : plot.getNumberInQuarter(),
-                    plot.getTerritoryUnit().getNumber() != null ?
-                            plot.getTerritoryUnit().getNumber() :
-                            plot.getTerritoryUnit().getName()
-            );
+            if (plot.getTerritoryUnit().getGeometry() instanceof Polygon) {
+                String quarterNumber = plot.getTerritoryUnit().getNumber() != null ?
+                        plot.getTerritoryUnit().getNumber() :
+                        plot.getTerritoryUnit().getName();
+
+                geometryService.validatePlotInsideQuarter(
+                        plot.getGeometry(),
+                        (Polygon) plot.getTerritoryUnit().getGeometry(),
+                        plot.getFullNumber() != null ? plot.getFullNumber() : plot.getNumberInQuarter(),
+                        quarterNumber  // ← String
+                );
+            }
         }
 
         Plot saved = plotRepository.save(plot);
@@ -492,24 +489,18 @@ public class PlotService {
         return allConflicts;
     }
 
-    /**
-     * Исправляет пропущенную территориальную единицу для существующих делян
-     */
     @Transactional
     public int fixMissingTerritoryUnit() {
         List<Plot> plots = plotRepository.findAll();
         int fixed = 0;
 
         for (Plot plot : plots) {
-            // Если у деляны нет territoryUnit, но есть quarterId - пытаемся восстановить
             if (plot.getTerritoryUnit() == null) {
-                // Здесь нужна логика восстановления из старых данных
-                // Например, если в Plot остались поля quarter, region и т.д.
                 log.warn("⚠️ У деляны {} нет территориальной единицы", plot.getFullNumber());
             }
         }
 
-        log.info("✅ Исправлена территориальная привязка для {} делян", fixed);
+        log.info("✅ Проверка завершена");
         return fixed;
     }
 }

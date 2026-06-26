@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+
+    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
+    <script src="/webjars/uikit/js/uikit.min.js"></script>
+    <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
+
+    <style>
+        body {
+            background: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .register-card {
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .register-card .uk-card-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .register-card .uk-button-primary {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .register-card .uk-alert {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-card">
+    <div class="uk-card-title">
+        <span uk-icon="icon: user; ratio: 2"></span>
+        <h2 style="margin-top: 10px;">Регистрация</h2>
+        <p class="uk-text-meta">Создайте аккаунт</p>
+    </div>
+
+    <!-- Сообщения об ошибках -->
+    <div th:if="${error}" class="uk-alert-danger" uk-alert>
+        <a class="uk-alert-close" uk-close></a>
+        <p><span uk-icon="icon: warning"></span> <span th:text="${error}"></span></p>
+    </div>
+
+    <!-- Форма регистрации -->
+    <form th:action="@{/register}" method="post" th:object="${user}">
+        <div class="uk-margin">
+            <label class="uk-form-label" for="username">Имя пользователя *</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="text" id="username" name="username"
+                       placeholder="Введите имя пользователя" required>
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label" for="email">Email *</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="email" id="email" name="email"
+                       placeholder="Введите email" required>
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label" for="fullName">Полное имя</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="text" id="fullName" name="fullName"
+                       placeholder="Введите полное имя">
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label" for="phone">Телефон</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="text" id="phone" name="phone"
+                       placeholder="Введите номер телефона">
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label" for="password">Пароль *</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="password" id="password" name="password"
+                       placeholder="Введите пароль (минимум 6 символов)" required>
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <label class="uk-form-label" for="confirmPassword">Подтверждение пароля *</label>
+            <div class="uk-form-controls">
+                <input class="uk-input" type="password" id="confirmPassword" name="confirmPassword"
+                       placeholder="Повторите пароль" required>
+            </div>
+        </div>
+
+        <div class="uk-margin">
+            <button type="submit" class="uk-button uk-button-primary">
+                <span uk-icon="icon: user"></span> Зарегистрироваться
+            </button>
+        </div>
+
+        <div class="uk-text-center uk-text-meta">
+            Уже есть аккаунт?
+            <a href="/login">Войти</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Проверка совпадения паролей
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirmPassword').value;
+        if (password !== confirm) {
+            e.preventDefault();
+            UIkit.notification({
+                message: '❌ Пароли не совпадают!',
+                status: 'danger',
+                timeout: 3000
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

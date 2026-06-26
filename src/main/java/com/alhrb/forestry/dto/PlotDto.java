@@ -10,19 +10,16 @@ import java.util.List;
 @Data
 public class PlotDto {
 
-    // ===== ИЕРАРХИЯ (выбирается из списков) =====
-    private Long regionId;
-    private Long municipalDistrictId;
-    private Long forestryId;
-    private Long districtForestryId;
-    private Long quarterId;
+    // ===== ТЕРРИТОРИЯ (вместо quarterId) =====
+    @NotNull(message = "Квартал обязателен")
+    private Long territoryUnitId;  // ← вместо quarterId
 
     // ===== НОМЕР ДЕЛЯНЫ В КВАРТАЛЕ =====
     @NotBlank(message = "Номер деляны в квартале обязателен")
     private String numberInQuarter;
 
     // ===== ВЫДЕЛЫ =====
-    private String plots; // Например: "1, 2, 3-5, 7"
+    private String plots;
 
     // ===== ОПИСАНИЕ =====
     private String description;
