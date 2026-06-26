@@ -3,10 +3,10 @@ package com.alhrb.forestry.service;
 import com.alhrb.forestry.model.User;
 import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.repository.UserUISettingsRepository;
+import com.alhrb.forestry.repository.UserRepository;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,35 +18,58 @@ import java.util.Optional;
 public class UserUISettingsService {
 
     private final UserUISettingsRepository userUISettingsRepository;
+    private final UserRepository userRepository;
 
-    private User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+    private static final String SESSION_USER_ID = "userId";
+
+    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО СЕССИИ =====
+    public UserUISettings getOrCreateSettings(HttpSession session) {
+        Long userId = (Long) session.getAttribute(SESSION_USER_ID);
+
+        if (userId == null) {
+            // Если пользователь не авторизован, возвращаем пустые настройки
+            log.debug("Пользователь не авторизован, возвращаем пустые настройки");
+            return new UserUISettings();
+        }
+
+        return userUISettingsRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    // Если настроек нет, создаем новые
+                    UserUISettings newSettings = new UserUISettings();
+                    newSettings.setUser(userRepository.findById(userId).orElse(null));
+                    return userUISettingsRepository.save(newSettings);
+                });
+    }
+
+    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО ПОЛЬЗОВАТЕЛЮ =====
+    public UserUISettings getOrCreateSettings(User user) {
+        if (user == null) {
+            return new UserUISettings();
+        }
+
+        return userUISettingsRepository.findByUser(user)
+                .orElseGet(() -> {
+                    UserUISettings newSettings = new UserUISettings();
+                    newSettings.setUser(user);
+                    return userUISettingsRepository.save(newSettings);
+                });
+    }
+
+    // ===== ОБНОВИТЬ НАСТРОЙКИ =====
+    @Transactional
+    public UserUISettings updateSetting(HttpSession session, String key, String value) {
+        Long userId = (Long) session.getAttribute(SESSION_USER_ID);
+        if (userId == null) {
             throw new RuntimeException("Пользователь не авторизован");
         }
-        return (User) auth.getPrincipal();
-    }
 
-    @Transactional
-    public UserUISettings save(UserUISettings settings) {
-        return userUISettingsRepository.save(settings);
-    }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
-    public Optional<UserUISettings> findByUser(User user) {
-        return userUISettingsRepository.findByUser(user);
-    }
-
-    public Optional<UserUISettings> findByUserId(Long userId) {
-        return userUISettingsRepository.findByUserId(userId);
-    }
-
-    @Transactional
-    public UserUISettings updateSetting(String key, String value) {
-        User currentUser = getCurrentUser();
-        UserUISettings settings = userUISettingsRepository.findByUser(currentUser)
+        UserUISettings settings = userUISettingsRepository.findByUser(user)
                 .orElse(new UserUISettings());
 
-        settings.setUser(currentUser);
+        settings.setUser(user);
 
         switch (key) {
             case "territory-unit":
@@ -78,14 +101,13 @@ public class UserUISettingsService {
         return userUISettingsRepository.save(settings);
     }
 
-    @Transactional
-    public UserUISettings getOrCreateSettings() {
-        User currentUser = getCurrentUser();
-        return userUISettingsRepository.findByUser(currentUser)
-                .orElseGet(() -> {
-                    UserUISettings settings = new UserUISettings();
-                    settings.setUser(currentUser);
-                    return userUISettingsRepository.save(settings);
-                });
+    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО ID ПОЛЬЗОВАТЕЛЯ =====
+    public Optional<UserUISettings> findByUserId(Long userId) {
+        return userUISettingsRepository.findByUserId(userId);
+    }
+
+    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО ПОЛЬЗОВАТЕЛЮ =====
+    public Optional<UserUISettings> findByUser(User user) {
+        return userUISettingsRepository.findByUser(user);
     }
 }

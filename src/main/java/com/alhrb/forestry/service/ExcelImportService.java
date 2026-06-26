@@ -37,47 +37,60 @@ public class ExcelImportService {
             Row headerRow = sheet.getRow(0);
 
             // Определяем индексы колонок
-            int territoryNameIdx = -1;      // полное имя территории (регион/район/лесничество/квартал)
-            int quarterNumberIdx = -1;      // номер квартала
-            int plotNumberIdx = -1;         // номер деляны
-            int wktGeometryIdx = -1;        // WKT геометрия
-            int yearOfCutIdx = -1;          // год рубки
-            int cutTypeIdx = -1;            // тип рубки
-            int territoryTypeIdx = -1;      // тип территории (для поиска)
+            int territoryNameIdx = -1;
+            int quarterNumberIdx = -1;
+            int plotNumberIdx = -1;
+            int wktGeometryIdx = -1;
+            int yearOfCutIdx = -1;
+            int cutTypeIdx = -1;
+            int regionNameIdx = -1;
+            int districtNameIdx = -1;
+            int forestryNameIdx = -1;
 
             for (Cell cell : headerRow) {
                 String header = getStringValue(cell).trim().toLowerCase();
+                int colIndex = cell.getColumnIndex();
+
                 switch (header) {
                     case "территория":
                     case "territory":
                     case "полный путь":
                     case "full_path":
-                        territoryNameIdx = cell.getColumnIndex();
+                        territoryNameIdx = colIndex;
                         break;
                     case "квартал":
                     case "quarter":
-                        quarterNumberIdx = cell.getColumnIndex();
+                        quarterNumberIdx = colIndex;
                         break;
                     case "номер деляны":
                     case "plot_number":
-                        plotNumberIdx = cell.getColumnIndex();
+                        plotNumberIdx = colIndex;
                         break;
                     case "wkt_geometry":
                     case "wkt":
                     case "геометрия":
-                        wktGeometryIdx = cell.getColumnIndex();
+                        wktGeometryIdx = colIndex;
                         break;
                     case "год рубки":
                     case "year_of_cut":
-                        yearOfCutIdx = cell.getColumnIndex();
+                        yearOfCutIdx = colIndex;
                         break;
                     case "тип рубки":
                     case "cut_type":
-                        cutTypeIdx = cell.getColumnIndex();
+                        cutTypeIdx = colIndex;
                         break;
-                    case "тип территории":
-                    case "territory_type":
-                        territoryTypeIdx = cell.getColumnIndex();
+                    case "регион":
+                    case "region":
+                        regionNameIdx = colIndex;
+                        break;
+                    case "район":
+                    case "муниципальный район":
+                    case "municipal_district":
+                        districtNameIdx = colIndex;
+                        break;
+                    case "лесничество":
+                    case "forestry":
+                        forestryNameIdx = colIndex;
                         break;
                 }
             }
@@ -88,9 +101,9 @@ public class ExcelImportService {
                 );
             }
 
-            if (quarterNumberIdx == -1 && territoryNameIdx == -1) {
+            if (quarterNumberIdx == -1 && territoryNameIdx == -1 && regionNameIdx == -1) {
                 throw new IllegalArgumentException(
-                        "Не найдена колонка с указанием квартала: 'квартал' или 'территория'"
+                        "Не найдена колонка с указанием квартала: 'квартал', 'территория' или 'регион'"
                 );
             }
 
@@ -102,23 +115,25 @@ public class ExcelImportService {
 
                 try {
                     Plot plot = new Plot();
-
-                    // ===== НАХОДИМ ТЕРРИТОРИАЛЬНУЮ ЕДИНИЦУ (КВАРТАЛ) =====
                     TerritoryUnit territoryUnit = null;
 
                     // 1. Пробуем найти по номеру квартала
                     Integer quarterNumber = getIntValue(row.getCell(quarterNumberIdx));
-                    if (quarterNumber != null) {
-                        // Ищем квартал по номеру в иерархии
-                        // Для этого нужно знать вышестоящие уровни
-                        String regionName = getStringValue(row.getCell(headerRow.getCell(0))); // пример
-                        String districtName = getStringValue(row.getCell(headerRow.getCell(1)));
-                        String forestryName = getStringValue(row.getCell(headerRow.getCell(2)));
+                    if (quarterNumber != null && regionNameIdx != -1 && districtNameIdx != -1 && forestryNameIdx != -1) {
+                        // Исправлено: передаем индексы, а не Cell
+                        String regionName = getStringValue(row.getCell(regionNameIdx));
+                        String districtName = getStringValue(row.getCell(districtNameIdx));
+                        String forestryName = getStringValue(row.getCell(forestryNameIdx));
 
                         territoryUnit = findQuarterByHierarchy(regionName, districtName, forestryName, quarterNumber);
                     }
 
-                    // 2. Если не нашли по номеру, пробуем по полному пути
+                    // 2. Если не нашли, пробуем по номеру квартала без иерархии
+                    if (territoryUnit == null && quarterNumber != null) {
+                        territoryUnit = findQuarterByNumber(quarterNumber);
+                    }
+
+                    // 3. Если не нашли, пробуем по полному пути
                     if (territoryUnit == null && territoryNameIdx != -1) {
                         String fullPath = getStringValue(row.getCell(territoryNameIdx));
                         if (fullPath != null && !fullPath.isEmpty()) {
@@ -132,7 +147,6 @@ public class ExcelImportService {
                         );
                     }
 
-                    // Проверяем, что это действительно квартал
                     if (!territoryUnit.isQuarter()) {
                         throw new IllegalArgumentException(
                                 String.format("Найденная территория '%s' не является кварталом", territoryUnit.getName())
@@ -141,26 +155,24 @@ public class ExcelImportService {
 
                     plot.setTerritoryUnit(territoryUnit);
 
-                    // ===== НОМЕР ДЕЛЯНЫ =====
+                    // Номер деляны
                     String plotNumber = getStringValue(row.getCell(plotNumberIdx));
                     if (plotNumber == null || plotNumber.isEmpty()) {
                         throw new IllegalArgumentException("Номер деляны не задан");
                     }
                     plot.setNumberInQuarter(plotNumber);
 
-                    // ===== ГЕОМЕТРИЯ =====
+                    // Геометрия
                     String wkt = getStringValue(row.getCell(wktGeometryIdx));
                     if (wkt != null && !wkt.isEmpty()) {
                         Polygon polygon = (Polygon) wktReader.read(wkt);
-
                         if (!polygon.isValid()) {
                             throw new IllegalArgumentException("Невалидный полигон (возможно 'бабочка')");
                         }
-
                         plot.setGeometry(polygon);
                     }
 
-                    // ===== ДОПОЛНИТЕЛЬНО =====
+                    // Дополнительно
                     if (yearOfCutIdx != -1) {
                         plot.setYearOfCut(getIntValue(row.getCell(yearOfCutIdx)));
                     }
@@ -168,7 +180,7 @@ public class ExcelImportService {
                         plot.setCutType(getStringValue(row.getCell(cutTypeIdx)));
                     }
 
-                    // Проверяем уникальность номера в квартале
+                    // Проверяем уникальность
                     Optional<Plot> existing = plotRepository.findByTerritoryUnitIdAndNumberInQuarter(
                             territoryUnit.getId(), plotNumber
                     );
@@ -203,14 +215,10 @@ public class ExcelImportService {
         return plots;
     }
 
-    /**
-     * Поиск квартала по иерархии: Регион -> Район -> Лесничество -> Квартал
-     */
     private TerritoryUnit findQuarterByHierarchy(String regionName, String districtName,
                                                  String forestryName, Integer quarterNumber) {
         if (quarterNumber == null) return null;
 
-        // Ищем регион
         TerritoryUnit region = null;
         if (regionName != null && !regionName.isEmpty()) {
             List<TerritoryUnit> regions = territoryUnitRepository.findByTypeAndName(
@@ -221,7 +229,6 @@ public class ExcelImportService {
             }
         }
 
-        // Ищем район
         TerritoryUnit district = null;
         if (region != null && districtName != null && !districtName.isEmpty()) {
             List<TerritoryUnit> districts = territoryUnitRepository.findByTypeAndParentIdAndName(
@@ -232,7 +239,6 @@ public class ExcelImportService {
             }
         }
 
-        // Ищем лесничество
         TerritoryUnit forestry = null;
         if (district != null && forestryName != null && !forestryName.isEmpty()) {
             List<TerritoryUnit> forestries = territoryUnitRepository.findByTypeAndParentIdAndName(
@@ -243,7 +249,6 @@ public class ExcelImportService {
             }
         }
 
-        // Ищем квартал
         if (forestry != null) {
             List<TerritoryUnit> quarters = territoryUnitRepository.findByTypeAndParentIdAndNumber(
                     TerritoryType.QUARTER, forestry.getId(), String.valueOf(quarterNumber)
@@ -253,29 +258,17 @@ public class ExcelImportService {
             }
         }
 
-        // Если не нашли через лесничество, ищем по всем уровням
-        if (region != null) {
-            List<TerritoryUnit> quarters = territoryUnitRepository.findByTypeAndNumber(
-                    TerritoryType.QUARTER, String.valueOf(quarterNumber)
-            );
-            // Проверяем, что квартал принадлежит нужному региону
-            for (TerritoryUnit quarter : quarters) {
-                TerritoryUnit current = quarter;
-                while (current != null) {
-                    if (current.getId().equals(region.getId())) {
-                        return quarter;
-                    }
-                    current = current.getParent();
-                }
-            }
-        }
-
         return null;
     }
 
-    /**
-     * Поиск территории по полному пути (например: "Республика Бурятия / Бичурский район / Бичурское лесничество / Квартал 12")
-     */
+    private TerritoryUnit findQuarterByNumber(Integer quarterNumber) {
+        if (quarterNumber == null) return null;
+        List<TerritoryUnit> quarters = territoryUnitRepository.findByTypeAndNumber(
+                TerritoryType.QUARTER, String.valueOf(quarterNumber)
+        );
+        return quarters.isEmpty() ? null : quarters.get(0);
+    }
+
     private TerritoryUnit findTerritoryByFullPath(String fullPath) {
         String[] parts = fullPath.split("/");
         TerritoryUnit current = null;
@@ -288,13 +281,11 @@ public class ExcelImportService {
             List<TerritoryUnit> children;
 
             if (current == null) {
-                // Ищем среди корневых (Федеральные округа)
                 children = territoryUnitRepository.findByParentIdIsNull();
             } else {
                 children = territoryUnitRepository.findByParentId(current.getId());
             }
 
-            // Ищем по имени или номеру (для кварталов)
             for (TerritoryUnit child : children) {
                 if (child.isQuarter()) {
                     if (child.getNumber() != null && name.contains(child.getNumber())) {
@@ -322,11 +313,16 @@ public class ExcelImportService {
     private String getStringValue(Cell cell) {
         if (cell == null) return null;
         switch (cell.getCellType()) {
-            case STRING: return cell.getStringCellValue();
-            case NUMERIC: return String.valueOf((long) cell.getNumericCellValue());
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-            case FORMULA: return cell.getCellFormula();
-            default: return null;
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf((long) cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return null;
         }
     }
 
@@ -337,9 +333,12 @@ public class ExcelImportService {
                 return (int) cell.getNumericCellValue();
             }
             if (cell.getCellType() == CellType.STRING) {
-                return Integer.parseInt(cell.getStringCellValue().trim());
+                String val = cell.getStringCellValue().trim();
+                if (val.isEmpty()) return null;
+                return Integer.parseInt(val);
             }
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
+            log.warn("Не удалось преобразовать значение в Integer: {}", cell);
             return null;
         }
         return null;

@@ -3,6 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.PlotDto;
 import com.alhrb.forestry.dto.UserUISettingsDto;
 import com.alhrb.forestry.model.Plot;
+import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.service.PlotService;
 import com.alhrb.forestry.service.UserUISettingsService;
 import jakarta.servlet.http.HttpSession;
@@ -28,8 +29,8 @@ public class ViewController {
 
     @GetMapping("/forest-ploat")
     public String forestPlot(Model model, HttpSession session) {
-        // Получаем настройки UI
-        UserUISettingsDto uiSettings = userUISettingsService.getSettings(session);
+        // Получаем настройки UI через сервис
+        UserUISettings uiSettings = userUISettingsService.getOrCreateSettings(session);
         List<Plot> plots = plotService.findAll();
 
         model.addAttribute("plots", plots);
@@ -45,5 +46,4 @@ public class ViewController {
 
         return "forest-ploat";
     }
-
 }
