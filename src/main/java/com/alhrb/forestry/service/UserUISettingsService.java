@@ -1,7 +1,6 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.dto.UserUISettingsDto;
-import com.alhrb.forestry.model.Region;
 import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.repository.UserUISettingsRepository;
 import jakarta.annotation.PostConstruct;

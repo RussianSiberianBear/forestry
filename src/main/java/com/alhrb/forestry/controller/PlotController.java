@@ -4,7 +4,6 @@ import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotDto;
 import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.Plot;
-import com.alhrb.forestry.model.Quarter;
 import com.alhrb.forestry.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
