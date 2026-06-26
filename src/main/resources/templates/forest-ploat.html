@@ -90,7 +90,6 @@
         </div>
     </div>
 
-
     <!-- ===== FLASH СООБЩЕНИЯ ===== -->
     <div th:if="${success}" class="uk-alert-success" uk-alert>
         <a class="uk-alert-close" uk-close></a>
@@ -115,11 +114,11 @@
                 Валидатор лесных делян
             </h1>
             <!-- ========================================== -->
-            <!-- ДВЕ КОЛОНКИ (1/3 : 2/3) -->
+            <!-- ДВЕ КОЛОНКИ (1/4 : 3/4) -->
             <!-- ========================================== -->
             <div class="uk-grid uk-margin-top" uk-grid>
 
-                <!-- ===== ЛЕВАЯ КОЛОНКА - ФОРМА (1/3) ===== -->
+                <!-- ===== ЛЕВАЯ КОЛОНКА - ФОРМА (1/4) ===== -->
                 <div class="uk-width-1-4@m">
                     <div class="uk-card uk-card-default uk-card-body">
                         <h3 class="uk-card-title">
@@ -270,9 +269,9 @@
                             <div class="uk-margin">
                                 <label class="uk-form-label" for="description">Описание</label>
                                 <div class="uk-form-controls">
-                            <textarea class="uk-textarea" id="description"
-                                      th:field="*{description}" rows="2"
-                                      placeholder="Дополнительная информация"></textarea>
+                                    <textarea class="uk-textarea" id="description"
+                                              th:field="*{description}" rows="2"
+                                              placeholder="Дополнительная информация"></textarea>
                                 </div>
                             </div>
 
@@ -315,8 +314,7 @@
                                     1. Введите <span class="uk-text-bold">Широту</span> и <span
                                         class="uk-text-bold">Долготу</span><br>
                                     2. Нажмите <span class="uk-text-bold">Enter</span> в поле "Долгота" — добавится
-                                    новая строка
-                                    для следующей точки<br>
+                                    новая строка для следующей точки<br>
                                     3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система
                                     замкнёт сама
                                 </p>
@@ -381,13 +379,56 @@
                     </div>
                 </div>
 
-                <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА (2/3) ===== -->
+                <!-- ===== ПРАВАЯ КОЛОНКА - КАРТА (3/4) ===== -->
                 <div class="uk-width-3-4@m">
                     <div class="uk-card uk-card-default uk-card-body">
                         <h3 class="uk-card-title">
                             <span uk-icon="icon: location"></span>
                             Существующие деляны
                         </h3>
+
+                        <!-- ===== ФИЛЬТРЫ ДЛЯ КАРТЫ (над картой) ===== -->
+                        <div class="uk-card uk-card-default uk-card-body uk-card-small uk-margin-bottom" style="background: #f8f9fa;">
+                            <div class="uk-grid uk-grid-small uk-flex uk-flex-middle" uk-grid>
+                                <div class="uk-width-auto">
+                                    <span uk-icon="icon: filter" style="color: #1e87f0;"></span>
+                                    <span style="font-weight: 600; font-size: 14px;">Фильтры карты:</span>
+                                </div>
+                                <div class="uk-width-expand">
+                                    <div class="uk-grid uk-grid-small" uk-grid>
+                                        <div class="uk-width-1-4">
+                                            <select class="form-select" id="filterCutType" onchange="onFilterCutTypeChange(this.value)">
+                                                <option value="">Все типы рубки</option>
+                                                <option value="Сплошная">Сплошная</option>
+                                                <option value="Выборочная">Выборочная</option>
+                                                <option value="Постепенная">Постепенная</option>
+                                                <option value="Санитарная">Санитарная</option>
+                                            </select>
+                                        </div>
+                                        <div class="uk-width-1-4">
+                                            <input class="uk-input" type="number" id="filterYearOfCut"
+                                                   placeholder="Год рубки"
+                                                   onchange="onFilterYearOfCutChange(this.value)"
+                                                   oninput="onFilterYearOfCutChange(this.value)"
+                                                   style="height: 38px;">
+                                        </div>
+                                        <div class="uk-width-auto">
+                                            <button class="uk-button uk-button-primary uk-button-small" onclick="applyFilters()">
+                                                <span uk-icon="icon: search"></span> Применить
+                                            </button>
+                                        </div>
+                                        <div class="uk-width-auto">
+                                            <button class="uk-button uk-button-default uk-button-small" onclick="clearFilters()">
+                                                <span uk-icon="icon: close"></span> Сбросить
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="uk-width-auto">
+                                    <span class="uk-badge" id="filterInfo" style="background: #1e87f0;">Все деляны</span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="map"></div>
 

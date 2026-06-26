@@ -337,3 +337,56 @@
 .progress-bar.active {
     display: block;
 }
+
+/* ==========================================
+   ФИЛЬТРЫ ДЛЯ КАРТЫ
+   ========================================== */
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #e5e5e5;
+}
+
+.filter-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+.filter-section .uk-grid {
+    margin-top: 0;
+}
+
+/* Индикатор активного фильтра */
+.filter-active {
+    border-left: 3px solid #1e87f0;
+    background: #f0f7ff;
+}
+
+/* Стиль для кнопки сброса при активных фильтрах */
+.has-filters .uk-button-default {
+    border-color: #1e87f0;
+    color: #1e87f0;
+}
+
+/* Фильтры в левой колонке */
+.filter-group {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.filter-group .uk-form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.filter-group .uk-input,
+.filter-group .form-select {
+    font-size: 14px;
+}

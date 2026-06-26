@@ -84,8 +84,67 @@ public class PlotService {
     }
 
     // ==========================================
-    // МЕТОД ДЛЯ КАРТЫ (ОБНОВЛЁННЫЙ)
+    // МЕТОД ДЛЯ КАРТЫ С ФИЛЬТРАЦИЕЙ
     // ==========================================
+
+    public List<PlotMapDto> getFilteredPlotsForMap(
+            Long regionId,
+            Long municipalDistrictId,
+            Long forestryId,
+            Long districtForestryId,
+            Long technicalUnitId,
+            Long quarterId,
+            String cutType,
+            Integer yearOfCut) {
+
+        List<Plot> plots;
+
+        // Если выбран квартал - берем деляны квартала
+        if (quarterId != null) {
+            plots = plotRepository.findByQuarterIdOrderByNumberInQuarter(quarterId);
+        }
+        // Если выбран техучасток - берем деляны техучастка
+        else if (technicalUnitId != null) {
+            plots = plotRepository.findByTechnicalUnitId(technicalUnitId);
+        }
+        // Если выбрано участковое лесничество
+        else if (districtForestryId != null) {
+            plots = plotRepository.findByDistrictForestryId(districtForestryId);
+        }
+        // Если выбрано лесничество
+        else if (forestryId != null) {
+            plots = plotRepository.findByForestryId(forestryId);
+        }
+        // Если выбран муниципальный район
+        else if (municipalDistrictId != null) {
+            plots = plotRepository.findByMunicipalDistrictId(municipalDistrictId);
+        }
+        // Если выбран регион
+        else if (regionId != null) {
+            plots = plotRepository.findByRegionId(regionId);
+        }
+        // Иначе все деляны
+        else {
+            plots = plotRepository.findAll();
+        }
+
+        // Дополнительная фильтрация по типу рубки и году
+        if (cutType != null && !cutType.isEmpty()) {
+            plots = plots.stream()
+                    .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
+                    .collect(Collectors.toList());
+        }
+
+        if (yearOfCut != null) {
+            plots = plots.stream()
+                    .filter(p -> p.getYearOfCut() != null && p.getYearOfCut().equals(yearOfCut))
+                    .collect(Collectors.toList());
+        }
+
+        return plots.stream()
+                .map(this::convertToMapDto)
+                .collect(Collectors.toList());
+    }
 
     public List<PlotMapDto> getAllPlotsForMap() {
         List<Plot> plots = plotRepository.findAll();
@@ -100,6 +159,8 @@ public class PlotService {
         dto.setFullNumber(plot.getFullNumber());
         dto.setNumberInQuarter(plot.getNumberInQuarter());
         dto.setVerified(plot.getVerified());
+        dto.setCutType(plot.getCutType());
+        dto.setYearOfCut(plot.getYearOfCut());
 
         // ===== БЕРЁМ ПЛОЩАДЬ ИЗ БД (area_ha) =====
         dto.setAreaHa(plot.getAreaHa());
@@ -110,7 +171,7 @@ public class PlotService {
 
         // Номер квартала
         if (plot.getQuarter() != null) {
-            dto.setQuarterNumber(plot.getQuarter().getNumber());
+            dto.setQuarterNumber(plot.getQuarter().getNumber().toString());
         }
 
         // Лесничество
