@@ -11,30 +11,48 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@SuppressWarnings({"SqlResolve", "SqlDialectInspection", "unused"})
 public interface PlotRepository extends JpaRepository<Plot, Long> {
 
-    // ===== ПОИСК ПО ИЕРАРХИИ =====
-    Optional<Plot> findByQuarterIdAndNumberInQuarter(Long quarterId, String numberInQuarter);
     Optional<Plot> findByFullNumber(String fullNumber);
 
-    List<Plot> findByQuarterIdOrderByNumberInQuarter(Long quarterId);
+    // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
+    @Query(value = """
+        WITH RECURSIVE territory_tree AS (
+            SELECT id FROM territory_units WHERE id = :unitId
+            UNION ALL
+            SELECT tu.id FROM territory_units tu
+            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+        )
+        SELECT p.* FROM forest_plot p
+        WHERE p.territory_unit_id IN (SELECT id FROM territory_tree)
+    """, nativeQuery = true)
+    List<Plot> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
 
-    // ===== МЕТОДЫ ДЛЯ ФИЛЬТРАЦИИ (JPQL) =====
-    @Query("SELECT p FROM Plot p WHERE p.forestry.id = :forestryId")
-    List<Plot> findByForestryId(@Param("forestryId") Long forestryId);
+    // ===== ПОИСК ПО ТИПУ ТЕРРИТОРИИ =====
+    @Query(value = """
+        WITH RECURSIVE territory_tree AS (
+            SELECT id FROM territory_units 
+            WHERE id = :unitId AND type = :type
+            UNION ALL
+            SELECT tu.id FROM territory_units tu
+            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+        )
+        SELECT p.* FROM forest_plot p
+        WHERE p.territory_unit_id IN (SELECT id FROM territory_tree)
+    """, nativeQuery = true)
+    List<Plot> findByTerritoryTypeAndIdRecursive(
+            @Param("type") String type,
+            @Param("unitId") Long unitId
+    );
 
-    @Query("SELECT p FROM Plot p WHERE p.municipalDistrict.id = :municipalDistrictId")
-    List<Plot> findByMunicipalDistrictId(@Param("municipalDistrictId") Long municipalDistrictId);
+    // ===== ПОИСК ПО КВАРТАЛУ =====
+    List<Plot> findByTerritoryUnitIdOrderByNumberInQuarter(Long territoryUnitId);
 
-    @Query("SELECT p FROM Plot p WHERE p.region.id = :regionId")
-    List<Plot> findByRegionId(@Param("regionId") Long regionId);
+    Optional<Plot> findByTerritoryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter);
 
-    @Query("SELECT p FROM Plot p WHERE p.districtForestry.id = :districtForestryId")
-    List<Plot> findByDistrictForestryId(@Param("districtForestryId") Long districtForestryId);
-
-    @Query("SELECT p FROM Plot p WHERE p.technicalUnit.id = :technicalUnitId")
-    List<Plot> findByTechnicalUnitId(@Param("technicalUnitId") Long technicalUnitId);
+    // ===== ПОИСК ПО ТИПУ И РОДИТЕЛЮ =====
+    @Query("SELECT p FROM Plot p WHERE p.territoryUnit.type = :type AND p.territoryUnit.parent.id = :parentId")
+    List<Plot> findByTerritoryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """
