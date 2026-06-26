@@ -4,6 +4,9 @@ import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.PlotRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
@@ -14,8 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +34,9 @@ public class PlotService {
     private final QuarterService quarterService;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Value("${forest.validation.min-area:0.01}")
     private double minArea;
@@ -79,7 +87,7 @@ public class PlotService {
     }
 
     // ==========================================
-    // МЕТОД ДЛЯ КАРТЫ С ФИЛЬТРАЦИЕЙ
+    // МЕТОД ДЛЯ КАРТЫ С ДИНАМИЧЕСКОЙ ФИЛЬТРАЦИЕЙ
     // ==========================================
 
     public List<PlotMapDto> getFilteredPlotsForMap(
@@ -92,7 +100,7 @@ public class PlotService {
             String cutType,
             Integer yearOfCut) {
 
-        log.info("📡 Фильтрация делян:");
+        log.info("📡 Запрос фильтрованных делян:");
         log.info("   regionId={}", regionId);
         log.info("   municipalDistrictId={}", municipalDistrictId);
         log.info("   forestryId={}", forestryId);
@@ -102,49 +110,52 @@ public class PlotService {
         log.info("   cutType={}", cutType);
         log.info("   yearOfCut={}", yearOfCut);
 
-        List<Plot> plots;
+        // Собираем JPQL запрос динамически
+        StringBuilder jpql = new StringBuilder("SELECT p FROM Plot p WHERE 1=1");
+        Map<String, Object> params = new HashMap<>();
 
-        // Иерархия фильтрации: выбираем самый глубокий уровень
+        if (regionId != null) {
+            jpql.append(" AND p.region.id = :regionId");
+            params.put("regionId", regionId);
+        }
+        if (municipalDistrictId != null) {
+            jpql.append(" AND p.municipalDistrict.id = :municipalDistrictId");
+            params.put("municipalDistrictId", municipalDistrictId);
+        }
+        if (forestryId != null) {
+            jpql.append(" AND p.forestry.id = :forestryId");
+            params.put("forestryId", forestryId);
+        }
+        if (districtForestryId != null) {
+            jpql.append(" AND p.districtForestry.id = :districtForestryId");
+            params.put("districtForestryId", districtForestryId);
+        }
+        if (technicalUnitId != null) {
+            jpql.append(" AND p.technicalUnit.id = :technicalUnitId");
+            params.put("technicalUnitId", technicalUnitId);
+        }
         if (quarterId != null) {
-            plots = plotRepository.findByQuarterIdOrderByNumberInQuarter(quarterId);
-            log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, plots.size());
-        } else if (technicalUnitId != null) {
-            plots = plotRepository.findByTechnicalUnitId(technicalUnitId);
-            log.info("📊 Фильтр по техучастку ID={}, найдено {} делян", technicalUnitId, plots.size());
-        } else if (districtForestryId != null) {
-            plots = plotRepository.findByDistrictForestryId(districtForestryId);
-            log.info("📊 Фильтр по участковому лесничеству ID={}, найдено {} делян", districtForestryId, plots.size());
-        } else if (forestryId != null) {
-            plots = plotRepository.findByForestryId(forestryId);
-            log.info("📊 Фильтр по лесничеству ID={}, найдено {} делян", forestryId, plots.size());
-        } else if (municipalDistrictId != null) {
-            plots = plotRepository.findByMunicipalDistrictId(municipalDistrictId);
-            log.info("📊 Фильтр по району ID={}, найдено {} делян", municipalDistrictId, plots.size());
-        } else if (regionId != null) {
-            plots = plotRepository.findByRegionId(regionId);
-            log.info("📊 Фильтр по региону ID={}, найдено {} делян", regionId, plots.size());
-        } else {
-            plots = plotRepository.findAll();
-            log.info("📊 Фильтр не применен, всего {} делян", plots.size());
+            jpql.append(" AND p.quarter.id = :quarterId");
+            params.put("quarterId", quarterId);
         }
-
-        // Дополнительная фильтрация по типу рубки
         if (cutType != null && !cutType.isEmpty()) {
-            int before = plots.size();
-            plots = plots.stream()
-                    .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
-                    .collect(Collectors.toList());
-            log.info("📊 После фильтра по типу рубки '{}': {} -> {} делян", cutType, before, plots.size());
+            jpql.append(" AND p.cutType = :cutType");
+            params.put("cutType", cutType);
+        }
+        if (yearOfCut != null) {
+            jpql.append(" AND p.yearOfCut = :yearOfCut");
+            params.put("yearOfCut", yearOfCut);
         }
 
-        // Дополнительная фильтрация по году рубки
-        if (yearOfCut != null) {
-            int before = plots.size();
-            plots = plots.stream()
-                    .filter(p -> p.getYearOfCut() != null && p.getYearOfCut().equals(yearOfCut))
-                    .collect(Collectors.toList());
-            log.info("📊 После фильтра по году рубки '{}': {} -> {} делян", yearOfCut, before, plots.size());
-        }
+        log.info("📝 JPQL: {}", jpql);
+        log.info("📝 Параметры: {}", params);
+
+        // Выполняем запрос
+        TypedQuery<Plot> query = entityManager.createQuery(jpql.toString(), Plot.class);
+        params.forEach(query::setParameter);
+
+        List<Plot> plots = query.getResultList();
+        log.info("📊 Найдено {} делян по фильтру", plots.size());
 
         return plots.stream()
                 .map(this::convertToMapDto)
@@ -260,8 +271,6 @@ public class PlotService {
 
     /**
      * Заполняет все уровни иерархии в деляне из квартала
-     * ВНИМАНИЕ: в модели Plot НЕТ полей regionId, municipalDistrictId и т.д.
-     * Только ссылки на объекты!
      */
     private void fillHierarchyFromQuarter(Plot plot, Quarter quarter) {
         // Устанавливаем участковое лесничество
