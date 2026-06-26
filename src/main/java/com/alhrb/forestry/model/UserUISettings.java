@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "user_ui_settings")
 @Data
@@ -18,27 +16,17 @@ public class UserUISettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "region_id")
-    private Long regionId;
+    // ===== ТЕРРИТОРИЯ (новая структура) =====
+    @Column(name = "territory_unit_id")
+    private Long territoryUnitId;
 
-    @Column(name = "municipal_district_id")
-    private Long municipalDistrictId;
+    @Column(name = "territory_type")
+    private String territoryType;
 
-    @Column(name = "forestry_id")
-    private Long forestryId;
-
-    @Column(name = "district_forestry_id")
-    private Long districtForestryId;
-
-    @Column(name = "technical_unit_id")
-    private Long technicalUnitId;
-
-    @Column(name = "quarter_id")
-    private Long quarterId;
-
+    // ===== КАРТА =====
     @Column(name = "center_lat")
     private Double centerLat;
 
@@ -48,20 +36,10 @@ public class UserUISettings {
     @Column(name = "zoom")
     private Integer zoom;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    // ===== ФИЛЬТРЫ ПО РУБКЕ =====
+    @Column(name = "cut_type")
+    private String cutType;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    @Column(name = "year_of_cut")
+    private Integer yearOfCut;
 }

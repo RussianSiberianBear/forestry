@@ -736,17 +736,14 @@
 <!-- СКРЫТЫЙ БЛОК С НАСТРОЙКАМИ UI -->
 <!-- ============================================ -->
 <div th:if="${uiSettings != null}" style="display: none;">
-    <input type="hidden" id="uiRegionId" th:value="${uiSettings.regionId}"/>
-    <input type="hidden" id="uiMunicipalDistrictId" th:value="${uiSettings.municipalDistrictId}"/>
-    <input type="hidden" id="uiForestryId" th:value="${uiSettings.forestryId}"/>
-    <input type="hidden" id="uiDistrictForestryId" th:value="${uiSettings.districtForestryId}"/>
-    <input type="hidden" id="uiTechnicalUnitId" th:value="${uiSettings.technicalUnitId}"/>
-    <input type="hidden" id="uiQuarterId" th:value="${uiSettings.quarterId}"/>
+    <input type="hidden" id="uiTerritoryUnitId" th:value="${uiSettings.territoryUnitId}"/>
+    <input type="hidden" id="uiTerritoryType" th:value="${uiSettings.territoryType}"/>
     <input type="hidden" id="uiCenterLat" th:value="${uiSettings.centerLat}"/>
     <input type="hidden" id="uiCenterLng" th:value="${uiSettings.centerLng}"/>
     <input type="hidden" id="uiZoom" th:value="${uiSettings.zoom}"/>
+    <input type="hidden" id="uiCutType" th:value="${uiSettings.cutType}"/>
+    <input type="hidden" id="uiYearOfCut" th:value="${uiSettings.yearOfCut}"/>
 </div>
-
 <!-- ============================================ -->
 <!-- JAVASCRIPT -->
 <!-- ============================================ -->

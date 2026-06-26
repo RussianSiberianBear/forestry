@@ -11,7 +11,5 @@ public interface UserUISettingsRepository extends JpaRepository<UserUISettings, 
 
     Optional<UserUISettings> findByUserId(Long userId);
 
-    void deleteByUserId(Long userId);
-
-    boolean existsByUserId(Long userId);
+    Optional<UserUISettings> findByUserIdAndTerritoryUnitId(Long userId, Long territoryUnitId);
 }
