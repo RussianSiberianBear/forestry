@@ -38,7 +38,7 @@ public class TerritoryUnitController {
     @GetMapping("/municipal-districts/by-region/{regionId}")
     public ResponseEntity<List<TerritoryUnitDto>> getMunicipalDistrictsByRegion(@PathVariable Long regionId) {
         log.info("📡 Запрос районов для региона ID: {}", regionId);
-        List<TerritoryUnit> districts = territoryUnitService.findByParentId(regionId);
+        List<TerritoryUnit> districts = territoryUnitService.findMunicipalDistrictsByRegion(regionId);
         log.info("📊 Найдено {} районов", districts.size());
 
         List<TerritoryUnitDto> dtos = districts.stream()
@@ -52,7 +52,7 @@ public class TerritoryUnitController {
     @GetMapping("/forestries/by-district/{districtId}")
     public ResponseEntity<List<TerritoryUnitDto>> getForestriesByDistrict(@PathVariable Long districtId) {
         log.info("📡 Запрос лесничеств для района ID: {}", districtId);
-        List<TerritoryUnit> forestries = territoryUnitService.findByParentId(districtId);
+        List<TerritoryUnit> forestries = territoryUnitService.findForestriesByDistrict(districtId);
         log.info("📊 Найдено {} лесничеств", forestries.size());
 
         List<TerritoryUnitDto> dtos = forestries.stream()
@@ -66,7 +66,7 @@ public class TerritoryUnitController {
     @GetMapping("/district-forestries/by-forestry/{forestryId}")
     public ResponseEntity<List<TerritoryUnitDto>> getDistrictForestriesByForestry(@PathVariable Long forestryId) {
         log.info("📡 Запрос участковых лесничеств для лесничества ID: {}", forestryId);
-        List<TerritoryUnit> districtForestries = territoryUnitService.findByParentId(forestryId);
+        List<TerritoryUnit> districtForestries = territoryUnitService.findDistrictForestriesByForestry(forestryId);
         log.info("📊 Найдено {} участковых лесничеств", districtForestries.size());
 
         List<TerritoryUnitDto> dtos = districtForestries.stream()
