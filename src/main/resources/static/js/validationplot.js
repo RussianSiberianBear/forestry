@@ -1692,7 +1692,7 @@ function loadRegions() {
 
     console.log('📥 Загружаем список регионов...');
 
-    fetch('/api/territory/regions')
+    fetch('/api/territory/regions')  // ← должен быть такой URL
         .then(response => {
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status);

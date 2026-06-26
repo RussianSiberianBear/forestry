@@ -1,5 +1,6 @@
 package com.alhrb.forestry.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,7 +32,8 @@ public class TerritoryUnit {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private TerritoryType type;
-    
+
+    @JsonIgnore
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TerritoryUnit> children = new ArrayList<>();
 

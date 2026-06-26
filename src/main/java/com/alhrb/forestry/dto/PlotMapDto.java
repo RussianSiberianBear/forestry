@@ -15,4 +15,5 @@ public class PlotMapDto {
     private String geometryGeoJson;
     private String cutType;
     private Integer yearOfCut;
+    private String territoryPath;  // ← НОВОЕ ПОЛЕ
 }

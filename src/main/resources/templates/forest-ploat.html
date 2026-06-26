@@ -26,7 +26,7 @@
     <div class="uk-navbar-left uk-margin-left">
         <ul class="uk-navbar-nav">
             <li><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
-            <li class="uk-active"><a href="/"><span uk-icon="icon: grid"></span>Деляны</a></li>
+            <li class="uk-active"><a href="/forest-ploat"><span uk-icon="icon: grid"></span>Деляны</a></li>
         </ul>
     </div>
     <div class="uk-navbar-right uk-margin-right">
@@ -138,11 +138,7 @@
                                             name="regionId"
                                             onchange="onRegionChange(this.value)">
                                         <option value="">-- Выберите регион --</option>
-                                        <option th:each="region : ${regions}"
-                                                th:value="${region.id}"
-                                                th:text="${region.name}"
-                                                th:selected="${region.id == plotDto.regionId}">
-                                        </option>
+                                        <!-- regions теперь из TerritoryUnit -->
                                     </select>
                                 </div>
                             </div>
@@ -223,7 +219,7 @@
                                            oninput="searchQuarters(this.value)"
                                            onfocus="searchQuarters(this.value)"
                                            disabled>
-                                    <input type="hidden" id="quarterId" name="quarterId" th:field="*{quarterId}">
+                                    <input type="hidden" id="quarterId" name="quarterId">
                                     <div id="quarterSuggestions" class="autocomplete-suggestions"></div>
                                 </div>
                                 <div class="field-hint">
@@ -434,7 +430,7 @@
                                 <thead>
                                 <tr>
                                     <th>№</th>
-                                    <th>Лесничество</th>
+                                    <th>Территория</th>
                                     <th>Тип рубки</th>
                                     <th>Год</th>
                                     <th>Статус</th>
@@ -443,12 +439,14 @@
                                 <tbody>
                                 <tr th:each="plot : ${plots}">
                                     <td th:text="${plot.fullNumber}"></td>
-                                    <td th:text="${plot.forestry != null ? plot.forestry.name : '-'}"></td>
+                                    <td>
+                                        <span th:text="${plot.territoryPath != null ? plot.territoryPath : '-'}"></span>
+                                    </td>
                                     <td th:text="${plot.cutType != null ? plot.cutType : '-'}"></td>
                                     <td th:text="${plot.yearOfCut != null ? plot.yearOfCut : '-'}"></td>
                                     <td>
-                                    <span th:if="${plot.verified}"
-                                          class="uk-badge uk-badge-success">✓ Вериф.</span>
+                <span th:if="${plot.verified}"
+                      class="uk-badge uk-badge-success">✓ Вериф.</span>
                                         <span th:unless="${plot.verified}"
                                               class="uk-badge uk-badge-warning">⏳ Не провер.</span>
                                     </td>

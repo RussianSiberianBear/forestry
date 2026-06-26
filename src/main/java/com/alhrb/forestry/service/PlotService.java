@@ -169,13 +169,14 @@ public class PlotService {
         if (plot.getTerritoryUnit() != null) {
             TerritoryUnit unit = plot.getTerritoryUnit();
 
-            // number уже String, просто передаем
+            // Номер квартала
             if (unit.isQuarter()) {
                 dto.setQuarterNumber(unit.getNumber() != null ? unit.getNumber() : unit.getName());
             } else {
                 dto.setQuarterNumber(unit.getName());
             }
 
+            // Ищем лесничество для отображения на карте
             TerritoryUnit current = unit;
             while (current != null) {
                 if (current.isForestry()) {
@@ -184,6 +185,9 @@ public class PlotService {
                 }
                 current = current.getParent();
             }
+
+            // Сохраняем полный путь для показа в таблице
+            dto.setTerritoryPath(unit.getFullPath());
         }
 
         if (plot.getGeometry() != null) {

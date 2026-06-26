@@ -20,18 +20,21 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== НОВАЯ СВЯЗЬ (вместо всех старых) =====
+    // ===== ССЫЛКА НА ТЕРРИТОРИАЛЬНУЮ ЕДИНИЦУ =====
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "territory_unit_id", nullable = false)
     private TerritoryUnit territoryUnit;
 
-    // ===== ОСТАЛЬНЫЕ ПОЛЯ ОСТАЮТСЯ =====
+    // ===== ПОЛЯ ДЕЛЯНЫ =====
     @Column(name = "number_in_quarter", nullable = false, length = 50)
     private String numberInQuarter;
 
     @Column(name = "full_number", length = 300, unique = true)
     private String fullNumber;
+
+    @Column(name = "plots", length = 200)
+    private String plots;
 
     @Column(name = "name", length = 100)
     private String name;
@@ -51,17 +54,18 @@ public class Plot {
     @Column(name = "area_m2")
     private Double areaM2;
 
+    @Column(name = "area_ha")
+    private Double areaHa;
+
     @Column(name = "year_of_cut")
     private Integer yearOfCut;
 
     @Column(name = "cut_type", length = 50)
     private String cutType;
 
-    @Column(name = "plots", length = 200)
-    private String plots;
-
-    @Column(name = "area_ha")
-    private Double areaHa;
+    // ===== ТРАНЗИТНОЕ ПОЛЕ ДЛЯ THYMELEAF =====
+    @Transient
+    private String territoryPath;
 
     @PrePersist
     protected void onCreate() {
@@ -70,6 +74,13 @@ public class Plot {
         if (fullNumber == null && territoryUnit != null) {
             fullNumber = territoryUnit.getFullPath() + " / Дел." + numberInQuarter;
         }
+    }
+
+    public String getTerritoryPath() {
+        if (territoryUnit != null) {
+            return territoryUnit.getFullPath();
+        }
+        return null;
     }
 
     @Override

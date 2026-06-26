@@ -7,6 +7,8 @@ import com.alhrb.forestry.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,35 +29,19 @@ public class UserUISettingsService {
         Long userId = (Long) session.getAttribute(SESSION_USER_ID);
 
         if (userId == null) {
-            // Если пользователь не авторизован, возвращаем пустые настройки
             log.debug("Пользователь не авторизован, возвращаем пустые настройки");
             return new UserUISettings();
         }
 
         return userUISettingsRepository.findByUserId(userId)
                 .orElseGet(() -> {
-                    // Если настроек нет, создаем новые
                     UserUISettings newSettings = new UserUISettings();
                     newSettings.setUser(userRepository.findById(userId).orElse(null));
                     return userUISettingsRepository.save(newSettings);
                 });
     }
 
-    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО ПОЛЬЗОВАТЕЛЮ =====
-    public UserUISettings getOrCreateSettings(User user) {
-        if (user == null) {
-            return new UserUISettings();
-        }
-
-        return userUISettingsRepository.findByUser(user)
-                .orElseGet(() -> {
-                    UserUISettings newSettings = new UserUISettings();
-                    newSettings.setUser(user);
-                    return userUISettingsRepository.save(newSettings);
-                });
-    }
-
-    // ===== ОБНОВИТЬ НАСТРОЙКИ =====
+    // ===== ОБНОВИТЬ НАСТРОЙКИ (через сессию) =====
     @Transactional
     public UserUISettings updateSetting(HttpSession session, String key, String value) {
         Long userId = (Long) session.getAttribute(SESSION_USER_ID);
@@ -66,6 +52,12 @@ public class UserUISettingsService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
+        return updateSetting(user, key, value);
+    }
+
+    // ===== ОБНОВИТЬ НАСТРОЙКИ (через пользователя) =====
+    @Transactional
+    public UserUISettings updateSetting(User user, String key, String value) {
         UserUISettings settings = userUISettingsRepository.findByUser(user)
                 .orElse(new UserUISettings());
 
