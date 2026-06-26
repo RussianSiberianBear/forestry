@@ -23,7 +23,7 @@
 <!-- НАВИГАЦИЯ -->
 <!-- ============================================ -->
 <nav class="uk-navbar-container" uk-navbar>
-    <div class="uk-navbar-left">
+    <div class="uk-navbar-left uk-margin-left">
         <ul class="uk-navbar-nav">
             <li><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
             <li class="uk-active"><a href="/"><span uk-icon="icon: grid"></span>Деляны</a></li>
@@ -37,7 +37,7 @@
 <!-- ============================================ -->
 <!-- ОСНОВНОЙ КОНТЕНТ -->
 <!-- ============================================ -->
-<div class="uk-container uk-container-large uk-margin-top">
+<div class="uk-container uk-width-1-1 uk-margin-top">
     <div th:if="${warning}" class="uk-alert-warning" uk-alert>
         <a class="uk-alert-close" uk-close></a>
         <p><span uk-icon="icon: warning"></span> <span th:text="${warning}"></span></p>
