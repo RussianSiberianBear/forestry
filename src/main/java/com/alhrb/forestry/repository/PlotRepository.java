@@ -1,6 +1,5 @@
 package com.alhrb.forestry.repository;
 
-import com.alhrb.forestry.model.ForestryUnitType;
 import com.alhrb.forestry.model.Plot;
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,30 +15,50 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
 
     Optional<Plot> findByFullNumber(String fullNumber);
 
-    // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
+    // ===== ПОИСК ПО ЛЕСНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """
         WITH RECURSIVE forestry_tree AS (
             SELECT id FROM forestry_units WHERE id = :unitId
             UNION ALL
-            SELECT tu.id FROM territory_units tu
-            INNER JOIN forestry_tree tt ON tu.parent_id = tt.id
-        )
-        SELECT p.* FROM forest_plot p
-        WHERE p.fotestry_unit_id IN (SELECT id FROM forestry_tree)
-    """, nativeQuery = true)
-    List<Plot> findByForestryUnitRecursive(@Param("unitId") Long unitId);
-
-    // ===== ПОИСК ПО ТИПУ ТЕРРИТОРИИ =====
-    @Query(value = """
-        WITH RECURSIVE forestry_tree AS (
-            SELECT id FROM forestry_units 
-            WHERE id = :unitId AND type = :type
-            UNION ALL
-            SELECT tu.id FROM territory_units tu
-            INNER JOIN forestry_tree tt ON tu.territory_units_id = tt.id
+            SELECT fu.id FROM forestry_units fu
+            INNER JOIN forestry_tree ft ON fu.parent_id = ft.id
         )
         SELECT p.* FROM forest_plot p
         WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)
+    """, nativeQuery = true)
+    List<Plot> findByForestryUnitRecursive(@Param("unitId") Long unitId);
+
+    // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву территорий) =====
+// В PlotRepository.java
+    @Query(value = """
+    WITH RECURSIVE territory_tree AS (
+        SELECT id FROM territory_units WHERE id = :unitId
+        UNION ALL
+        SELECT tu.id FROM territory_units tu
+        INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+    )
+    SELECT p.* FROM forest_plot p
+    WHERE p.forestry_unit_id IN (
+        SELECT fu.id FROM forestry_units fu
+        WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+    )
+""", nativeQuery = true)
+    List<Plot> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
+
+    // ===== ПОИСК ПО ТИПУ ЛЕСНОЙ ЕДИНИЦЫ И ТЕРРИТОРИИ =====
+    @Query(value = """
+        WITH RECURSIVE territory_tree AS (
+            SELECT id FROM territory_units WHERE id = :unitId
+            UNION ALL
+            SELECT tu.id FROM territory_units tu
+            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+        )
+        SELECT p.* FROM forest_plot p
+        WHERE p.forestry_unit_id IN (
+            SELECT fu.id FROM forestry_units fu
+            WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+            AND fu.type = :type
+        )
     """, nativeQuery = true)
     List<Plot> findByForestryTypeAndIdRecursive(
             @Param("type") String type,

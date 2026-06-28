@@ -66,7 +66,7 @@ public class PlotService {
     }
 
     public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
-        return plotRepository.findByTerritoryUnit(unitId);
+        return plotRepository.findByTerritoryUnitRecursive(unitId);
     }
 
     public List<Plot> findByForestryTypeAndIdRecursive(String type, Long id) {
@@ -101,32 +101,44 @@ public class PlotService {
 
         List<Plot> plots = new ArrayList<>();
 
+        // ===== ФИЛЬТР ПО ЛЕСНЫМ ЕДИНИЦАМ (иерархия forestry_units) =====
         if (quarterId != null) {
+            // Квартал - лесная единица
             plots = plotRepository.findByForestryUnitRecursive(quarterId);
             log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, plots.size());
         } else if (technicalUnitId != null) {
+            // Техучасток - лесная единица
             plots = plotRepository.findByForestryUnitRecursive(technicalUnitId);
             log.info("📊 Фильтр по техучастку ID={}, найдено {} делян", technicalUnitId, plots.size());
         } else if (districtForestryId != null) {
+            // Участковое лесничество - лесная единица
             plots = plotRepository.findByForestryUnitRecursive(districtForestryId);
             log.info("📊 Фильтр по участковому лесничеству ID={}, найдено {} делян", districtForestryId, plots.size());
         } else if (forestryId != null) {
+            // Лесничество - лесная единица
             plots = plotRepository.findByForestryUnitRecursive(forestryId);
             log.info("📊 Фильтр по лесничеству ID={}, найдено {} делян", forestryId, plots.size());
+
+            // ===== ФИЛЬТР ПО ТЕРРИТОРИАЛЬНЫМ ЕДИНИЦАМ (иерархия territory_units) =====
         } else if (municipalDistrictId != null) {
-            plots = plotRepository.findByForestryUnitRecursive(municipalDistrictId);
-            log.info("📊 Фильтр по району ID={}, найдено {} делян", municipalDistrictId, plots.size());
+            // Муниципальный район - территориальная единица
+            plots = plotRepository.findByTerritoryUnitRecursive(municipalDistrictId);
+            log.info("📊 Фильтр по муниципальному району ID={}, найдено {} делян", municipalDistrictId, plots.size());
         } else if (regionId != null) {
-            plots = plotRepository.findByForestryUnitRecursive(regionId);
+            // Регион - территориальная единица
+            plots = plotRepository.findByTerritoryUnitRecursive(regionId);
             log.info("📊 Фильтр по региону ID={}, найдено {} делян", regionId, plots.size());
         } else if (federalDistrictId != null) {
-            plots = plotRepository.findByForestryUnitRecursive(federalDistrictId);
+            // Федеральный округ - территориальная единица
+            plots = plotRepository.findByTerritoryUnitRecursive(federalDistrictId);
             log.info("📊 Фильтр по федеральному округу ID={}, найдено {} делян", federalDistrictId, plots.size());
         } else {
+            // Без фильтра - все деляны
             plots = plotRepository.findAll();
             log.info("📊 Фильтр не применен, всего {} делян", plots.size());
         }
 
+        // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
         if (cutType != null && !cutType.isEmpty()) {
             int before = plots.size();
             plots = plots.stream()
