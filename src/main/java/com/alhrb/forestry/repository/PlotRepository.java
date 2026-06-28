@@ -1,5 +1,6 @@
 package com.alhrb.forestry.repository;
 
+import com.alhrb.forestry.model.ForestryUnitType;
 import com.alhrb.forestry.model.Plot;
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,7 @@ import java.util.Optional;
 public interface PlotRepository extends JpaRepository<Plot, Long> {
 
     Optional<Plot> findByFullNumber(String fullNumber);
+    List<Plot>findByTerritoryUnit(ForestryUnitType type);
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """

@@ -5,6 +5,7 @@ import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.PlotRepository;
+import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
@@ -28,6 +29,7 @@ public class PlotService {
 
     private final PlotRepository plotRepository;
     private final ForestryUnitRepository forestryUnitRepository;
+    private final TerritoryUnitRepository  territoryUnitRepository;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
 
@@ -55,15 +57,19 @@ public class PlotService {
         return plotRepository.findByForestryUnitIdOrderByNumberInQuarter(forestryUnitId);
     }
 
-    public Optional<Plot> findByTerritoryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter) {
+    public Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter) {
         return plotRepository.findByForestryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
     }
 
-    public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
+    public List<Plot> findByForestryUnitRecursive(Long unitId) {
         return plotRepository.findByForestryUnitRecursive(unitId);
     }
 
-    public List<Plot> findByTerritoryTypeAndIdRecursive(String type, Long id) {
+    public List<Plot> findByTerritoryUnit(Long unitId) {
+        return plotRepository.findByTerritoryUnit(unitId);
+    }
+
+    public List<Plot> findByForestryTypeAndIdRecursive(String type, Long id) {
         return plotRepository.findByForestryTypeAndIdRecursive(type, id);
     }
 

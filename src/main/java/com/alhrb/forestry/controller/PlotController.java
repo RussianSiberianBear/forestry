@@ -208,15 +208,15 @@ public class PlotController {
                 territoryName = "муниципальному району";
                 break;
             case "FORESTRY":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                plots = plotService.findByForestryUnitRecursive(id);
                 territoryName = "лесничеству";
                 break;
             case "DISTRICT_FORESTRY":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                plots = plotService.findByForestryUnitRecursive(id);
                 territoryName = "участковому лесничеству";
                 break;
             case "TECHNICAL_UNIT":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                plots = plotService.findByForestryUnitRecursive(id);
                 territoryName = "техническому участку";
                 break;
             case "QUARTER":
