@@ -18,26 +18,15 @@ public class UserUISettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "region_id")
-    private Long regionId;
+    @Column(name = "territory_unit_id")
+    private Long territoryUnitId;
 
-    @Column(name = "municipal_district_id")
-    private Long municipalDistrictId;
-
-    @Column(name = "forestry_id")
-    private Long forestryId;
-
-    @Column(name = "district_forestry_id")
-    private Long districtForestryId;
-
-    @Column(name = "technical_unit_id")
-    private Long technicalUnitId;
-
-    @Column(name = "quarter_id")
-    private Long quarterId;
+    @Column(name = "territory_type")
+    private String territoryType;
 
     @Column(name = "center_lat")
     private Double centerLat;
@@ -47,6 +36,12 @@ public class UserUISettings {
 
     @Column(name = "zoom")
     private Integer zoom;
+
+    @Column(name = "cut_type")
+    private String cutType;
+
+    @Column(name = "year_of_cut")
+    private Integer yearOfCut;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

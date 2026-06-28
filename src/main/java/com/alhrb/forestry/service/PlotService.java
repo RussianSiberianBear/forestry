@@ -3,10 +3,9 @@ package com.alhrb.forestry.service;
 import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.*;
+import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.PlotRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
@@ -17,10 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,19 +28,13 @@ import java.util.stream.Collectors;
 public class PlotService {
 
     private final PlotRepository plotRepository;
-    private final QuarterService quarterService;
+    private final ForestryUnitRepository forestryUnitRepository;
+    private final TerritoryUnitRepository  territoryUnitRepository;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     @Value("${forest.validation.min-area:0.01}")
     private double minArea;
-
-    // ==========================================
-    // БАЗОВЫЕ ОПЕРАЦИИ
-    // ==========================================
 
     @Transactional
     public Plot save(Plot plot) {
@@ -62,35 +53,32 @@ public class PlotService {
         return plotRepository.findByFullNumber(fullNumber);
     }
 
-    public List<Plot> findByQuarterId(Long quarterId) {
-        return plotRepository.findByQuarterIdOrderByNumberInQuarter(quarterId);
+    public List<Plot> findByForestryUnitId(Long forestryUnitId) {
+        return plotRepository.findByForestryUnitIdOrderByNumberInQuarter(forestryUnitId);
     }
 
-    public List<Plot> findByForestryId(Long forestryId) {
-        return plotRepository.findByForestryId(forestryId);
+    public Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter) {
+        return plotRepository.findByForestryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
     }
 
-    public List<Plot> findByMunicipalDistrictId(Long municipalDistrictId) {
-        return plotRepository.findByMunicipalDistrictId(municipalDistrictId);
+    public List<Plot> findByForestryUnitRecursive(Long unitId) {
+        return plotRepository.findByForestryUnitRecursive(unitId);
     }
 
-    public List<Plot> findByRegionId(Long regionId) {
-        return plotRepository.findByRegionId(regionId);
+    public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
+        return plotRepository.findByTerritoryUnitRecursive(unitId);
     }
 
-    public List<Plot> findByDistrictForestryId(Long districtForestryId) {
-        return plotRepository.findByDistrictForestryId(districtForestryId);
-    }
-
-    public List<Plot> findByTechnicalUnitId(Long technicalUnitId) {
-        return plotRepository.findByTechnicalUnitId(technicalUnitId);
+    public List<Plot> findByForestryTypeAndIdRecursive(String type, Long id) {
+        return plotRepository.findByForestryTypeAndIdRecursive(type, id);
     }
 
     // ==========================================
-    // МЕТОД ДЛЯ КАРТЫ С ДИНАМИЧЕСКОЙ ФИЛЬТРАЦИЕЙ
+    // МЕТОД ДЛЯ КАРТЫ С ФИЛЬТРАЦИЕЙ
     // ==========================================
 
     public List<PlotMapDto> getFilteredPlotsForMap(
+            Long federalDistrictId,
             Long regionId,
             Long municipalDistrictId,
             Long forestryId,
@@ -101,6 +89,7 @@ public class PlotService {
             Integer yearOfCut) {
 
         log.info("📡 Запрос фильтрованных делян:");
+        log.info("   federalDistrictId={}", federalDistrictId);
         log.info("   regionId={}", regionId);
         log.info("   municipalDistrictId={}", municipalDistrictId);
         log.info("   forestryId={}", forestryId);
@@ -110,52 +99,63 @@ public class PlotService {
         log.info("   cutType={}", cutType);
         log.info("   yearOfCut={}", yearOfCut);
 
-        // Собираем JPQL запрос динамически
-        StringBuilder jpql = new StringBuilder("SELECT p FROM Plot p WHERE 1=1");
-        Map<String, Object> params = new HashMap<>();
+        List<Plot> plots = new ArrayList<>();
 
-        if (regionId != null) {
-            jpql.append(" AND p.region.id = :regionId");
-            params.put("regionId", regionId);
-        }
-        if (municipalDistrictId != null) {
-            jpql.append(" AND p.municipalDistrict.id = :municipalDistrictId");
-            params.put("municipalDistrictId", municipalDistrictId);
-        }
-        if (forestryId != null) {
-            jpql.append(" AND p.forestry.id = :forestryId");
-            params.put("forestryId", forestryId);
-        }
-        if (districtForestryId != null) {
-            jpql.append(" AND p.districtForestry.id = :districtForestryId");
-            params.put("districtForestryId", districtForestryId);
-        }
-        if (technicalUnitId != null) {
-            jpql.append(" AND p.technicalUnit.id = :technicalUnitId");
-            params.put("technicalUnitId", technicalUnitId);
-        }
+        // ===== ФИЛЬТР ПО ЛЕСНЫМ ЕДИНИЦАМ (иерархия forestry_units) =====
         if (quarterId != null) {
-            jpql.append(" AND p.quarter.id = :quarterId");
-            params.put("quarterId", quarterId);
+            // Квартал - лесная единица
+            plots = plotRepository.findByForestryUnitRecursive(quarterId);
+            log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, plots.size());
+        } else if (technicalUnitId != null) {
+            // Техучасток - лесная единица
+            plots = plotRepository.findByForestryUnitRecursive(technicalUnitId);
+            log.info("📊 Фильтр по техучастку ID={}, найдено {} делян", technicalUnitId, plots.size());
+        } else if (districtForestryId != null) {
+            // Участковое лесничество - лесная единица
+            plots = plotRepository.findByForestryUnitRecursive(districtForestryId);
+            log.info("📊 Фильтр по участковому лесничеству ID={}, найдено {} делян", districtForestryId, plots.size());
+        } else if (forestryId != null) {
+            // Лесничество - лесная единица
+            plots = plotRepository.findByForestryUnitRecursive(forestryId);
+            log.info("📊 Фильтр по лесничеству ID={}, найдено {} делян", forestryId, plots.size());
+
+            // ===== ФИЛЬТР ПО ТЕРРИТОРИАЛЬНЫМ ЕДИНИЦАМ (иерархия territory_units) =====
+        } else if (municipalDistrictId != null) {
+            // Муниципальный район - территориальная единица
+            plots = plotRepository.findByTerritoryUnitRecursive(municipalDistrictId);
+            log.info("📊 Фильтр по муниципальному району ID={}, найдено {} делян", municipalDistrictId, plots.size());
+        } else if (regionId != null) {
+            // Регион - территориальная единица
+            plots = plotRepository.findByTerritoryUnitRecursive(regionId);
+            log.info("📊 Фильтр по региону ID={}, найдено {} делян", regionId, plots.size());
+        } else if (federalDistrictId != null) {
+            // Федеральный округ - территориальная единица
+            plots = plotRepository.findByTerritoryUnitRecursive(federalDistrictId);
+            log.info("📊 Фильтр по федеральному округу ID={}, найдено {} делян", federalDistrictId, plots.size());
+        } else {
+            // Без фильтра - все деляны
+            plots = plotRepository.findAll();
+            log.info("📊 Фильтр не применен, всего {} делян", plots.size());
         }
+
+        // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
         if (cutType != null && !cutType.isEmpty()) {
-            jpql.append(" AND p.cutType = :cutType");
-            params.put("cutType", cutType);
+            int before = plots.size();
+            plots = plots.stream()
+                    .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
+                    .collect(Collectors.toList());
+            log.info("📊 После фильтра по типу рубки '{}': {} -> {} делян", cutType, before, plots.size());
         }
+
         if (yearOfCut != null) {
-            jpql.append(" AND p.yearOfCut = :yearOfCut");
-            params.put("yearOfCut", yearOfCut);
+            int before = plots.size();
+            plots = plots.stream()
+                    .filter(p -> p.getYearOfCut() != null && p.getYearOfCut().equals(yearOfCut))
+                    .collect(Collectors.toList());
+            log.info("📊 После фильтра по году рубки '{}': {} -> {} делян", yearOfCut, before, plots.size());
         }
 
-        log.info("📝 JPQL: {}", jpql);
-        log.info("📝 Параметры: {}", params);
-
-        // Выполняем запрос
-        TypedQuery<Plot> query = entityManager.createQuery(jpql.toString(), Plot.class);
-        params.forEach(query::setParameter);
-
-        List<Plot> plots = query.getResultList();
-        log.info("📊 Найдено {} делян по фильтру", plots.size());
+        log.info("📊 ИТОГО найдено {} делян", plots.size());
 
         return plots.stream()
                 .map(this::convertToMapDto)
@@ -179,23 +179,35 @@ public class PlotService {
         dto.setCutType(plot.getCutType());
         dto.setYearOfCut(plot.getYearOfCut());
 
-        // Площадь
         dto.setAreaHa(plot.getAreaHa());
         if (plot.getAreaHa() != null) {
             dto.setAreaM2(plot.getAreaHa() * 10000);
         }
 
-        // Номер квартала
-        if (plot.getQuarter() != null) {
-            dto.setQuarterNumber(String.valueOf(plot.getQuarter().getNumber()));
+        if (plot.getForestryUnit() != null) {
+            ForestryUnit unit = plot.getForestryUnit();
+
+            // Номер квартала
+            if (unit.isQuarter()) {
+                dto.setQuarterNumber(unit.getNumber() != null ? unit.getNumber() : unit.getName());
+            } else {
+                dto.setQuarterNumber(unit.getName());
+            }
+
+            // Ищем лесничество для отображения на карте
+            ForestryUnit current = unit;
+            while (current != null) {
+                if (current.isForestry()) {
+                    dto.setForestryName(current.getName());
+                    break;
+                }
+                current = current.getParent();
+            }
+
+            // Сохраняем полный путь для показа в таблице
+            dto.setTerritoryPath(unit.getFullPath());
         }
 
-        // Лесничество
-        if (plot.getForestry() != null) {
-            dto.setForestryName(plot.getForestry().getName());
-        }
-
-        // Геометрия
         if (plot.getGeometry() != null) {
             try {
                 GeoJsonWriter writer = new GeoJsonWriter();
@@ -210,7 +222,7 @@ public class PlotService {
     }
 
     // ==========================================
-    // СОЗДАНИЕ ДЕЛЯНЫ С ЗАПОЛНЕНИЕМ ИЕРАРХИИ
+    // СОЗДАНИЕ ДЕЛЯНЫ
     // ==========================================
 
     @Transactional
@@ -219,7 +231,7 @@ public class PlotService {
             String plots,
             String description,
             Polygon geometry,
-            Long quarterId,
+            Long forestryUnitId,
             Integer yearOfCut,
             String cutType) {
 
@@ -229,28 +241,43 @@ public class PlotService {
 
         if (!geometryService.isValid(geometry)) {
             throw new IllegalArgumentException(
-                    "⚠️ Деляна имеет некорректную геометрию! " +
-                            "Возможна 'бабочка' (самопересечение)."
+                    "⚠️ Деляна имеет некорректную геометрию! Возможна 'бабочка' (самопересечение)."
             );
         }
 
-        Quarter quarter = quarterService.findById(quarterId)
-                .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
+        ForestryUnit forestryUnit = forestryUnitRepository.findById(forestryUnitId)
+                .orElseThrow(() -> new IllegalArgumentException("Территориальная единица не найдена"));
 
-        if (quarter.getGeometry() != null) {
-            geometryService.validatePlotInsideQuarter(
-                    geometry,
-                    quarter.getGeometry(),
-                    numberInQuarter,
-                    quarter.getNumber()
-            );
+        if (!forestryUnit.isQuarter()) {
+            throw new IllegalArgumentException("Деляна может быть привязана только к кварталу!");
         }
 
-        Optional<Plot> existing = plotRepository.findByQuarterIdAndNumberInQuarter(quarterId, numberInQuarter);
+        // Проверяем геометрию квартала
+        if (forestryUnit.getGeometry() != null) {
+            if (forestryUnit.getGeometry() instanceof Polygon) {
+                // quarterNumber уже String, просто передаем
+                String quarterNumber = forestryUnit.getNumber() != null ?
+                        forestryUnit.getNumber() :
+                        forestryUnit.getName();
+
+                geometryService.validatePlotInsideQuarter(
+                        geometry,
+                        (Polygon) forestryUnit.getGeometry(),
+                        numberInQuarter,
+                        quarterNumber  // ← String
+                );
+            } else {
+                log.warn("⚠️ Геометрия квартала не является Polygon, проверка пропущена");
+            }
+        }
+
+        Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
+                forestryUnitId, numberInQuarter);
         if (existing.isPresent()) {
             throw new IllegalArgumentException(
-                    String.format("❌ Деляна с номером '%s' уже существует в квартале %d!",
-                            numberInQuarter, quarter.getNumber())
+                    String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
+                            numberInQuarter,
+                            forestryUnit.getNumber() != null ? forestryUnit.getNumber() : forestryUnit.getName())
             );
         }
 
@@ -259,54 +286,11 @@ public class PlotService {
         plot.setPlots(plots);
         plot.setDescription(description);
         plot.setGeometry(geometry);
-        plot.setQuarter(quarter);
+        plot.setForestryUnit(forestryUnit);
         plot.setYearOfCut(yearOfCut);
         plot.setCutType(cutType);
 
-        // Заполняем всю иерархию из квартала
-        fillHierarchyFromQuarter(plot, quarter);
-
         return saveWithValidation(plot);
-    }
-
-    /**
-     * Заполняет все уровни иерархии в деляне из квартала
-     */
-    private void fillHierarchyFromQuarter(Plot plot, Quarter quarter) {
-        // Устанавливаем участковое лесничество
-        if (quarter.getDistrictForestry() != null) {
-            DistrictForestry districtForestry = quarter.getDistrictForestry();
-            plot.setDistrictForestry(districtForestry);
-
-            // Устанавливаем лесничество
-            if (districtForestry.getForestry() != null) {
-                Forestry forestry = districtForestry.getForestry();
-                plot.setForestry(forestry);
-
-                // Устанавливаем муниципальный район
-                if (forestry.getMunicipalDistrict() != null) {
-                    MunicipalDistrict municipalDistrict = forestry.getMunicipalDistrict();
-                    plot.setMunicipalDistrict(municipalDistrict);
-
-                    // Устанавливаем регион
-                    if (municipalDistrict.getRegion() != null) {
-                        plot.setRegion(municipalDistrict.getRegion());
-                    }
-                }
-            }
-        }
-
-        // Устанавливаем технический участок (если есть)
-        if (quarter.getTechnicalUnit() != null) {
-            plot.setTechnicalUnit(quarter.getTechnicalUnit());
-        }
-
-        log.info("🏷️ Заполнена иерархия для деляны: region={}, municipalDistrict={}, forestry={}, districtForestry={}, technicalUnit={}",
-                plot.getRegion() != null ? plot.getRegion().getName() : "null",
-                plot.getMunicipalDistrict() != null ? plot.getMunicipalDistrict().getName() : "null",
-                plot.getForestry() != null ? plot.getForestry().getName() : "null",
-                plot.getDistrictForestry() != null ? plot.getDistrictForestry().getName() : "null",
-                plot.getTechnicalUnit() != null ? plot.getTechnicalUnit().getName() : "null");
     }
 
     @Transactional
@@ -317,8 +301,7 @@ public class PlotService {
 
         if (!geometryService.isValid(plot.getGeometry())) {
             throw new IllegalArgumentException(
-                    "⚠️ Деляна имеет некорректную геометрию! " +
-                            "Возможна 'бабочка' (самопересечение)."
+                    "⚠️ Деляна имеет некорректную геометрию! Возможна 'бабочка' (самопересечение)."
             );
         }
 
@@ -326,37 +309,41 @@ public class PlotService {
             throw new IllegalArgumentException("Номер деляны в квартале обязателен!");
         }
 
-        if (plot.getQuarter() != null) {
-            Optional<Plot> existing = plotRepository.findByQuarterIdAndNumberInQuarter(
-                    plot.getQuarter().getId(),
+        if (plot.getForestryUnit() != null) {
+            Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
+                    plot.getForestryUnit().getId(),
                     plot.getNumberInQuarter()
             );
             if (existing.isPresent() && !existing.get().getId().equals(plot.getId())) {
                 throw new IllegalArgumentException(
-                        String.format("❌ Деляна с номером '%s' уже существует в квартале %d!",
-                                plot.getNumberInQuarter(), plot.getQuarter().getNumber())
+                        String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
+                                plot.getNumberInQuarter(),
+                                plot.getForestryUnit().getNumber() != null ?
+                                        plot.getForestryUnit().getNumber() :
+                                        plot.getForestryUnit().getName())
                 );
             }
         }
 
-        if (plot.getQuarter() != null && plot.getQuarter().getGeometry() != null) {
-            geometryService.validatePlotInsideQuarter(
-                    plot.getGeometry(),
-                    plot.getQuarter().getGeometry(),
-                    plot.getFullNumber() != null ? plot.getFullNumber() : plot.getNumberInQuarter(),
-                    plot.getQuarter().getNumber()
-            );
-        }
+        if (plot.getForestryUnit() != null && plot.getForestryUnit().getGeometry() != null) {
+            if (plot.getForestryUnit().getGeometry() instanceof Polygon) {
+                String quarterNumber = plot.getForestryUnit().getNumber() != null ?
+                        plot.getForestryUnit().getNumber() :
+                        plot.getForestryUnit().getName();
 
-        // Если иерархия не заполнена - заполняем из квартала
-        if (plot.getQuarter() != null && plot.getDistrictForestry() == null) {
-            fillHierarchyFromQuarter(plot, plot.getQuarter());
+                geometryService.validatePlotInsideQuarter(
+                        plot.getGeometry(),
+                        (Polygon) plot.getForestryUnit().getGeometry(),
+                        plot.getFullNumber() != null ? plot.getFullNumber() : plot.getNumberInQuarter(),
+                        quarterNumber  // ← String
+                );
+            }
         }
 
         Plot saved = plotRepository.save(plot);
-        log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, districtForestry: {})",
+        log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, территория: {})",
                 saved.getFullNumber(), saved.getId(), saved.getAreaHa(),
-                saved.getDistrictForestry() != null ? saved.getDistrictForestry().getName() : "null");
+                saved.getForestryUnit() != null ? saved.getForestryUnit().getFullPath() : "null");
 
         List<IntersectionReport> conflicts = validatePlot(saved);
 
@@ -498,11 +485,6 @@ public class PlotService {
 
         for (Plot plot : plots) {
             try {
-                // Для импорта из Excel нужно заполнить иерархию через квартал
-                if (plot.getQuarter() != null && plot.getDistrictForestry() == null) {
-                    fillHierarchyFromQuarter(plot, plot.getQuarter());
-                }
-
                 List<IntersectionReport> conflicts = saveWithValidation(plot);
                 savedPlots.add(plot);
                 allConflicts.addAll(conflicts);
@@ -529,23 +511,18 @@ public class PlotService {
         return allConflicts;
     }
 
-    /**
-     * Исправляет пропущенную иерархию для существующих делян
-     */
     @Transactional
-    public int fixMissingHierarchy() {
+    public int fixMissingTerritoryUnit() {
         List<Plot> plots = plotRepository.findAll();
         int fixed = 0;
 
         for (Plot plot : plots) {
-            if (plot.getQuarter() != null && plot.getDistrictForestry() == null) {
-                fillHierarchyFromQuarter(plot, plot.getQuarter());
-                plotRepository.save(plot);
-                fixed++;
+            if (plot.getForestryUnit() == null) {
+                log.warn("⚠️ У деляны {} нет территориальной единицы", plot.getFullNumber());
             }
         }
 
-        log.info("✅ Исправлена иерархия для {} делян", fixed);
+        log.info("✅ Проверка завершена");
         return fixed;
     }
 }

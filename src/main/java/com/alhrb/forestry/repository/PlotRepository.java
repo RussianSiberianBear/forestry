@@ -11,30 +11,68 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-@SuppressWarnings({"SqlResolve", "SqlDialectInspection", "unused"})
 public interface PlotRepository extends JpaRepository<Plot, Long> {
 
-    // ===== ПОИСК ПО ИЕРАРХИИ =====
-    Optional<Plot> findByQuarterIdAndNumberInQuarter(Long quarterId, String numberInQuarter);
     Optional<Plot> findByFullNumber(String fullNumber);
 
-    List<Plot> findByQuarterIdOrderByNumberInQuarter(Long quarterId);
+    // ===== ПОИСК ПО ЛЕСНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
+    @Query(value = """
+        WITH RECURSIVE forestry_tree AS (
+            SELECT id FROM forestry_units WHERE id = :unitId
+            UNION ALL
+            SELECT fu.id FROM forestry_units fu
+            INNER JOIN forestry_tree ft ON fu.parent_id = ft.id
+        )
+        SELECT p.* FROM forest_plot p
+        WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)
+    """, nativeQuery = true)
+    List<Plot> findByForestryUnitRecursive(@Param("unitId") Long unitId);
 
-    // ===== МЕТОДЫ ДЛЯ ФИЛЬТРАЦИИ (JPQL) =====
-    @Query("SELECT p FROM Plot p WHERE p.forestry.id = :forestryId")
-    List<Plot> findByForestryId(@Param("forestryId") Long forestryId);
+    // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву территорий) =====
+// В PlotRepository.java
+    @Query(value = """
+    WITH RECURSIVE territory_tree AS (
+        SELECT id FROM territory_units WHERE id = :unitId
+        UNION ALL
+        SELECT tu.id FROM territory_units tu
+        INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+    )
+    SELECT p.* FROM forest_plot p
+    WHERE p.forestry_unit_id IN (
+        SELECT fu.id FROM forestry_units fu
+        WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+    )
+""", nativeQuery = true)
+    List<Plot> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
 
-    @Query("SELECT p FROM Plot p WHERE p.municipalDistrict.id = :municipalDistrictId")
-    List<Plot> findByMunicipalDistrictId(@Param("municipalDistrictId") Long municipalDistrictId);
+    // ===== ПОИСК ПО ТИПУ ЛЕСНОЙ ЕДИНИЦЫ И ТЕРРИТОРИИ =====
+    @Query(value = """
+        WITH RECURSIVE territory_tree AS (
+            SELECT id FROM territory_units WHERE id = :unitId
+            UNION ALL
+            SELECT tu.id FROM territory_units tu
+            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+        )
+        SELECT p.* FROM forest_plot p
+        WHERE p.forestry_unit_id IN (
+            SELECT fu.id FROM forestry_units fu
+            WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+            AND fu.type = :type
+        )
+    """, nativeQuery = true)
+    List<Plot> findByForestryTypeAndIdRecursive(
+            @Param("type") String type,
+            @Param("unitId") Long unitId
+    );
 
-    @Query("SELECT p FROM Plot p WHERE p.region.id = :regionId")
-    List<Plot> findByRegionId(@Param("regionId") Long regionId);
+    // ===== ПОИСК ПО КВАРТАЛУ =====
+    List<Plot> findByForestryUnitIdOrderByNumberInQuarter(Long territoryUnitId);
 
-    @Query("SELECT p FROM Plot p WHERE p.districtForestry.id = :districtForestryId")
-    List<Plot> findByDistrictForestryId(@Param("districtForestryId") Long districtForestryId);
+    Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
 
-    @Query("SELECT p FROM Plot p WHERE p.technicalUnit.id = :technicalUnitId")
-    List<Plot> findByTechnicalUnitId(@Param("technicalUnitId") Long technicalUnitId);
+    // ===== ПОИСК ПО ТИПУ И РОДИТЕЛЮ =====
+    @Query("SELECT p FROM Plot p WHERE p.forestryUnit.type = :type AND p.forestryUnit.id = :parentId")
+    List<Plot> findByForestryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """

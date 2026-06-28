@@ -74,12 +74,26 @@ public class GeometryService {
     /**
      * Проверка с понятным сообщением
      */
-    public void validatePlotInsideQuarter(Polygon plotGeometry, Polygon quarterGeometry,
-                                          String plotNumber, Integer quarterNumber) {
-        if (!isPlotInsideQuarter(plotGeometry, quarterGeometry)) {
+    public void validatePlotInsideQuarter(Polygon plotGeometry, Polygon quarterGeometry, String plotNumber, String quarterNumber) {
+        if (plotGeometry == null || quarterGeometry == null) {
+            return;
+        }
+
+        // Проверяем, что деляна полностью внутри квартала
+        if (!quarterGeometry.contains(plotGeometry)) {
             throw new IllegalArgumentException(
-                    String.format("❌ Деляна '%s' выходит за границы квартала %d!",
-                            plotNumber, quarterNumber)
+                    String.format("❌ Деляна '%s' выходит за границы квартала %s!", plotNumber, quarterNumber)
+            );
+        }
+
+        // Проверяем, что площадь деляны не превышает площадь квартала
+        double plotArea = plotGeometry.getArea();
+        double quarterArea = quarterGeometry.getArea();
+
+        if (plotArea > quarterArea) {
+            throw new IllegalArgumentException(
+                    String.format("❌ Площадь деляны '%s' (%.2f га) превышает площадь квартала %s (%.2f га)!",
+                            plotNumber, plotArea / 10000, quarterNumber, quarterArea / 10000)
             );
         }
     }

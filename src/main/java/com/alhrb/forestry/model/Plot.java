@@ -20,38 +20,13 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== ПРЯМЫЕ ССЫЛКИ НА ВСЕ УРОВНИ =====
+    // ===== ССЫЛКА НА КВАРТАЛ =====
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "region_id")
-    private Region region;
+    @JoinColumn(name = "forestry_unit_id", nullable = false)
+    private ForestryUnit forestryUnit;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "municipal_district_id")
-    private MunicipalDistrict municipalDistrict;
-
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "forestry_id")
-    private Forestry forestry;
-
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "district_forestry_id")
-    private DistrictForestry districtForestry;
-
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "technical_unit_id")
-    private TechnicalUnit technicalUnit;
-
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quarter_id")
-    private Quarter quarter;
-
-    // ===== НОМЕР ДЕЛЯНЫ =====
+    // ===== ПОЛЯ ДЕЛЯНЫ =====
     @Column(name = "number_in_quarter", nullable = false, length = 50)
     private String numberInQuarter;
 
@@ -88,52 +63,24 @@ public class Plot {
     @Column(name = "cut_type", length = 50)
     private String cutType;
 
+    // ===== ТРАНЗИТНОЕ ПОЛЕ ДЛЯ THYMELEAF =====
+    @Transient
+    private String territoryPath;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
 
-        // ===== УБИРАЕМ РУЧНОЙ РАСЧЁТ ПЛОЩАДИ =====
-        // Теперь площадь считается триггером в БД
-        // area_ha автоматически заполняется при INSERT/UPDATE
-
-        // Проверка внутри квартала
-        if (quarter != null && quarter.getGeometry() != null && geometry != null) {
-            if (!quarter.getGeometry().contains(geometry)) {
-                throw new IllegalStateException(
-                        String.format("❌ Деляна '%s' выходит за границы квартала %d!",
-                                numberInQuarter, quarter.getNumber())
-                );
-            }
+        if (fullNumber == null && forestryUnit != null) {
+            fullNumber = forestryUnit.getFullPath() + " / Дел." + numberInQuarter;
         }
+    }
 
-        // Формируем полный номер
-        if (fullNumber == null) {
-            StringBuilder sb = new StringBuilder();
-
-            if (region != null) {
-                sb.append(region.getName()).append("/");
-            }
-            if (municipalDistrict != null) {
-                sb.append(municipalDistrict.getName()).append("/");
-            }
-            if (forestry != null) {
-                sb.append(forestry.getName()).append("/");
-            }
-            if (districtForestry != null) {
-                sb.append(districtForestry.getName()).append("/");
-            }
-            if (technicalUnit != null && !technicalUnit.getIsMain()) {
-                sb.append(technicalUnit.getName()).append("/");
-            }
-            if (quarter != null) {
-                sb.append("Кв.").append(quarter.getNumber()).append("/");
-            }
-            if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
-                sb.append("Дел.").append(numberInQuarter);
-            }
-
-            fullNumber = sb.toString();
+    public String getForestryPath() {
+        if (forestryUnit != null) {
+            return forestryUnit.getFullPath();
         }
+        return null;
     }
 
     @Override

@@ -1,8 +1,8 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.PlotDto;
-import com.alhrb.forestry.dto.UserUISettingsDto;
 import com.alhrb.forestry.model.Plot;
+import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.service.PlotService;
 import com.alhrb.forestry.service.UserUISettingsService;
 import jakarta.servlet.http.HttpSession;
@@ -28,9 +28,11 @@ public class ViewController {
 
     @GetMapping("/forest-ploat")
     public String forestPlot(Model model, HttpSession session) {
-        // Получаем настройки UI
-        UserUISettingsDto uiSettings = userUISettingsService.getSettings(session);
+        UserUISettings uiSettings = userUISettingsService.getOrCreateSettings(session);
         List<Plot> plots = plotService.findAll();
+
+        // Заполняем territoryPath для каждого plot
+        plots.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
 
         model.addAttribute("plots", plots);
         model.addAttribute("plotDto", new PlotDto());
@@ -45,5 +47,4 @@ public class ViewController {
 
         return "forest-ploat";
     }
-
 }
