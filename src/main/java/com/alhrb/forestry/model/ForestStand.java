@@ -243,4 +243,13 @@ public class ForestStand {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /**
+     * Год актуальности таксационных данных
+     * По лесоустроительной инструкции, в зоне интенсивного освоения лесов
+     * периодичность таксации составляет 10 лет [citation:10]
+     * Данные старше 10 лет считаются неактуальными
+     */
+    @Column(name = "relevance_year")
+    private Integer relevanceYear;
 }
