@@ -184,7 +184,7 @@ public class ExcelImportService {
                     }
 
                     // Проверяем уникальность
-                    Optional<Plot> existing = plotRepository.findByTerritoryUnitIdAndNumberInQuarter(
+                    Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
                             territoryUnit.getId(), plotNumber
                     );
                     if (existing.isPresent()) {
