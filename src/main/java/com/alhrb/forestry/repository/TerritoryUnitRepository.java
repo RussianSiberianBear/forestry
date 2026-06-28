@@ -47,20 +47,7 @@ public interface TerritoryUnitRepository extends JpaRepository<TerritoryUnit, Lo
             @Param("number") String number
     );
 
-    // ===== ПОИСК КВАРТАЛОВ ДЛЯ AUTOCOMPLETE =====
-    @Query("""
-        SELECT tu FROM TerritoryUnit tu
-        WHERE tu.parent.id = :technicalUnitId
-          AND tu.type = 'QUARTER'
-          AND tu.number LIKE %:query%
-        ORDER BY tu.number
-    """)
-    List<TerritoryUnit> searchQuarters(
-            @Param("technicalUnitId") Long technicalUnitId,
-            @Param("query") String query
-    );
-
-    // ===== ПОЛУЧИТЬ ВСЕ ДЕТИ (РЕКУРСИВНО) =====
+    // ===== ПОЛУЧИТЬ ВСЕХ ДЕТЕЙ (РЕКУРСИВНО) =====
     @Query(value = """
         WITH RECURSIVE territory_tree AS (
             SELECT id, name, type, parent_id, 0 as depth

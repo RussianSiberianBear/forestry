@@ -36,21 +36,5 @@ public class TerritoryUnitService {
     public List<TerritoryUnit> findMunicipalDistrictsByRegion(Long parentId) {
         return territoryUnitRepository.findByTypeAndParentId(TerritoryType.MUNICIPAL_DISTRICT, parentId);
     }
-    public List<TerritoryUnit> findForestriesByDistrict(Long parentId) {
-        return territoryUnitRepository.findByTypeAndParentId(TerritoryType.FORESTRY, parentId);
-    }
-
-    public List<TerritoryUnit> findDistrictForestriesByForestry(Long parentId) {
-        return territoryUnitRepository.findByTypeAndParentId(TerritoryType.DISTRICT_FORESTRY, parentId);
-    }
-
-    public List<TerritoryUnit> findTechnicalUnit(Long districtForestryId) {
-        return territoryUnitRepository.findByTypeAndParentId(TerritoryType.TECHNICAL_UNIT, districtForestryId);
-    }
-
-    public List<TerritoryUnit> searchQuarters(Long technicalUnitId, String query) {
-        return territoryUnitRepository.searchQuarters(technicalUnitId, query);
-    }
-
 
 }

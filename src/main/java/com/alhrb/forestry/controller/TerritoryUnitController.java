@@ -1,8 +1,11 @@
 package com.alhrb.forestry.controller;
 
+import com.alhrb.forestry.dto.ForestryUnitDto;
 import com.alhrb.forestry.dto.TerritoryUnitDto;
+import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.model.TerritoryType;
 import com.alhrb.forestry.model.TerritoryUnit;
+import com.alhrb.forestry.service.ForestryUnitService;
 import com.alhrb.forestry.service.TerritoryUnitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
 public class TerritoryUnitController {
 
     private final TerritoryUnitService territoryUnitService;
+    private final ForestryUnitService forestryUnitService;
 
     // ===== ВСЕ РЕГИОНЫ =====
     @GetMapping("/regions")
@@ -52,11 +56,11 @@ public class TerritoryUnitController {
     @GetMapping("/forestries/by-district/{districtId}")
     public ResponseEntity<List<TerritoryUnitDto>> getForestriesByDistrict(@PathVariable Long districtId) {
         log.info("📡 Запрос лесничеств для района ID: {}", districtId);
-        List<TerritoryUnit> forestries = territoryUnitService.findForestriesByDistrict(districtId);
+        List<ForestryUnit> forestries = forestryUnitService.findForestriesByDistrict(districtId);
         log.info("📊 Найдено {} лесничеств", forestries.size());
 
-        List<TerritoryUnitDto> dtos = forestries.stream()
-                .map(this::toDto)
+        List<ForestryUnitDto> dtos = forestries.stream()
+                .map(this::toForestryDto)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -66,11 +70,11 @@ public class TerritoryUnitController {
     @GetMapping("/district-forestries/by-forestry/{forestryId}")
     public ResponseEntity<List<TerritoryUnitDto>> getDistrictForestriesByForestry(@PathVariable Long forestryId) {
         log.info("📡 Запрос участковых лесничеств для лесничества ID: {}", forestryId);
-        List<TerritoryUnit> districtForestries = territoryUnitService.findDistrictForestriesByForestry(forestryId);
+        List<ForestryUnit> districtForestries = forestryUnitService.findDistrictForestriesByForestry(forestryId);
         log.info("📊 Найдено {} участковых лесничеств", districtForestries.size());
 
         List<TerritoryUnitDto> dtos = districtForestries.stream()
-                .map(this::toDto)
+                .map(this::toForestryDto)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -80,12 +84,12 @@ public class TerritoryUnitController {
     @GetMapping("/technical-units/by-district/{districtForestryId}")
     public ResponseEntity<List<TerritoryUnitDto>> getTechnicalUnitsByDistrict(@PathVariable Long districtForestryId) {
         log.info("📡 Запрос техучастков для участкового лесничества ID: {}", districtForestryId);
-        List<TerritoryUnit> technicalUnits = territoryUnitService.findTechnicalUnit(districtForestryId);
+        List<ForestryUnit> technicalUnits = forestryUnitService.findTechnicalUnit(districtForestryId);
 
         log.info("📊 Найдено {} техучастков", technicalUnits.size());
 
-        List<TerritoryUnitDto> dtos = technicalUnits.stream()
-                .map(this::toDto)
+        List<ForestryUnitDto> dtos = technicalUnits.stream()
+                .map(this::toForestryDto)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -117,10 +121,10 @@ public class TerritoryUnitController {
         Long searchParentId = parentId != null ? parentId : technicalUnitId;
 
         log.info("📡 Поиск кварталов для родителя ID: {}, запрос: {}", searchParentId, query);
-        List<TerritoryUnit> quarters = territoryUnitService.searchQuarters(searchParentId, query);
+        List<ForestryUnit> quarters = forestryUnitService.searchQuarters(searchParentId, query);
 
         List<TerritoryUnitDto> dtos = quarters.stream()
-                .map(this::toDto)
+                .map(this::toForestryDto)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -150,6 +154,25 @@ public class TerritoryUnitController {
         dto.setNumber(unit.getNumber());
         dto.setIsMain(unit.getIsMain());
         dto.setAreaHa(unit.getAreaHa());
+
+        if (unit.getParent() != null) {
+            dto.setParentId(unit.getParent().getId());
+            dto.setParentName(unit.getParent().getName());
+        }
+
+        return dto;
+    }
+
+    private ForestryUnitDto toForestryDto(ForestryUnit unit) {
+        if (unit == null) {
+            return null;
+        }
+
+        ForestryUnitDto dto = new ForestryUnitDto();
+        dto.setId(unit.getId());
+        dto.setName(unit.getName());
+        dto.setType(unit.getType().name());
+        dto.setNumber(unit.getNumber());
 
         if (unit.getParent() != null) {
             dto.setParentId(unit.getParent().getId());

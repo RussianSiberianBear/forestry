@@ -1,6 +1,7 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.*;
+import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.PlotRepository;
 import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import java.util.Optional;
 public class ExcelImportService {
 
     private final TerritoryUnitRepository territoryUnitRepository;
+    private final ForestryUnitRepository  forestryUnitRepository;
     private final PlotRepository plotRepository;
     private final GeometryService geometryService;
 
@@ -116,6 +118,7 @@ public class ExcelImportService {
                 try {
                     Plot plot = new Plot();
                     TerritoryUnit territoryUnit = null;
+                    ForestryUnit forestryUnit = null;
 
                     // 1. Пробуем найти по номеру квартала
                     Integer quarterNumber = getIntValue(row.getCell(quarterNumberIdx));
@@ -125,29 +128,29 @@ public class ExcelImportService {
                         String districtName = getStringValue(row.getCell(districtNameIdx));
                         String forestryName = getStringValue(row.getCell(forestryNameIdx));
 
-                        territoryUnit = findQuarterByHierarchy(regionName, districtName, forestryName, quarterNumber);
+                        forestryUnit = findQuarterByHierarchy(regionName, districtName, forestryName, quarterNumber);
                     }
 
                     // 2. Если не нашли, пробуем по номеру квартала без иерархии
-                    if (territoryUnit == null && quarterNumber != null) {
-                        territoryUnit = findQuarterByNumber(quarterNumber);
+                    if (forestryUnit == null && quarterNumber != null) {
+                        forestryUnit = findQuarterByNumber(quarterNumber);
                     }
 
                     // 3. Если не нашли, пробуем по полному пути
-                    if (territoryUnit == null && territoryNameIdx != -1) {
-                        String fullPath = getStringValue(row.getCell(territoryNameIdx));
+                    if (forestryUnit == null && forestryNameIdx != -1) {
+                        String fullPath = getStringValue(row.getCell(forestryNameIdx));
                         if (fullPath != null && !fullPath.isEmpty()) {
-                            territoryUnit = findTerritoryByFullPath(fullPath);
+                            forestryUnit = findForestryByFullPath(fullPath);
                         }
                     }
 
-                    if (territoryUnit == null) {
+                    if (forestryUnit == null) {
                         throw new IllegalArgumentException(
                                 String.format("Не найден квартал для строки %d", i + 1)
                         );
                     }
 
-                    if (!territoryUnit.isQuarter()) {
+                    if (!forestryUnit.isQuarter()) {
                         throw new IllegalArgumentException(
                                 String.format("Найденная территория '%s' не является кварталом", territoryUnit.getName())
                         );
@@ -187,7 +190,7 @@ public class ExcelImportService {
                     if (existing.isPresent()) {
                         throw new IllegalArgumentException(
                                 String.format("Деляна с номером '%s' уже существует в квартале %s",
-                                        plotNumber, territoryUnit.getNumber())
+                                        plotNumber, forestryUnit.getNumber())
                         );
                     }
 
@@ -215,7 +218,7 @@ public class ExcelImportService {
         return plots;
     }
 
-    private TerritoryUnit findQuarterByHierarchy(String regionName, String districtName,
+    private ForestryUnit findQuarterByHierarchy(String regionName, String districtName,
                                                  String forestryName, Integer quarterNumber) {
         if (quarterNumber == null) return null;
 
@@ -239,10 +242,10 @@ public class ExcelImportService {
             }
         }
 
-        TerritoryUnit forestry = null;
+        ForestryUnit forestry = null;
         if (district != null && forestryName != null && !forestryName.isEmpty()) {
-            List<TerritoryUnit> forestries = territoryUnitRepository.findByTypeAndParentIdAndName(
-                    TerritoryType.FORESTRY, district.getId(), forestryName
+            List<ForestryUnit> forestries = forestryUnitRepository.findByTypeAndParentIdAndName(
+                    ForestryUnitType.FORESTRY, district.getId(), forestryName
             );
             if (!forestries.isEmpty()) {
                 forestry = forestries.get(0);
@@ -250,8 +253,8 @@ public class ExcelImportService {
         }
 
         if (forestry != null) {
-            List<TerritoryUnit> quarters = territoryUnitRepository.findByTypeAndParentIdAndNumber(
-                    TerritoryType.QUARTER, forestry.getId(), String.valueOf(quarterNumber)
+            List<ForestryUnit> quarters = forestryUnitRepository.findByTypeAndParentIdAndNumber(
+                    ForestryUnitType.QUARTER, forestry.getId(), String.valueOf(quarterNumber)
             );
             if (!quarters.isEmpty()) {
                 return quarters.get(0);
@@ -261,32 +264,32 @@ public class ExcelImportService {
         return null;
     }
 
-    private TerritoryUnit findQuarterByNumber(Integer quarterNumber) {
+    private ForestryUnit findQuarterByNumber(Integer quarterNumber) {
         if (quarterNumber == null) return null;
-        List<TerritoryUnit> quarters = territoryUnitRepository.findByTypeAndNumber(
-                TerritoryType.QUARTER, String.valueOf(quarterNumber)
+        List<ForestryUnit> quarters = forestryUnitRepository.findByTypeAndNumber(
+                ForestryUnitType.QUARTER, String.valueOf(quarterNumber)
         );
         return quarters.isEmpty() ? null : quarters.get(0);
     }
 
-    private TerritoryUnit findTerritoryByFullPath(String fullPath) {
+    private ForestryUnit findForestryByFullPath(String fullPath) {
         String[] parts = fullPath.split("/");
-        TerritoryUnit current = null;
+        ForestryUnit current = null;
 
         for (String part : parts) {
             String name = part.trim();
             if (name.isEmpty()) continue;
 
-            TerritoryUnit found = null;
-            List<TerritoryUnit> children;
+            ForestryUnit found = null;
+            List<ForestryUnit> children;
 
             if (current == null) {
-                children = territoryUnitRepository.findByParentIdIsNull();
+                children = forestryUnitRepository.findByParentIdIsNull();
             } else {
-                children = territoryUnitRepository.findByParentId(current.getId());
+                children = forestryUnitRepository.findByParentId(current.getId());
             }
 
-            for (TerritoryUnit child : children) {
+            for (ForestryUnit child : children) {
                 if (child.isQuarter()) {
                     if (child.getNumber() != null && name.contains(child.getNumber())) {
                         found = child;
