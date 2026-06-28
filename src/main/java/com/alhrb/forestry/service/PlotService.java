@@ -51,20 +51,20 @@ public class PlotService {
         return plotRepository.findByFullNumber(fullNumber);
     }
 
-    public List<Plot> findByTerritoryUnitId(Long territoryUnitId) {
-        return plotRepository.findByTerritoryUnitIdOrderByNumberInQuarter(territoryUnitId);
+    public List<Plot> findByForestryryUnitId(Long forestryUnitId) {
+        return plotRepository.findByForestryUnitIdOrderByNumberInQuarter(forestryUnitId);
     }
 
     public Optional<Plot> findByTerritoryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter) {
-        return plotRepository.findByTerritoryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
+        return plotRepository.findByForestryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
     }
 
     public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
-        return plotRepository.findByTerritoryUnitRecursive(unitId);
+        return plotRepository.findByForestryUnitRecursive(unitId);
     }
 
     public List<Plot> findByTerritoryTypeAndIdRecursive(String type, Long id) {
-        return plotRepository.findByTerritoryTypeAndIdRecursive(type, id);
+        return plotRepository.findByForestryTypeAndIdRecursive(type, id);
     }
 
     // ==========================================
@@ -96,25 +96,25 @@ public class PlotService {
         List<Plot> plots = new ArrayList<>();
 
         if (quarterId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(quarterId);
+            plots = plotRepository.findByForestryUnitRecursive(quarterId);
             log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, plots.size());
         } else if (technicalUnitId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(technicalUnitId);
+            plots = plotRepository.findByForestryUnitRecursive(technicalUnitId);
             log.info("📊 Фильтр по техучастку ID={}, найдено {} делян", technicalUnitId, plots.size());
         } else if (districtForestryId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(districtForestryId);
+            plots = plotRepository.findByForestryUnitRecursive(districtForestryId);
             log.info("📊 Фильтр по участковому лесничеству ID={}, найдено {} делян", districtForestryId, plots.size());
         } else if (forestryId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(forestryId);
+            plots = plotRepository.findByForestryUnitRecursive(forestryId);
             log.info("📊 Фильтр по лесничеству ID={}, найдено {} делян", forestryId, plots.size());
         } else if (municipalDistrictId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(municipalDistrictId);
+            plots = plotRepository.findByForestryUnitRecursive(municipalDistrictId);
             log.info("📊 Фильтр по району ID={}, найдено {} делян", municipalDistrictId, plots.size());
         } else if (regionId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(regionId);
+            plots = plotRepository.findByForestryUnitRecursive(regionId);
             log.info("📊 Фильтр по региону ID={}, найдено {} делян", regionId, plots.size());
         } else if (federalDistrictId != null) {
-            plots = plotRepository.findByTerritoryUnitRecursive(federalDistrictId);
+            plots = plotRepository.findByForestryUnitRecursive(federalDistrictId);
             log.info("📊 Фильтр по федеральному округу ID={}, найдено {} делян", federalDistrictId, plots.size());
         } else {
             plots = plotRepository.findAll();
@@ -253,8 +253,8 @@ public class PlotService {
             }
         }
 
-        Optional<Plot> existing = plotRepository.findByTerritoryUnitIdAndNumberInQuarter(
-                territoryUnitId, numberInQuarter);
+        Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
+                forestryUnitId, numberInQuarter);
         if (existing.isPresent()) {
             throw new IllegalArgumentException(
                     String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
@@ -291,31 +291,31 @@ public class PlotService {
             throw new IllegalArgumentException("Номер деляны в квартале обязателен!");
         }
 
-        if (plot.getTerritoryUnit() != null) {
-            Optional<Plot> existing = plotRepository.findByTerritoryUnitIdAndNumberInQuarter(
-                    plot.getTerritoryUnit().getId(),
+        if (plot.getForestryUnit() != null) {
+            Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
+                    plot.getForestryUnit().getId(),
                     plot.getNumberInQuarter()
             );
             if (existing.isPresent() && !existing.get().getId().equals(plot.getId())) {
                 throw new IllegalArgumentException(
                         String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
                                 plot.getNumberInQuarter(),
-                                plot.getTerritoryUnit().getNumber() != null ?
-                                        plot.getTerritoryUnit().getNumber() :
-                                        plot.getTerritoryUnit().getName())
+                                plot.getForestryUnit().getNumber() != null ?
+                                        plot.getForestryUnit().getNumber() :
+                                        plot.getForestryUnit().getName())
                 );
             }
         }
 
-        if (plot.getTerritoryUnit() != null && plot.getTerritoryUnit().getGeometry() != null) {
-            if (plot.getTerritoryUnit().getGeometry() instanceof Polygon) {
-                String quarterNumber = plot.getTerritoryUnit().getNumber() != null ?
-                        plot.getTerritoryUnit().getNumber() :
-                        plot.getTerritoryUnit().getName();
+        if (plot.getForestryUnit() != null && plot.getForestryUnit().getGeometry() != null) {
+            if (plot.getForestryUnit().getGeometry() instanceof Polygon) {
+                String quarterNumber = plot.getForestryUnit().getNumber() != null ?
+                        plot.getForestryUnit().getNumber() :
+                        plot.getForestryUnit().getName();
 
                 geometryService.validatePlotInsideQuarter(
                         plot.getGeometry(),
-                        (Polygon) plot.getTerritoryUnit().getGeometry(),
+                        (Polygon) plot.getForestryUnit().getGeometry(),
                         plot.getFullNumber() != null ? plot.getFullNumber() : plot.getNumberInQuarter(),
                         quarterNumber  // ← String
                 );
@@ -325,7 +325,7 @@ public class PlotService {
         Plot saved = plotRepository.save(plot);
         log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, территория: {})",
                 saved.getFullNumber(), saved.getId(), saved.getAreaHa(),
-                saved.getTerritoryUnit() != null ? saved.getTerritoryUnit().getFullPath() : "null");
+                saved.getForestryUnit() != null ? saved.getForestryUnit().getFullPath() : "null");
 
         List<IntersectionReport> conflicts = validatePlot(saved);
 
@@ -499,7 +499,7 @@ public class PlotService {
         int fixed = 0;
 
         for (Plot plot : plots) {
-            if (plot.getTerritoryUnit() == null) {
+            if (plot.getForestryUnit() == null) {
                 log.warn("⚠️ У деляны {} нет территориальной единицы", plot.getFullNumber());
             }
         }

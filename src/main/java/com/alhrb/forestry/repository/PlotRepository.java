@@ -26,7 +26,7 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
         SELECT p.* FROM forest_plot p
         WHERE p.territory_unit_id IN (SELECT id FROM territory_tree)
     """, nativeQuery = true)
-    List<Plot> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
+    List<Plot> findByForestryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТИПУ ТЕРРИТОРИИ =====
     @Query(value = """
@@ -40,15 +40,15 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
         SELECT p.* FROM forest_plot p
         WHERE p.territory_unit_id IN (SELECT id FROM territory_tree)
     """, nativeQuery = true)
-    List<Plot> findByTerritoryTypeAndIdRecursive(
+    List<Plot> findByForestryTypeAndIdRecursive(
             @Param("type") String type,
             @Param("unitId") Long unitId
     );
 
     // ===== ПОИСК ПО КВАРТАЛУ =====
-    List<Plot> findByTerritoryUnitIdOrderByNumberInQuarter(Long territoryUnitId);
+    List<Plot> findByForestryUnitIdOrderByNumberInQuarter(Long territoryUnitId);
 
-    Optional<Plot> findByTerritoryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter);
+    Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
 
     // ===== ПОИСК ПО ТИПУ И РОДИТЕЛЮ =====
     @Query("SELECT p FROM Plot p WHERE p.territoryUnit.type = :type AND p.territoryUnit.parent.id = :parentId")
