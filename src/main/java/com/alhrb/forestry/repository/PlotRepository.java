@@ -15,7 +15,6 @@ import java.util.Optional;
 public interface PlotRepository extends JpaRepository<Plot, Long> {
 
     Optional<Plot> findByFullNumber(String fullNumber);
-    List<Plot>findByTerritoryUnit(ForestryUnitType type);
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """
@@ -37,7 +36,7 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
             WHERE id = :unitId AND type = :type
             UNION ALL
             SELECT tu.id FROM territory_units tu
-            INNER JOIN forestry_tree tt ON tu.parent_id = tt.id
+            INNER JOIN forestry_tree tt ON tu.territory_units_id = tt.id
         )
         SELECT p.* FROM forest_plot p
         WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)

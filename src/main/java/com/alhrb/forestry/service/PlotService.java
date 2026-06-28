@@ -65,7 +65,7 @@ public class PlotService {
         return plotRepository.findByForestryUnitRecursive(unitId);
     }
 
-    public List<Plot> findByTerritoryUnit(Long unitId) {
+    public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
         return plotRepository.findByTerritoryUnit(unitId);
     }
 
