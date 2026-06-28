@@ -20,11 +20,11 @@ public class Plot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== ССЫЛКА НА ТЕРРИТОРИАЛЬНУЮ ЕДИНИЦУ =====
+    // ===== ССЫЛКА НА КВАРТАЛ =====
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "territory_unit_id", nullable = false)
-    private TerritoryUnit territoryUnit;
+    @JoinColumn(name = "forestry_unit_id", nullable = false)
+    private ForestryUnit forestryUnit;
 
     // ===== ПОЛЯ ДЕЛЯНЫ =====
     @Column(name = "number_in_quarter", nullable = false, length = 50)
@@ -71,14 +71,14 @@ public class Plot {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
 
-        if (fullNumber == null && territoryUnit != null) {
-            fullNumber = territoryUnit.getFullPath() + " / Дел." + numberInQuarter;
+        if (fullNumber == null && forestryUnit != null) {
+            fullNumber = forestryUnit.getFullPath() + " / Дел." + numberInQuarter;
         }
     }
 
-    public String getTerritoryPath() {
-        if (territoryUnit != null) {
-            return territoryUnit.getFullPath();
+    public String getForestryPath() {
+        if (forestryUnit != null) {
+            return forestryUnit.getFullPath();
         }
         return null;
     }
