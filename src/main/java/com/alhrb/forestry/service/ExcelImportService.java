@@ -156,7 +156,7 @@ public class ExcelImportService {
                         );
                     }
 
-                    plot.setTerritoryUnit(territoryUnit);
+                    plot.setForestryUnit(forestryUnit);
 
                     // Номер деляны
                     String plotNumber = getStringValue(row.getCell(plotNumberIdx));

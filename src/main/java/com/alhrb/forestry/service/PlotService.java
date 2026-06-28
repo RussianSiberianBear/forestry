@@ -3,8 +3,8 @@ package com.alhrb.forestry.service;
 import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotMapDto;
 import com.alhrb.forestry.model.*;
+import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.PlotRepository;
-import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class PlotService {
 
     private final PlotRepository plotRepository;
-    private final TerritoryUnitRepository territoryUnitRepository;
+    private final ForestryUnitRepository forestryUnitRepository;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
 
@@ -166,8 +166,8 @@ public class PlotService {
             dto.setAreaM2(plot.getAreaHa() * 10000);
         }
 
-        if (plot.getTerritoryUnit() != null) {
-            TerritoryUnit unit = plot.getTerritoryUnit();
+        if (plot.getForestryUnit() != null) {
+            ForestryUnit unit = plot.getForestryUnit();
 
             // Номер квартала
             if (unit.isQuarter()) {
@@ -177,7 +177,7 @@ public class PlotService {
             }
 
             // Ищем лесничество для отображения на карте
-            TerritoryUnit current = unit;
+            ForestryUnit current = unit;
             while (current != null) {
                 if (current.isForestry()) {
                     dto.setForestryName(current.getName());
@@ -213,7 +213,7 @@ public class PlotService {
             String plots,
             String description,
             Polygon geometry,
-            Long territoryUnitId,
+            Long forestryUnitId,
             Integer yearOfCut,
             String cutType) {
 
@@ -227,24 +227,24 @@ public class PlotService {
             );
         }
 
-        TerritoryUnit territoryUnit = territoryUnitRepository.findById(territoryUnitId)
+        ForestryUnit forestryUnit = forestryUnitRepository.findById(forestryUnitId)
                 .orElseThrow(() -> new IllegalArgumentException("Территориальная единица не найдена"));
 
-        if (!territoryUnit.isQuarter()) {
+        if (!forestryUnit.isQuarter()) {
             throw new IllegalArgumentException("Деляна может быть привязана только к кварталу!");
         }
 
         // Проверяем геометрию квартала
-        if (territoryUnit.getGeometry() != null) {
-            if (territoryUnit.getGeometry() instanceof Polygon) {
+        if (forestryUnit.getGeometry() != null) {
+            if (forestryUnit.getGeometry() instanceof Polygon) {
                 // quarterNumber уже String, просто передаем
-                String quarterNumber = territoryUnit.getNumber() != null ?
-                        territoryUnit.getNumber() :
-                        territoryUnit.getName();
+                String quarterNumber = forestryUnit.getNumber() != null ?
+                        forestryUnit.getNumber() :
+                        forestryUnit.getName();
 
                 geometryService.validatePlotInsideQuarter(
                         geometry,
-                        (Polygon) territoryUnit.getGeometry(),
+                        (Polygon) forestryUnit.getGeometry(),
                         numberInQuarter,
                         quarterNumber  // ← String
                 );
@@ -259,7 +259,7 @@ public class PlotService {
             throw new IllegalArgumentException(
                     String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
                             numberInQuarter,
-                            territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName())
+                            forestryUnit.getNumber() != null ? forestryUnit.getNumber() : forestryUnit.getName())
             );
         }
 
@@ -268,7 +268,7 @@ public class PlotService {
         plot.setPlots(plots);
         plot.setDescription(description);
         plot.setGeometry(geometry);
-        plot.setTerritoryUnit(territoryUnit);
+        plot.setForestryUnit(forestryUnit);
         plot.setYearOfCut(yearOfCut);
         plot.setCutType(cutType);
 
