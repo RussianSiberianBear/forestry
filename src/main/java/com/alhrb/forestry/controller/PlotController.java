@@ -3,6 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.PlotDto;
 import com.alhrb.forestry.dto.PlotMapDto;
+import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.model.Plot;
 import com.alhrb.forestry.model.TerritoryUnit;
 import com.alhrb.forestry.service.*;
@@ -29,7 +30,7 @@ public class PlotController {
 
     private final PlotService plotService;
     private final GeometryService geometryService;
-    private final TerritoryUnitService territoryUnitService;  // ← вместо QuarterService
+    private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
     @PostMapping("/create")
     public String createPlot(@Valid @ModelAttribute("plotDto") PlotDto plotDto,
@@ -51,7 +52,7 @@ public class PlotController {
             }
 
             // Получаем территориальную единицу (квартал)
-            TerritoryUnit territoryUnit = territoryUnitService.findById(plotDto.getTerritoryUnitId())
+            ForestryUnit territoryUnit = forestryUnitService.findById(plotDto.getTerritoryUnitId())
                     .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
             // Проверяем, что это квартал
@@ -219,7 +220,7 @@ public class PlotController {
                 territoryName = "техническому участку";
                 break;
             case "QUARTER":
-                plots = plotService.findByTerritoryUnitId(id);
+                plots = plotService.findByForestryUnitId(id);
                 territoryName = "кварталу";
                 break;
             default:

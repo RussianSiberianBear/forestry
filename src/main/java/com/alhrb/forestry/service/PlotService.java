@@ -51,7 +51,7 @@ public class PlotService {
         return plotRepository.findByFullNumber(fullNumber);
     }
 
-    public List<Plot> findByForestryryUnitId(Long forestryUnitId) {
+    public List<Plot> findByForestryUnitId(Long forestryUnitId) {
         return plotRepository.findByForestryUnitIdOrderByNumberInQuarter(forestryUnitId);
     }
 
