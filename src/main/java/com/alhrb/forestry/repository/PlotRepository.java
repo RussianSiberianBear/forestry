@@ -17,28 +17,28 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """
-        WITH RECURSIVE territory_tree AS (
-            SELECT id FROM territory_units WHERE id = :unitId
+        WITH RECURSIVE forestry_tree AS (
+            SELECT id FROM forestry_units WHERE id = :unitId
             UNION ALL
             SELECT tu.id FROM territory_units tu
-            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+            INNER JOIN forestry_tree tt ON tu.parent_id = tt.id
         )
         SELECT p.* FROM forest_plot p
-        WHERE p.territory_unit_id IN (SELECT id FROM territory_tree)
+        WHERE p.fotestry_unit_id IN (SELECT id FROM forestry_tree)
     """, nativeQuery = true)
     List<Plot> findByForestryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТИПУ ТЕРРИТОРИИ =====
     @Query(value = """
-        WITH RECURSIVE territory_tree AS (
-            SELECT id FROM territory_units 
+        WITH RECURSIVE forestry_tree AS (
+            SELECT id FROM forestry_units 
             WHERE id = :unitId AND type = :type
             UNION ALL
             SELECT tu.id FROM territory_units tu
-            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+            INNER JOIN forestry_tree tt ON tu.parent_id = tt.id
         )
         SELECT p.* FROM forest_plot p
-        WHERE p.territory_unit_id IN (SELECT id FROM territory_tree)
+        WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)
     """, nativeQuery = true)
     List<Plot> findByForestryTypeAndIdRecursive(
             @Param("type") String type,
@@ -51,8 +51,8 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
     Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
 
     // ===== ПОИСК ПО ТИПУ И РОДИТЕЛЮ =====
-    @Query("SELECT p FROM Plot p WHERE p.territoryUnit.type = :type AND p.territoryUnit.parent.id = :parentId")
-    List<Plot> findByTerritoryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
+    @Query("SELECT p FROM Plot p WHERE p.forestryUnit.type = :type AND p.forestryUnit.id = :parentId")
+    List<Plot> findByForestryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """
