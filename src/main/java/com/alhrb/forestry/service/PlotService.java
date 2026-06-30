@@ -129,10 +129,21 @@ public class PlotService {
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
         // Номера делян могут быть разделены запятой,точкой с запятой или пробелом чтобы можно было отобразить несколько
         if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
-            Set<String> allowedValues = Arrays.stream(numberInQuarter.split("[,;\\\\s]+"))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .collect(Collectors.toSet());
+            // Нормализуем строку: заменяем все разделители на пробелы
+            String normalized = numberInQuarter
+                    .replaceAll("[,;]", " ")  // заменяем запятые и точки с запятой на пробелы
+                    .replaceAll("\\s+", " ")  // заменяем все пробелы (включая множественные) на один
+                    .trim();                  // удаляем пробелы в начале и конце
+
+            Set<String> allowedValues = new HashSet<>();
+            if (!normalized.isEmpty()) {
+                String[] parts = normalized.split(" ");
+                for (String part : parts) {
+                    if (!part.isEmpty()) {
+                        allowedValues.add(part);
+                    }
+                }
+            }
 
             plots = plots.stream()
                     .filter(p -> {
