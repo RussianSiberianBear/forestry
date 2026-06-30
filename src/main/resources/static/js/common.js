@@ -133,4 +133,3 @@ function setYearPeriod(from,to) {
     document.getElementById(from).value = formatDate(fromDate);
     document.getElementById(to).value = formatDate(toDate);
 }
-
