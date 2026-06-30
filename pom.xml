@@ -1,38 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.2.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
+
     <groupId>com.alhrb</groupId>
     <artifactId>forestry</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>forestry</name>
     <description>Forestry management system</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
+
     <properties>
         <java.version>17</java.version>
-        <!-- ===== MAPSTRUCT VERSIONS ===== -->
+        <!-- ===== ВЕРСИИ ===== -->
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
-        <org.projectlombok.version>1.18.30</org.projectlombok.version>
+        <org.projectlombok.version>1.18.38</org.projectlombok.version> <!-- ОБНОВЛЕНО! -->
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     </properties>
+
     <dependencies>
         <!-- ===== SPRING BOOT STARTERS ===== -->
         <dependency>
@@ -51,24 +42,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <!-- ===== SPRING SECURITY ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ===== MAPSTRUCT ===== -->
+        <!-- ===== MAPSTRUCT (только API, процессор вынесен в Maven-плагин) ===== -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${org.mapstruct.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <version>${org.mapstruct.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <!-- ===== БАЗА ДАННЫХ ===== -->
@@ -82,40 +65,31 @@
             <artifactId>hibernate-spatial</artifactId>
         </dependency>
 
-        <!-- ===== JTS (Java Topology Suite) для работы с геометрией ===== -->
+        <!-- ===== JTS (Java Topology Suite) ===== -->
         <dependency>
             <groupId>org.locationtech.jts</groupId>
             <artifactId>jts-core</artifactId>
             <version>1.19.0</version>
         </dependency>
-
-        <!-- ===== JTS GeoJSON для сериализации геометрии ===== -->
         <dependency>
             <groupId>org.locationtech.jts.io</groupId>
             <artifactId>jts-io-common</artifactId>
             <version>1.19.0</version>
         </dependency>
 
-        <!-- ===== Excel парсер ===== -->
+        <!-- ===== EXCEL ===== -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.3</version>
         </dependency>
 
-        <!-- ===== LOMBOK ===== -->
+        <!-- ===== LOMBOK (ТОЛЬКО КАК ЗАВИСИМОСТЬ, процессор в annotationProcessorPaths) ===== -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${org.projectlombok.version}</version>
             <optional>true</optional>
-        </dependency>
-
-        <!-- ===== LOMBOK MAPSTRUCT BINDING ===== -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok-mapstruct-binding</artifactId>
-            <version>${lombok-mapstruct-binding.version}</version>
         </dependency>
 
         <!-- ===== ТЕСТЫ ===== -->
@@ -130,7 +104,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- ===== UI Kit (Thymeleaf + WebJars) ===== -->
+        <!-- ===== UI ===== -->
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>webjars-locator</artifactId>
@@ -146,13 +120,10 @@
             <artifactId>leaflet</artifactId>
             <version>1.9.4</version>
         </dependency>
-
-        <!-- ===== THYMELEAF SPRING SECURITY (для тегов в шаблонах) ===== -->
         <dependency>
             <groupId>org.thymeleaf.extras</groupId>
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -169,6 +140,7 @@
                     </excludes>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -176,20 +148,18 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <!-- ===== ТОЛЬКО ЗДЕСЬ ПРОЦЕССОРЫ! ===== -->
                     <annotationProcessorPaths>
-                        <!-- ===== MAPSTRUCT PROCESSOR ===== -->
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${org.mapstruct.version}</version>
                         </path>
-                        <!-- ===== LOMBOK PROCESSOR ===== -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${org.projectlombok.version}</version>
                         </path>
-                        <!-- ===== LOMBOK-MAPSTRUCT BINDING ===== -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok-mapstruct-binding</artifactId>
@@ -197,22 +167,13 @@
                         </path>
                     </annotationProcessorPaths>
                     <compilerArgs>
-                        <compilerArg>
-                            -Amapstruct.defaultComponentModel=spring
-                        </compilerArg>
-                        <compilerArg>
-                            -Amapstruct.unmappedTargetPolicy=IGNORE
-                        </compilerArg>
-                        <compilerArg>
-                            -Amapstruct.suppressGeneratorTimestamp=true
-                        </compilerArg>
-                        <compilerArg>
-                            -Amapstruct.verbose=false
-                        </compilerArg>
+                        <arg>-Amapstruct.defaultComponentModel=spring</arg>
+                        <arg>-Amapstruct.unmappedTargetPolicy=IGNORE</arg>
+                        <arg>-Amapstruct.suppressGeneratorTimestamp=true</arg>
+                        <arg>-Amapstruct.verbose=false</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
 </project>
