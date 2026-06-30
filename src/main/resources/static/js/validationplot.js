@@ -1676,6 +1676,43 @@ function getPolygonCenter(coords) {
     };
 }
 
+// Функция для нормализации и сортировки номеров делян
+function formatNumberInQuarter(value) {
+    if (!value) return '';
+
+    // 1. Заменяем запятые и точки с запятой на пробелы
+    let normalized = value.replace(/[,;]/g, ' ');
+
+    // 2. Удаляем множественные пробелы
+    normalized = normalized.replace(/\s+/g, ' ');
+
+    // 3. Обрезаем пробелы в начале и конце
+    normalized = normalized.trim();
+
+    if (!normalized) return '';
+
+    // 4. Разбиваем на массив, удаляем пустые элементы
+    let numbers = normalized.split(' ').filter(s => s !== '');
+
+    // 5. Сортируем как числа (если это числа) или как строки
+    numbers.sort((a, b) => {
+        // Пробуем преобразовать в числа
+        const numA = parseFloat(a);
+        const numB = parseFloat(b);
+
+        // Если оба числа - сортируем как числа
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+        }
+
+        // Иначе сортируем как строки
+        return a.localeCompare(b);
+    });
+
+    // 6. Соединяем обратно через запятую
+    return numbers.join(', ');
+}
+
 function updateLegend() {
     const oldLegend = document.querySelector('.custom-legend');
     if (oldLegend) {
@@ -1698,7 +1735,7 @@ function updateLegend() {
         border: 1px solid #ddd;
         pointer-events: none;
         max-width: 220px;
-    `;
+        `;
 
     const labelsStatus = showLabels ? '🟢 Включены' : '🔴 Выключены';
 
@@ -1711,7 +1748,8 @@ function updateLegend() {
         filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Год рубки: ${filters.yearOfCut}</div>`;
     }
     if (filters.numberInQuarter) {
-        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${filters.numberInQuarter}</div>`;
+        const formattedNumbers = formatNumberInQuarter(filters.numberInQuarter);
+        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${formattedNumbers}</div>`;
     }
 
     legend.innerHTML = `
