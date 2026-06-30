@@ -543,6 +543,28 @@ function enableQuarterField() {
         quarterInput.disabled = false;
         quarterInput.placeholder = 'Введите номер квартала...';
     }
+    // Поле номера деляны пока блокируем, так как квартал ещё не выбран
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
+}
+
+function updateNumberInQuarterField() {
+    const quarterId = document.getElementById('quarterId')?.value;
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+
+    if (quarterId && quarterId !== '') {
+        // Квартал выбран - включаем поле
+        numberInQuarterInput.disabled = false;
+        numberInQuarterInput.placeholder = 'Введите номер деляны...';
+    } else {
+        // Квартал не выбран - блокируем поле
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.value = '';
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
 }
 
 function setQuarter(quarterId) {
@@ -558,6 +580,8 @@ function setQuarter(quarterId) {
                     }
                     document.getElementById('quarterId').value = quarterId;
                     console.log('✅ Установлен квартал:', unit.number);
+                    // Включаем поле номера деляны
+                    updateNumberInQuarterField();
                 }
             })
             .catch(error => console.error('Ошибка загрузки квартала:', error));
@@ -927,6 +951,37 @@ function searchQuarters(query) {
     }, 300);
 }
 
+function selectQuarter(id, number, name) {
+    const quarterInput = document.getElementById('quarterInput');
+    const quarterIdInput = document.getElementById('quarterId');
+    const suggestionsDiv = document.getElementById('quarterSuggestions');
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+
+    if (quarterInput) {
+        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
+        quarterInput.disabled = false;
+    }
+    if (quarterIdInput) quarterIdInput.value = id;
+    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+
+    // Включаем поле номера деляны, так как квартал выбран
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = false;
+        numberInQuarterInput.placeholder = 'Введите номер деляны...';
+        numberInQuarterInput.focus();
+    }
+
+    saveUISetting('territory-unit', id);
+    saveUISetting('territory-type', 'QUARTER');
+    updateTerritoryInfo();
+
+    UIkit.notification({
+        message: '✅ Выбран квартал ' + number,
+        status: 'success',
+        timeout: 1500
+    });
+}
+
 // ==========================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
@@ -958,6 +1013,14 @@ function resetDependentSelects(level) {
     if (quarterId) quarterId.value = '';
     const suggestions = document.getElementById('quarterSuggestions');
     if (suggestions) suggestions.style.display = 'none';
+
+    // Блокируем поле номера деляны при сбросе
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.value = '';
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
 }
 
 function resetAllDependentSelects() {
@@ -999,6 +1062,14 @@ function resetAllDependentSelects() {
     if (quarterId) quarterId.value = '';
     const suggestions = document.getElementById('quarterSuggestions');
     if (suggestions) suggestions.style.display = 'none';
+
+    // Блокируем поле номера деляны
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.value = '';
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
 
     updateTerritoryInfo();
 }
@@ -1059,6 +1130,13 @@ function onForestryChange(forestryId) {
             quarterInput.value = '';
             quarterInput.placeholder = 'Сначала выберите лесничество';
         }
+        // Блокируем поле номера деляны
+        const numberInQuarterInput = document.getElementById('numberInQuarter');
+        if (numberInQuarterInput) {
+            numberInQuarterInput.disabled = true;
+            numberInQuarterInput.value = '';
+            numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+        }
         return;
     }
 
@@ -1117,29 +1195,6 @@ function onTechnicalUnitChange(technicalUnitId) {
     saveUISetting('territory-type', 'TECHNICAL_UNIT');
 
     updateTerritoryInfo();
-}
-
-function selectQuarter(id, number, name) {
-    const quarterInput = document.getElementById('quarterInput');
-    const quarterIdInput = document.getElementById('quarterId');
-    const suggestionsDiv = document.getElementById('quarterSuggestions');
-
-    if (quarterInput) {
-        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
-        quarterInput.disabled = false;
-    }
-    if (quarterIdInput) quarterIdInput.value = id;
-    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
-
-    saveUISetting('territory-unit', id);
-    saveUISetting('territory-type', 'QUARTER');
-    updateTerritoryInfo();
-
-    UIkit.notification({
-        message: '✅ Выбран квартал ' + number,
-        status: 'success',
-        timeout: 1500
-    });
 }
 
 function onCutTypeChange(value) {
