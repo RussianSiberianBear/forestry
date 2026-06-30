@@ -136,7 +136,7 @@
                                 <div class="uk-form-controls">
                                     <select class="form-select" id="regionSelect"
                                             name="regionId"
-                                            onchange="onRegionChange(this.value)">
+                                            onchange="onRegionChange(this.value)" data-filter>
                                         <option value="">-- Выберите регион --</option>
                                         <!-- regions теперь из TerritoryUnit -->
                                     </select>
@@ -152,7 +152,7 @@
                                     <select class="form-select dependent-select" id="municipalDistrictSelect"
                                             name="municipalDistrictId"
                                             onchange="onMunicipalDistrictChange(this.value)"
-                                            disabled>
+                                            disabled data-filter >
                                         <option value="">-- Сначала выберите регион --</option>
                                     </select>
                                 </div>
@@ -167,7 +167,7 @@
                                     <select class="form-select dependent-select" id="forestrySelect"
                                             name="forestryId"
                                             onchange="onForestryChange(this.value)"
-                                            disabled>
+                                            disabled data-filter>
                                         <option value="">-- Сначала выберите район --</option>
                                     </select>
                                 </div>
@@ -182,7 +182,7 @@
                                     <select class="form-select dependent-select" id="districtForestrySelect"
                                             name="districtForestryId"
                                             onchange="onDistrictForestryChange(this.value)"
-                                            disabled>
+                                            disabled data-filter>
                                         <option value="">-- Сначала выберите лесничество --</option>
                                     </select>
                                 </div>
@@ -197,7 +197,7 @@
                                     <select class="form-select dependent-select" id="technicalUnitSelect"
                                             name="technicalUnitId"
                                             onchange="onTechnicalUnitChange(this.value)"
-                                            disabled>
+                                            disabled data-filter>
                                         <option value="">-- Сначала выберите участковое лесничество --</option>
                                     </select>
                                 </div>
@@ -218,7 +218,7 @@
                                            autocomplete="off"
                                            oninput="searchQuarters(this.value)"
                                            onfocus="searchQuarters(this.value)"
-                                           disabled>
+                                           disabled data-filter>
                                     <input type="hidden" id="quarterId" name="quarterId">
                                     <div id="quarterSuggestions" class="autocomplete-suggestions"></div>
                                 </div>
@@ -239,7 +239,7 @@
                                     <input class="uk-input" type="text" id="numberInQuarter"
                                            th:field="*{numberInQuarter}"
                                            placeholder="Например: 12, 12а, 12/1"
-                                           required>
+                                           required data-filter>
                                 </div>
                                 <div class="field-hint">
                                     <span uk-icon="icon: info"></span>
@@ -281,7 +281,7 @@
                                                    th:field="*{yearOfCut}"
                                                    placeholder="2024"
                                                    onchange="onYearOfCutChange(this.value)"
-                                                   oninput="onYearOfCutChange(this.value)">
+                                                   oninput="onYearOfCutChange(this.value)" data-filter>
                                         </div>
                                     </div>
                                 </div>
@@ -291,7 +291,7 @@
                                         <div class="uk-form-controls">
                                             <select class="form-select" id="cutType"
                                                     th:field="*{cutType}"
-                                                    onchange="onCutTypeChange(this.value)">
+                                                    onchange="onCutTypeChange(this.value)" data-filter>
                                                 <option value="">-- Выберите --</option>
                                                 <option value="Сплошная">Сплошная</option>
                                                 <option value="Выборочная">Выборочная</option>
@@ -747,6 +747,7 @@
 <!-- ============================================ -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/common.js"></script>
 <script src="/js/validationplot.js"></script>
 <script src="/js/forest-ploat-mass-load.js"></script>
 
