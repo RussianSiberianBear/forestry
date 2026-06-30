@@ -85,19 +85,9 @@ public class PlotService {
             Long districtForestryId,
             Long technicalUnitId,
             Long quarterId,
+            String numberInQuarter,
             String cutType,
             Integer yearOfCut) {
-
-        log.info("📡 Запрос фильтрованных делян:");
-        log.info("   federalDistrictId={}", federalDistrictId);
-        log.info("   regionId={}", regionId);
-        log.info("   municipalDistrictId={}", municipalDistrictId);
-        log.info("   forestryId={}", forestryId);
-        log.info("   districtForestryId={}", districtForestryId);
-        log.info("   technicalUnitId={}", technicalUnitId);
-        log.info("   quarterId={}", quarterId);
-        log.info("   cutType={}", cutType);
-        log.info("   yearOfCut={}", yearOfCut);
 
         List<Plot> plots = new ArrayList<>();
 
@@ -139,12 +129,17 @@ public class PlotService {
         }
 
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
+        if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
+            plots = plots.stream()
+                    .filter(p -> p.getNumberInQuarter() != null)
+                    .collect(Collectors.toList());
+        }
+
         if (cutType != null && !cutType.isEmpty()) {
             int before = plots.size();
             plots = plots.stream()
                     .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
                     .collect(Collectors.toList());
-            log.info("📊 После фильтра по типу рубки '{}': {} -> {} делян", cutType, before, plots.size());
         }
 
         if (yearOfCut != null) {
