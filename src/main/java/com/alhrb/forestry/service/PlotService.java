@@ -15,11 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.thymeleaf.util.StringUtils.trim;
@@ -131,9 +127,19 @@ public class PlotService {
         }
 
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
+        // Номера делян могут быть разделены запятой чтобы можно было отобразить несколько
         if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
+            Set<String> allowedValues = Arrays.stream(numberInQuarter.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toSet());
+
             plots = plots.stream()
-                    .filter(p -> p.getNumberInQuarter().equals(trim(numberInQuarter)))
+                    .filter(p -> {
+                        String pValue = p.getNumberInQuarter() != null ?
+                                p.getNumberInQuarter().trim() : "";
+                        return allowedValues.contains(pValue);
+                    })
                     .collect(Collectors.toList());
         }
 
