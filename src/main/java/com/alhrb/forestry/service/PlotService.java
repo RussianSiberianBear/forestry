@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.thymeleaf.util.StringUtils.trim;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -131,12 +133,11 @@ public class PlotService {
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
         if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
             plots = plots.stream()
-                    .filter(p -> p.getNumberInQuarter() != null)
+                    .filter(p -> p.getNumberInQuarter().equals(trim(numberInQuarter)))
                     .collect(Collectors.toList());
         }
 
         if (cutType != null && !cutType.isEmpty()) {
-            int before = plots.size();
             plots = plots.stream()
                     .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
                     .collect(Collectors.toList());
