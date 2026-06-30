@@ -127,9 +127,9 @@ public class PlotService {
         }
 
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
-        // Номера делян могут быть разделены запятой чтобы можно было отобразить несколько
+        // Номера делян могут быть разделены запятой,точкой с запятой или пробелом чтобы можно было отобразить несколько
         if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
-            Set<String> allowedValues = Arrays.stream(numberInQuarter.split(","))
+            Set<String> allowedValues = Arrays.stream(numberInQuarter.split("[,;\\\\s]+"))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toSet());
