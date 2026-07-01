@@ -69,6 +69,12 @@ public class UserUISettingsService {
             case "territory-type":
                 settings.setTerritoryType(value != null && !value.equals("0") ? value : null);
                 break;
+            case "forestry-unit":
+                settings.setForestryUnitId(value != null && !value.equals("0") ? Long.parseLong(value) : null);
+                break;
+            case "forestry-type":
+                settings.setForestryType(value != null && !value.equals("0") ? value : null);
+                break;
             case "center-lat":
                 settings.setCenterLat(value != null ? Double.parseDouble(value) : null);
                 break;

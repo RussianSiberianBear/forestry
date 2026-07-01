@@ -1079,8 +1079,8 @@ function selectQuarter(id, number, name) {
         numberInQuarterInput.focus();
     }
 
-    saveUISetting('territory-unit', id);
-    saveUISetting('territory-type', 'QUARTER');
+    saveUISetting('forestry-unit', id);
+    saveUISetting('forestry-type', 'QUARTER');
     updateTerritoryInfo();
 
     UIkit.notification({
@@ -1230,8 +1230,8 @@ function onForestryChange(forestryId) {
     resetDependentSelects('district');
 
     if (!forestryId) {
-        saveUISetting('territory-unit', 0);
-        saveUISetting('territory-type', '');
+        saveUISetting('forestry-unit', 0);
+        saveUISetting('forestry-type', '');
         const quarterInput = document.getElementById('quarterInput');
         if (quarterInput) {
             quarterInput.disabled = true;
@@ -1254,8 +1254,8 @@ function onForestryChange(forestryId) {
         quarterInput.placeholder = 'Введите номер квартала...';
     }
 
-    saveUISetting('territory-unit', forestryId);
-    saveUISetting('territory-type', 'FORESTRY');
+    saveUISetting('forestry-unit', forestryId);
+    saveUISetting('forestry-type', 'FORESTRY');
     loadDistrictForestries(forestryId);
 
     updateTerritoryInfo();
@@ -1272,8 +1272,8 @@ function onDistrictForestryChange(districtForestryId) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             techSelect.disabled = true;
         }
-        saveUISetting('territory-unit', 0);
-        saveUISetting('territory-type', '');
+        saveUISetting('forestry-unit', 0);
+        saveUISetting('forestry-type', '');
         return;
     }
 
@@ -1282,8 +1282,8 @@ function onDistrictForestryChange(districtForestryId) {
         techSelect.disabled = true;
     }
 
-    saveUISetting('territory-unit', districtForestryId);
-    saveUISetting('territory-type', 'DISTRICT_FORESTRY');
+    saveUISetting('forestry-unit', districtForestryId);
+    saveUISetting('forestry-type', 'DISTRICT_FORESTRY');
 
     loadTechnicalUnits(districtForestryId);
 
@@ -1294,13 +1294,13 @@ function onTechnicalUnitChange(technicalUnitId) {
     const quarterInput = document.getElementById('quarterInput');
 
     if (!technicalUnitId) {
-        saveUISetting('territory-unit', 0);
-        saveUISetting('territory-type', '');
+        saveUISetting('forestry-unit', 0);
+        saveUISetting('forestry-type', '');
         return;
     }
 
-    saveUISetting('territory-unit', technicalUnitId);
-    saveUISetting('territory-type', 'TECHNICAL_UNIT');
+    saveUISetting('forestry-unit', technicalUnitId);
+    saveUISetting('forestry-type', 'TECHNICAL_UNIT');
 
     updateTerritoryInfo();
 }
