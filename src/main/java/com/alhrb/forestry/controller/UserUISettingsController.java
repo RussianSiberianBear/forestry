@@ -18,10 +18,10 @@ public class UserUISettingsController {
 
     @PostMapping("/{key}/{value}")
     public ResponseEntity<String> saveSetting(@PathVariable String key,
-                                              @PathVariable String value,
-                                              HttpSession session) {
+                                              @PathVariable String value
+                                              ) {
         try {
-            userUISettingsService.updateSetting(session, key, value);  // ← передаем session
+            userUISettingsService.updateSetting(key, value);
             log.info("✅ Настройка сохранена: {}={}", key, value);
             return ResponseEntity.ok("OK");
         } catch (Exception e) {
@@ -31,9 +31,9 @@ public class UserUISettingsController {
     }
 
     @GetMapping("/current")
-    public ResponseEntity<UserUISettings> getCurrentSettings(HttpSession session) {
+    public ResponseEntity<UserUISettings> getCurrentSettings() {
         try {
-            UserUISettings settings = userUISettingsService.getOrCreateSettings(session);
+            UserUISettings settings = userUISettingsService.getOrCreateSettings();
             return ResponseEntity.ok(settings);
         } catch (Exception e) {
             log.error("❌ Ошибка получения настроек: {}", e.getMessage());
