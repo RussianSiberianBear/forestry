@@ -14,6 +14,27 @@ let labelLayer = null;
 let currentFilters = {};
 
 function collectFilters() {
+    // Используем автосборку фильтров из отдельного файла
+    // Корневой элемент - форма с id=plotForm
+    // Функция collectFilterAuto определена в отдельном файле
+    if (typeof collectFilterAuto === 'function') {
+        const filters = collectFilterAuto('plotForm', {
+            selector: '[data-filter]',
+            trim: true,
+            skipEmpty: true,
+            skipDisabled: true
+        });
+        console.log('📋 Собранные фильтры (авто):', filters);
+        return filters;
+    } else {
+        // Фоллбэк - ручной сбор фильтров, если автосборка недоступна
+        console.warn('⚠️ Функция collectFilterAuto не найдена, используем ручной сбор');
+        return collectFiltersManual();
+    }
+}
+
+// Ручной сбор фильтров (фоллбэк)
+function collectFiltersManual() {
     const regionSelect = document.getElementById('regionSelect');
     const municipalSelect = document.getElementById('municipalDistrictSelect');
     const forestrySelect = document.getElementById('forestrySelect');
@@ -22,6 +43,7 @@ function collectFilters() {
     const quarterId = document.getElementById('quarterId');
     const cutTypeSelect = document.getElementById('cutType');
     const yearOfCutInput = document.getElementById('yearOfCut');
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
 
     const filters = {};
 
@@ -49,7 +71,10 @@ function collectFilters() {
     const yearOfCut = yearOfCutInput?.value;
     if (yearOfCut && yearOfCut !== '') filters.yearOfCut = yearOfCut;
 
-    console.log('📋 Собранные фильтры:', filters);
+    const numberInQuarter = numberInQuarterInput?.value?.trim();
+    if (numberInQuarter && numberInQuarter !== '') filters.numberInQuarter = numberInQuarter;
+
+    console.log('📋 Собранные фильтры (ручной):', filters);
     return filters;
 }
 
@@ -61,23 +86,24 @@ function refreshMap() {
     currentFilters = collectFilters();
     console.log('🔍 Обновление карты с фильтрами:', currentFilters);
 
-    if (Object.keys(currentFilters).length === 0) {
-        loadAllPlots();
-        return;
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+        mapContainer.style.opacity = '0.6';
     }
 
+    // Формируем параметры запроса
     const params = new URLSearchParams();
     Object.keys(currentFilters).forEach(key => {
         params.append(key, currentFilters[key]);
     });
 
-    const url = '/api/plots/map-data-filtered?' + params.toString();
-    console.log('📡 Запрос к:', url);
+    // Определяем URL для запроса
+    const hasFilters = Object.keys(currentFilters).length > 0;
+    const url = hasFilters
+        ? '/api/plots/map-data-filtered?' + params.toString()
+        : '/api/plots/map-data';
 
-    const mapContainer = document.getElementById('map');
-    if (mapContainer) {
-        mapContainer.style.opacity = '0.6';
-    }
+    console.log('📡 Запрос к:', url);
 
     fetch(url)
         .then(response => {
@@ -98,10 +124,34 @@ function refreshMap() {
                     infoSpan.textContent = 'Все деляны';
                     infoSpan.style.background = '#1e87f0';
                 } else {
-                    infoSpan.textContent = `Найдено: ${count}`;
+                    let filterText = `Найдено: ${count}`;
+                    // Показываем номера делян из загруженных данных
+                    if (plots && plots.length > 0) {
+                        const numbers = plots
+                            .map(p => p.numberInQuarter)
+                            .filter(n => n && n !== '')
+                            .sort((a, b) => {
+                                const numA = parseFloat(a);
+                                const numB = parseFloat(b);
+                                if (!isNaN(numA) && !isNaN(numB)) {
+                                    return numA - numB;
+                                }
+                                return a.localeCompare(b);
+                            });
+                        if (numbers.length > 0) {
+                            const displayNumbers = numbers.length > 10
+                                ? numbers.slice(0, 10).join(', ') + `... +${numbers.length - 10}`
+                                : numbers.join(', ');
+                            filterText += ` (Дел. №: ${displayNumbers})`;
+                        }
+                    }
+                    infoSpan.textContent = filterText;
                     infoSpan.style.background = '#2e7d32';
                 }
             }
+
+            // Обновляем легенду с переданными данными
+            updateLegend(plots);
 
             if (mapContainer) {
                 mapContainer.style.opacity = '1';
@@ -126,53 +176,94 @@ function refreshMap() {
         });
 }
 
-function loadAllPlots() {
-    console.log('📡 Загрузка всех делян');
+// ==========================================
+// ЛЕГЕНДА КАРТЫ
+// ==========================================
+
+function updateLegend(plotsData) {
+    const oldLegend = document.querySelector('.custom-legend');
+    if (oldLegend) {
+        oldLegend.remove();
+    }
+
+    const legend = document.createElement('div');
+    legend.className = 'custom-legend';
+    legend.style.cssText = `
+        position: absolute;
+        bottom: 30px;
+        right: 10px;
+        background: rgba(255,255,255,0.92);
+        padding: 10px 14px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-size: 12px;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        border: 1px solid #ddd;
+        pointer-events: none;
+        max-width: 220px;
+        `;
+
+    const labelsStatus = showLabels ? '🟢 Включены' : '🔴 Выключены';
+
+    let filterInfo = '';
+    const filters = collectFilters();
+    if (filters.cutType) {
+        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Тип рубки: ${filters.cutType}</div>`;
+    }
+    if (filters.yearOfCut) {
+        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Год рубки: ${filters.yearOfCut}</div>`;
+    }
+
+    // Показываем номера делян из переданных данных (plotsData)
+    if (plotsData && Array.isArray(plotsData) && plotsData.length > 0) {
+        const numbers = plotsData
+            .map(p => p.numberInQuarter)
+            .filter(n => n !== undefined && n !== null && n !== '')
+            .sort((a, b) => {
+                const numA = parseFloat(a);
+                const numB = parseFloat(b);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
+        if (numbers.length > 0) {
+            const displayNumbers = numbers.length > 10
+                ? numbers.slice(0, 10).join(', ') + `... +${numbers.length - 10}`
+                : numbers.join(', ');
+            filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${displayNumbers}</div>`;
+        }
+    }
+
+    legend.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 4px; color: #333;">📋 Информация на карте:</div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #d32f2f; border-radius: 2px; opacity: 0.3;"></span>
+                <span style="color: #555;">Красные полигоны — деляны</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #d32f2f; border-radius: 50%; border: 1px solid #d32f2f;"></span>
+                <span style="color: #555;">Метки: Квартал / Деляна / Площадь</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; border-top: 1px solid #eee; padding-top: 4px;">
+                <span style="font-size: 10px; color: #999;">Метки: ${labelsStatus}</span>
+                <span style="font-size: 10px; color: #999;">| При наведении — увеличение</span>
+            </div>
+            ${filterInfo ? `<div style="border-top: 1px solid #eee; padding-top: 4px; margin-top: 2px;">${filterInfo}</div>` : ''}
+        </div>
+    `;
 
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
-        mapContainer.style.opacity = '0.6';
+        mapContainer.style.position = 'relative';
+        mapContainer.appendChild(legend);
     }
+}
 
-    const infoSpan = document.getElementById('filterInfo');
-    if (infoSpan) {
-        infoSpan.textContent = 'Все деляны';
-        infoSpan.style.background = '#1e87f0';
-    }
-
-    fetch('/api/plots/map-data')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.json();
-        })
-        .then(plots => {
-            cachedPlots = plots;
-            renderPlots(plots);
-
-            if (mapContainer) {
-                mapContainer.style.opacity = '1';
-            }
-
-            const count = plots ? plots.length : 0;
-            UIkit.notification({
-                message: `🗺️ Загружено ${count} делян`,
-                status: 'success',
-                timeout: 2000
-            });
-        })
-        .catch(error => {
-            console.error('❌ Ошибка загрузки делян:', error);
-            if (mapContainer) {
-                mapContainer.style.opacity = '1';
-            }
-            UIkit.notification({
-                message: '❌ Ошибка загрузки: ' + error.message,
-                status: 'danger',
-                timeout: 3000
-            });
-        });
+function loadAllPlots() {
+    refreshMap();
 }
 
 // ==========================================
@@ -421,6 +512,8 @@ function saveUISetting(endpoint, value) {
 function loadUISettingsFromServer() {
     const territoryUnitId = document.getElementById('uiTerritoryUnitId')?.value;
     const territoryType = document.getElementById('uiTerritoryType')?.value;
+    const forestryUnitId = document.getElementById('uiForestryUnitId')?.value;
+    const forestryType = document.getElementById('uiForestryType')?.value;
     const centerLat = document.getElementById('uiCenterLat')?.value;
     const centerLng = document.getElementById('uiCenterLng')?.value;
     const zoom = document.getElementById('uiZoom')?.value;
@@ -451,7 +544,7 @@ function loadUISettingsFromServer() {
 
     if (!territoryUnitId || territoryUnitId === '') {
         console.log('⚠️ Нет сохранённой территории');
-        loadAllPlots();
+        refreshMap();
         return;
     }
 
@@ -466,7 +559,7 @@ function loadTerritoryHierarchy(unitId, type) {
         })
         .catch(error => {
             console.error('Ошибка загрузки территории:', error);
-            loadAllPlots();
+            refreshMap();
         });
 }
 
@@ -511,7 +604,7 @@ function loadFullHierarchy(unit) {
             })
             .catch(error => {
                 console.error('Ошибка загрузки пути:', error);
-                loadAllPlots();
+                refreshMap();
             });
     }
 }
@@ -529,7 +622,6 @@ function restoreHierarchy(regionId, municipalDistrictId, forestryId,
                     const forestrySelect = document.getElementById('forestrySelect');
                     if (forestrySelect && forestryId) {
                         forestrySelect.value = forestryId;
-                        // ВКЛЮЧАЕМ ПОЛЕ КВАРТАЛА ПРИ ВЫБОРЕ ЛЕСНИЧЕСТВА!
                         enableQuarterField();
                         loadDistrictForestries(forestryId, function() {
                             const districtSelect = document.getElementById('districtForestrySelect');
@@ -546,16 +638,10 @@ function restoreHierarchy(regionId, municipalDistrictId, forestryId,
                                 setQuarter(quarterId);
                             }
                         });
-                    } else {
-                        refreshMap();
                     }
                 });
-            } else {
-                refreshMap();
             }
         });
-    } else {
-        refreshMap();
     }
 }
 
@@ -564,6 +650,28 @@ function enableQuarterField() {
     if (quarterInput) {
         quarterInput.disabled = false;
         quarterInput.placeholder = 'Введите номер квартала...';
+    }
+    // Поле номера деляны пока блокируем, так как квартал ещё не выбран
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
+}
+
+function updateNumberInQuarterField() {
+    const quarterId = document.getElementById('quarterId')?.value;
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+
+    if (quarterId && quarterId !== '') {
+        // Квартал выбран - включаем поле
+        numberInQuarterInput.disabled = false;
+        numberInQuarterInput.placeholder = 'Введите номер деляны...';
+    } else {
+        // Квартал не выбран - блокируем поле
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.value = '';
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
     }
 }
 
@@ -580,12 +688,11 @@ function setQuarter(quarterId) {
                     }
                     document.getElementById('quarterId').value = quarterId;
                     console.log('✅ Установлен квартал:', unit.number);
-                    refreshMap();
+                    // Включаем поле номера деляны
+                    updateNumberInQuarterField();
                 }
             })
             .catch(error => console.error('Ошибка загрузки квартала:', error));
-    } else {
-        refreshMap();
     }
 }
 
@@ -708,7 +815,7 @@ function loadForestries(municipalDistrictId, callback) {
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
 
-    fetch('/api/territory/forestries/by-district/' + municipalDistrictId)
+    fetch('/api/forestry/forestries/by-district/' + municipalDistrictId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -732,7 +839,6 @@ function loadForestries(municipalDistrictId, callback) {
                 if (data.length === 1) {
                     select.value = data[0].id;
                     saveUISetting('forestry', data[0].id);
-                    // ВКЛЮЧАЕМ ПОЛЕ КВАРТАЛА!
                     enableQuarterField();
                     loadDistrictForestries(data[0].id);
                 }
@@ -766,7 +872,7 @@ function loadDistrictForestries(forestryId, callback) {
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
 
-    fetch('/api/territory/district-forestries/by-forestry/' + forestryId)
+    fetch('/api/forestry/district-forestries/by-forestry/' + forestryId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -828,7 +934,7 @@ function loadTechnicalUnits(districtForestryId, callback) {
     techSelect.innerHTML = '<option value="">Загрузка...</option>';
     techSelect.disabled = true;
 
-    fetch('/api/territory/technical-units/by-district/' + districtForestryId)
+    fetch('/api/forestry/technical-units/by-district/' + districtForestryId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -891,7 +997,6 @@ function searchQuarters(query) {
 
     if (!quarterInput) return;
 
-    // Определяем родителя для поиска кварталов: техучасток > участковое > лесничество
     let parentId = technicalUnitId || districtForestryId || forestryId;
 
     if (!parentId) {
@@ -914,8 +1019,7 @@ function searchQuarters(query) {
             suggestionsDiv.style.display = 'block';
         }
 
-        // Используем параметр technicalUnitId как требует контроллер
-        const url = '/api/territory/quarters/search?technicalUnitId=' + parentId + '&query=' + encodeURIComponent(query.trim());
+        const url = '/api/forestry/quarters/search?technicalUnitId=' + parentId + '&query=' + encodeURIComponent(query.trim());
 
         fetch(url)
             .then(response => {
@@ -955,6 +1059,37 @@ function searchQuarters(query) {
     }, 300);
 }
 
+function selectQuarter(id, number, name) {
+    const quarterInput = document.getElementById('quarterInput');
+    const quarterIdInput = document.getElementById('quarterId');
+    const suggestionsDiv = document.getElementById('quarterSuggestions');
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+
+    if (quarterInput) {
+        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
+        quarterInput.disabled = false;
+    }
+    if (quarterIdInput) quarterIdInput.value = id;
+    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+
+    // Включаем поле номера деляны, так как квартал выбран
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = false;
+        numberInQuarterInput.placeholder = 'Введите номер деляны...';
+        numberInQuarterInput.focus();
+    }
+
+    saveUISetting('forestry-unit', id);
+    saveUISetting('forestry-type', 'QUARTER');
+    updateTerritoryInfo();
+
+    UIkit.notification({
+        message: '✅ Выбран квартал ' + number,
+        status: 'success',
+        timeout: 1500
+    });
+}
+
 // ==========================================
 // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ==========================================
@@ -986,6 +1121,14 @@ function resetDependentSelects(level) {
     if (quarterId) quarterId.value = '';
     const suggestions = document.getElementById('quarterSuggestions');
     if (suggestions) suggestions.style.display = 'none';
+
+    // Блокируем поле номера деляны при сбросе
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.value = '';
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
 }
 
 function resetAllDependentSelects() {
@@ -1027,6 +1170,14 @@ function resetAllDependentSelects() {
     if (quarterId) quarterId.value = '';
     const suggestions = document.getElementById('quarterSuggestions');
     if (suggestions) suggestions.style.display = 'none';
+
+    // Блокируем поле номера деляны
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.value = '';
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
 
     updateTerritoryInfo();
 }
@@ -1079,27 +1230,32 @@ function onForestryChange(forestryId) {
     resetDependentSelects('district');
 
     if (!forestryId) {
-        saveUISetting('territory-unit', 0);
-        saveUISetting('territory-type', '');
-        // БЛОКИРУЕМ ПОЛЕ КВАРТАЛА
+        saveUISetting('forestry-unit', 0);
+        saveUISetting('forestry-type', '');
         const quarterInput = document.getElementById('quarterInput');
         if (quarterInput) {
             quarterInput.disabled = true;
             quarterInput.value = '';
             quarterInput.placeholder = 'Сначала выберите лесничество';
         }
+        // Блокируем поле номера деляны
+        const numberInQuarterInput = document.getElementById('numberInQuarter');
+        if (numberInQuarterInput) {
+            numberInQuarterInput.disabled = true;
+            numberInQuarterInput.value = '';
+            numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+        }
         return;
     }
 
-    // ВКЛЮЧАЕМ ПОЛЕ КВАРТАЛА ПРИ ВЫБОРЕ ЛЕСНИЧЕСТВА!
     const quarterInput = document.getElementById('quarterInput');
     if (quarterInput) {
         quarterInput.disabled = false;
         quarterInput.placeholder = 'Введите номер квартала...';
     }
 
-    saveUISetting('territory-unit', forestryId);
-    saveUISetting('territory-type', 'FORESTRY');
+    saveUISetting('forestry-unit', forestryId);
+    saveUISetting('forestry-type', 'FORESTRY');
     loadDistrictForestries(forestryId);
 
     updateTerritoryInfo();
@@ -1116,9 +1272,8 @@ function onDistrictForestryChange(districtForestryId) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             techSelect.disabled = true;
         }
-        // ПОЛЕ КВАРТАЛА НЕ БЛОКИРУЕМ, так как лесничество уже выбрано!
-        saveUISetting('territory-unit', 0);
-        saveUISetting('territory-type', '');
+        saveUISetting('forestry-unit', 0);
+        saveUISetting('forestry-type', '');
         return;
     }
 
@@ -1127,8 +1282,8 @@ function onDistrictForestryChange(districtForestryId) {
         techSelect.disabled = true;
     }
 
-    saveUISetting('territory-unit', districtForestryId);
-    saveUISetting('territory-type', 'DISTRICT_FORESTRY');
+    saveUISetting('forestry-unit', districtForestryId);
+    saveUISetting('forestry-type', 'DISTRICT_FORESTRY');
 
     loadTechnicalUnits(districtForestryId);
 
@@ -1139,38 +1294,15 @@ function onTechnicalUnitChange(technicalUnitId) {
     const quarterInput = document.getElementById('quarterInput');
 
     if (!technicalUnitId) {
-        saveUISetting('territory-unit', 0);
-        saveUISetting('territory-type', '');
+        saveUISetting('forestry-unit', 0);
+        saveUISetting('forestry-type', '');
         return;
     }
 
-    saveUISetting('territory-unit', technicalUnitId);
-    saveUISetting('territory-type', 'TECHNICAL_UNIT');
+    saveUISetting('forestry-unit', technicalUnitId);
+    saveUISetting('forestry-type', 'TECHNICAL_UNIT');
 
     updateTerritoryInfo();
-}
-
-function selectQuarter(id, number, name) {
-    const quarterInput = document.getElementById('quarterInput');
-    const quarterIdInput = document.getElementById('quarterId');
-    const suggestionsDiv = document.getElementById('quarterSuggestions');
-
-    if (quarterInput) {
-        quarterInput.value = 'Кв. ' + number + (name ? ' (' + name + ')' : '');
-        quarterInput.disabled = false;
-    }
-    if (quarterIdInput) quarterIdInput.value = id;
-    if (suggestionsDiv) suggestionsDiv.style.display = 'none';
-
-    saveUISetting('territory-unit', id);
-    saveUISetting('territory-type', 'QUARTER');
-    updateTerritoryInfo();
-
-    UIkit.notification({
-        message: '✅ Выбран квартал ' + number,
-        status: 'success',
-        timeout: 1500
-    });
 }
 
 function onCutTypeChange(value) {
@@ -1195,6 +1327,7 @@ function updateTerritoryInfo() {
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
     const quarterInput = document.getElementById('quarterInput')?.value;
+    const numberInQuarter = document.getElementById('numberInQuarter')?.value?.trim();
 
     let name = 'не выбрано';
 
@@ -1217,6 +1350,10 @@ function updateTerritoryInfo() {
         name = select?.options[select.selectedIndex]?.text || 'Регион';
     }
 
+    if (numberInQuarter) {
+        name += ` (Дел. №${numberInQuarter})`;
+    }
+
     const span = document.getElementById('selectedTerritoryName');
     if (span) span.textContent = name;
 }
@@ -1232,6 +1369,7 @@ function checkSelected() {
     const districtForestryId = document.getElementById('districtForestrySelect')?.value;
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
+    const numberInQuarter = document.getElementById('numberInQuarter')?.value?.trim();
 
     let type = null;
     let id = null;
@@ -1284,13 +1422,25 @@ function checkSelected() {
         'QUARTER': 'кварталу'
     };
 
+    let message = `🔍 Проверка делян по ${typeNames[type]}: "${name}"...`;
+    if (numberInQuarter) {
+        message += ` (Дел. №${numberInQuarter})`;
+    }
+
     UIkit.notification({
-        message: `🔍 Проверка делян по ${typeNames[type]}: "${name}"...`,
+        message: message,
         status: 'primary',
         timeout: 3000
     });
 
-    fetch('/api/plots/validate-by-territory?type=' + type + '&id=' + id, {
+    const params = new URLSearchParams();
+    params.append('type', type);
+    params.append('id', id);
+    if (numberInQuarter) {
+        params.append('numberInQuarter', numberInQuarter);
+    }
+
+    fetch('/api/plots/validate-by-territory?' + params.toString(), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1674,7 +1824,8 @@ function renderPlots(plots) {
         }
     });
 
-    updateLegend();
+    // Обновляем легенду с переданными данными
+    updateLegend(plots);
 }
 
 function getPolygonCenter(coords) {
@@ -1689,7 +1840,44 @@ function getPolygonCenter(coords) {
     };
 }
 
-function updateLegend() {
+// Функция для нормализации и сортировки номеров делян
+function formatNumberInQuarter(value) {
+    if (!value) return '';
+
+    // 1. Заменяем запятые и точки с запятой на пробелы
+    let normalized = value.replace(/[,;]/g, ' ');
+
+    // 2. Удаляем множественные пробелы
+    normalized = normalized.replace(/\s+/g, ' ');
+
+    // 3. Обрезаем пробелы в начале и конце
+    normalized = normalized.trim();
+
+    if (!normalized) return '';
+
+    // 4. Разбиваем на массив, удаляем пустые элементы
+    let numbers = normalized.split(' ').filter(s => s !== '');
+
+    // 5. Сортируем как числа (если это числа) или как строки
+    numbers.sort((a, b) => {
+        // Пробуем преобразовать в числа
+        const numA = parseFloat(a);
+        const numB = parseFloat(b);
+
+        // Если оба числа - сортируем как числа
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+        }
+
+        // Иначе сортируем как строки
+        return a.localeCompare(b);
+    });
+
+    // 6. Соединяем обратно через запятую
+    return numbers.join(', ');
+}
+
+function updateLegend(plotsData) {
     const oldLegend = document.querySelector('.custom-legend');
     if (oldLegend) {
         oldLegend.remove();
@@ -1711,7 +1899,7 @@ function updateLegend() {
         border: 1px solid #ddd;
         pointer-events: none;
         max-width: 220px;
-    `;
+        `;
 
     const labelsStatus = showLabels ? '🟢 Включены' : '🔴 Выключены';
 
@@ -1722,6 +1910,27 @@ function updateLegend() {
     }
     if (filters.yearOfCut) {
         filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Год рубки: ${filters.yearOfCut}</div>`;
+    }
+
+    // Показываем номера делян из переданных данных (plotsData)
+    if (plotsData && Array.isArray(plotsData) && plotsData.length > 0) {
+        const numbers = plotsData
+            .map(p => p.numberInQuarter)
+            .filter(n => n !== undefined && n !== null && n !== '')
+            .sort((a, b) => {
+                const numA = parseFloat(a);
+                const numB = parseFloat(b);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
+        if (numbers.length > 0) {
+            const displayNumbers = numbers.length > 10
+                ? numbers.slice(0, 10).join(', ') + `... +${numbers.length - 10}`
+                : numbers.join(', ');
+            filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${displayNumbers}</div>`;
+        }
     }
 
     legend.innerHTML = `
@@ -1772,7 +1981,7 @@ function toggleLabels() {
     if (cachedPlots) {
         renderPlots(cachedPlots);
     } else {
-        loadAllPlots();
+        refreshMap();
     }
 
     UIkit.notification({
@@ -1816,6 +2025,23 @@ document.addEventListener('DOMContentLoaded', function () {
             conflictCount.textContent = conflictRows.length;
         }
     }
+
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.addEventListener('input', function() {
+            updateTerritoryInfo();
+        });
+    }
+
+    const selectors = ['regionSelect', 'municipalDistrictSelect', 'forestrySelect', 'districtForestrySelect', 'technicalUnitSelect'];
+    selectors.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', function() {
+                updateTerritoryInfo();
+            });
+        }
+    });
 
     setTimeout(function() {
         console.log('🔄 Запускаем initMap с задержкой 300мс...');

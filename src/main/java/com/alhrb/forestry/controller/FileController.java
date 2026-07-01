@@ -2,6 +2,7 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.FileUploadResponseDto;
 import com.alhrb.forestry.service.FileUploadService;
+import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
@@ -22,14 +23,14 @@ import java.util.List;
 public class FileController {
 
     private final FileUploadService fileUploadService;
-
-    // TODO: Получать userId из контекста безопасности
-    private static final Long TEST_USER_ID = 1L;
+    private final SecurityHelper securityHelper;
 
     @PostMapping("/upload")
     public ResponseEntity<FileUploadResponseDto> uploadFile(@RequestParam("file") MultipartFile file) {
+
+        Long userId = securityHelper.getCurrentUserId();
         try {
-            FileUploadResponseDto response = fileUploadService.uploadFile(TEST_USER_ID, file);
+            FileUploadResponseDto response = fileUploadService.uploadFile(userId, file);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -37,16 +38,17 @@ public class FileController {
             log.error("Ошибка при чтении файла", e);
             return ResponseEntity.internalServerError().build();
         }
+
     }
 
     @GetMapping
     public ResponseEntity<List<FileUploadResponseDto>> getUserFiles() {
-        return ResponseEntity.ok(fileUploadService.getUserFiles(TEST_USER_ID));
+        return ResponseEntity.ok(fileUploadService.getUserFiles(securityHelper.getCurrentUserId()));
     }
 
     @GetMapping("/{fileId}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
-        byte[] fileData = fileUploadService.getFileData(fileId, TEST_USER_ID);
+        byte[] fileData = fileUploadService.getFileData(fileId, securityHelper.getCurrentUserId());
         ByteArrayResource resource = new ByteArrayResource(fileData);
 
         return ResponseEntity.ok()

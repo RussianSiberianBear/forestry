@@ -109,10 +109,10 @@
     <div class="uk-switcher uk-margin">
         <div>
             <!-- ===== ЗАГОЛОВОК ===== -->
-            <h1 class="uk-heading-divider">
+            <h2 class="uk-heading-divider">
                 <span uk-icon="icon: tree; ratio: 1.5"></span>
                 Валидатор лесных делян
-            </h1>
+            </h2>
             <!-- ========================================== -->
             <!-- ДВЕ КОЛОНКИ (1/4 : 3/4) -->
             <!-- ========================================== -->
@@ -129,14 +129,14 @@
                         <form th:action="@{/api/plots/create}" th:object="${plotDto}" method="post" id="plotForm">
 
                             <!-- ===== 1. РЕГИОН ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="regionSelect">
                                     Регион <span class="required-star">*</span>
                                 </label>
                                 <div class="uk-form-controls">
                                     <select class="form-select" id="regionSelect"
                                             name="regionId"
-                                            onchange="onRegionChange(this.value)">
+                                            onchange="onRegionChange(this.value)" data-filter>
                                         <option value="">-- Выберите регион --</option>
                                         <!-- regions теперь из TerritoryUnit -->
                                     </select>
@@ -144,7 +144,7 @@
                             </div>
 
                             <!-- ===== 2. МУНИЦИПАЛЬНЫЙ РАЙОН ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="municipalDistrictSelect">
                                     Муниципальный район <span class="required-star">*</span>
                                 </label>
@@ -152,14 +152,14 @@
                                     <select class="form-select dependent-select" id="municipalDistrictSelect"
                                             name="municipalDistrictId"
                                             onchange="onMunicipalDistrictChange(this.value)"
-                                            disabled>
+                                            disabled data-filter >
                                         <option value="">-- Сначала выберите регион --</option>
                                     </select>
                                 </div>
                             </div>
 
                             <!-- ===== 3. ЛЕСНИЧЕСТВО ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="forestrySelect">
                                     Лесничество <span class="required-star">*</span>
                                 </label>
@@ -167,14 +167,14 @@
                                     <select class="form-select dependent-select" id="forestrySelect"
                                             name="forestryId"
                                             onchange="onForestryChange(this.value)"
-                                            disabled>
+                                            disabled data-filter>
                                         <option value="">-- Сначала выберите район --</option>
                                     </select>
                                 </div>
                             </div>
 
                             <!-- ===== 4. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="districtForestrySelect">
                                     Участковое лесничество <span class="required-star">*</span>
                                 </label>
@@ -182,14 +182,14 @@
                                     <select class="form-select dependent-select" id="districtForestrySelect"
                                             name="districtForestryId"
                                             onchange="onDistrictForestryChange(this.value)"
-                                            disabled>
+                                            disabled data-filter>
                                         <option value="">-- Сначала выберите лесничество --</option>
                                     </select>
                                 </div>
                             </div>
 
                             <!-- ===== 5. ТЕХНИЧЕСКИЙ УЧАСТОК ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="technicalUnitSelect">
                                     Технический участок <span class="required-star">*</span>
                                 </label>
@@ -197,7 +197,7 @@
                                     <select class="form-select dependent-select" id="technicalUnitSelect"
                                             name="technicalUnitId"
                                             onchange="onTechnicalUnitChange(this.value)"
-                                            disabled>
+                                            disabled data-filter>
                                         <option value="">-- Сначала выберите участковое лесничество --</option>
                                     </select>
                                 </div>
@@ -208,7 +208,7 @@
                             </div>
 
                             <!-- ===== 6. КВАРТАЛ (AUTOCOMPLETE) ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="quarterInput">
                                     Квартал <span class="required-star">*</span>
                                 </label>
@@ -218,7 +218,7 @@
                                            autocomplete="off"
                                            oninput="searchQuarters(this.value)"
                                            onfocus="searchQuarters(this.value)"
-                                           disabled>
+                                           disabled data-filter>
                                     <input type="hidden" id="quarterId" name="quarterId">
                                     <div id="quarterSuggestions" class="autocomplete-suggestions"></div>
                                 </div>
@@ -231,7 +231,7 @@
                             <hr>
 
                             <!-- ===== 7. НОМЕР ДЕЛЯНЫ ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="numberInQuarter">
                                     Номер деляны в квартале <span class="required-star">*</span>
                                 </label>
@@ -239,7 +239,7 @@
                                     <input class="uk-input" type="text" id="numberInQuarter"
                                            th:field="*{numberInQuarter}"
                                            placeholder="Например: 12, 12а, 12/1"
-                                           required>
+                                           required disabled data-filter>
                                 </div>
                                 <div class="field-hint">
                                     <span uk-icon="icon: info"></span>
@@ -248,7 +248,7 @@
                             </div>
 
                             <!-- ===== 8. ВЫДЕЛЫ ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="plots">Выделы</label>
                                 <div class="uk-form-controls">
                                     <input class="uk-input" type="text" id="plots"
@@ -262,7 +262,7 @@
                             </div>
 
                             <!-- ===== 9. ОПИСАНИЕ ===== -->
-                            <div class="uk-margin">
+                            <div class="uk-margin-small">
                                 <label class="uk-form-label" for="description">Описание</label>
                                 <div class="uk-form-controls">
                                     <textarea class="uk-textarea" id="description"
@@ -274,24 +274,24 @@
                             <!-- ===== 10. ГОД РУБКИ И ТИП ===== -->
                             <div class="uk-grid uk-grid-small" uk-grid>
                                 <div class="uk-width-1-2">
-                                    <div class="uk-margin">
+                                    <div class="uk-margin-small">
                                         <label class="uk-form-label" for="yearOfCut">Год рубки</label>
                                         <div class="uk-form-controls">
                                             <input class="uk-input" type="number" id="yearOfCut"
                                                    th:field="*{yearOfCut}"
                                                    placeholder="2024"
                                                    onchange="onYearOfCutChange(this.value)"
-                                                   oninput="onYearOfCutChange(this.value)">
+                                                   oninput="onYearOfCutChange(this.value)" data-filter>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="uk-width-1-2">
-                                    <div class="uk-margin">
+                                    <div class="uk-margin-small">
                                         <label class="uk-form-label" for="cutType">Тип рубки</label>
                                         <div class="uk-form-controls">
                                             <select class="form-select" id="cutType"
                                                     th:field="*{cutType}"
-                                                    onchange="onCutTypeChange(this.value)">
+                                                    onchange="onCutTypeChange(this.value)" data-filter>
                                                 <option value="">-- Выберите --</option>
                                                 <option value="Сплошная">Сплошная</option>
                                                 <option value="Выборочная">Выборочная</option>
@@ -394,8 +394,8 @@
                             <div class="uk-alert-primary uk-margin-small" uk-alert>
                                 <p>
                                     <span uk-icon="icon: info"></span>
-                                    <strong>Карта автоматически обновляется</strong> при выборе региона, района, лесничества,
-                                    квартала, а также при изменении года рубки и типа рубки в левой панели.
+                                    <strong>Карта обновляется по кнопке "Обновить карту"</strong> при выборе региона, района, лесничества,
+                                    квартала, номеров делян, года рубки и типа рубки в левой панели.
                                 </p>
                             </div>
 
@@ -736,6 +736,8 @@
 <div th:if="${uiSettings != null}" style="display: none;">
     <input type="hidden" id="uiTerritoryUnitId" th:value="${uiSettings.territoryUnitId}"/>
     <input type="hidden" id="uiTerritoryType" th:value="${uiSettings.territoryType}"/>
+    <input type="hidden" id="uiForestryUnitId" th:value="${uiSettings.forestryUnitId}"/>
+    <input type="hidden" id="uiForestryType" th:value="${uiSettings.forestryType}"/>
     <input type="hidden" id="uiCenterLat" th:value="${uiSettings.centerLat}"/>
     <input type="hidden" id="uiCenterLng" th:value="${uiSettings.centerLng}"/>
     <input type="hidden" id="uiZoom" th:value="${uiSettings.zoom}"/>
@@ -747,6 +749,7 @@
 <!-- ============================================ -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/common.js"></script>
 <script src="/js/validationplot.js"></script>
 <script src="/js/forest-ploat-mass-load.js"></script>
 

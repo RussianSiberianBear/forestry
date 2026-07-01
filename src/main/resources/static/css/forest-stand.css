@@ -1,0 +1,392 @@
+/* ==========================================
+   ОБЩИЕ СТИЛИ
+   ========================================== */
+
+#map {
+    height: 600px;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* ==========================================
+   КООРДИНАТЫ
+   ========================================== */
+
+.coordinate-row {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.coordinate-row input {
+    width: 140px;
+    display: inline-block;
+}
+
+.coord-input {
+    font-family: 'Courier New', monospace;
+}
+
+/* ==========================================
+   КОНФЛИКТЫ
+   ========================================== */
+
+.conflict-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.severity-critical {
+    color: #d32f2f;
+    font-weight: bold;
+}
+.severity-warning {
+    color: #f57c00;
+    font-weight: bold;
+}
+.severity-ok {
+    color: #388e3c;
+}
+
+/* ==========================================
+   СПИСКИ
+   ========================================== */
+
+.plot-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* ==========================================
+   КАРТОЧКИ
+   ========================================== */
+
+.uk-card {
+    transition: all 0.3s ease;
+}
+.uk-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================
+   ФОРМЫ
+   ========================================== */
+
+.form-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    background: white;
+}
+.form-select:focus {
+    border-color: #1e87f0;
+    outline: none;
+}
+
+.dependent-select.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.required-star {
+    color: #d32f2f;
+    margin-left: 2px;
+}
+
+.field-hint {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+/* ==========================================
+   AUTOCOMPLETE
+   ========================================== */
+
+.autocomplete-wrapper {
+    position: relative;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: none;
+}
+
+.autocomplete-suggestions .suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.2s ease;
+}
+
+.autocomplete-suggestions .suggestion-item:hover {
+    background: #e3f0ff;
+}
+
+.autocomplete-suggestions .suggestion-item.active {
+    background: #1e87f0;
+    color: white;
+}
+
+.autocomplete-suggestions .suggestion-item .suggestion-number {
+    font-weight: bold;
+}
+
+.autocomplete-suggestions .suggestion-item .suggestion-name {
+    color: #666;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.autocomplete-suggestions .no-results {
+    padding: 12px;
+    color: #999;
+    text-align: center;
+}
+
+.autocomplete-suggestions .loading-suggestions {
+    padding: 12px;
+    color: #666;
+    text-align: center;
+}
+
+/* ==========================================
+   КООРДИНАТЫ - ОДНА СТРОКА
+   ========================================== */
+
+#coordInput {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    padding: 10px 14px;
+    border: 2px solid #e5e5e5;
+    border-radius: 4px;
+    transition: border-color 0.3s ease;
+}
+#coordInput:focus {
+    border-color: #1e87f0;
+    outline: none;
+}
+
+.coordinate-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.coordinate-row:last-child {
+    border-bottom: none;
+}
+
+.coordinate-row .coord-index {
+    font-weight: bold;
+    color: #1e87f0;
+    min-width: 24px;
+}
+.coordinate-row .coord-lat,
+.coordinate-row .coord-lng {
+    font-family: 'Courier New', monospace;
+    color: #333;
+}
+.coordinate-row .coord-lat {
+    color: #2e7d32;
+}
+.coordinate-row .coord-lng {
+    color: #d32f2f;
+}
+
+#coordCounter {
+    font-weight: bold;
+    color: #666;
+}
+
+/* ==========================================
+   КАРТА — ПЕРЕКЛЮЧАТЕЛЬ СЛОЁВ
+   ========================================== */
+
+.leaflet-control-layers {
+    border-radius: 4px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.leaflet-control-layers label {
+    font-size: 14px !important;
+    padding: 6px 12px !important;
+    cursor: pointer;
+}
+
+.leaflet-control-layers label:hover {
+    background: #f0f0f0 !important;
+}
+
+.leaflet-control-layers input[type="radio"] {
+    margin-right: 8px !important;
+    cursor: pointer;
+}
+
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #fafafa;
+}
+
+.upload-area:hover {
+    border-color: #1e87f0;
+    background-color: #f0f7ff;
+}
+
+.upload-area.dragover {
+    border-color: #1e87f0;
+    background-color: #e3f0ff;
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: #999;
+}
+
+.file-info {
+    margin-top: 10px;
+    color: #666;
+}
+
+.file-name {
+    font-weight: bold;
+    color: #1e87f0;
+}
+
+.conflict-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.severity-critical {
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+.severity-warning {
+    color: #f57c00;
+    font-weight: bold;
+}
+
+.severity-ok {
+    color: #388e3c;
+}
+
+.stats-number {
+    font-size: 28px;
+    font-weight: bold;
+    display: block;
+}
+
+.stats-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.stats-critical {
+    color: #d32f2f;
+}
+
+.stats-warning {
+    color: #f57c00;
+}
+
+.stats-success {
+    color: #388e3c;
+}
+
+.template-download {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.template-download code {
+    background-color: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.progress-bar {
+    margin-top: 15px;
+    display: none;
+}
+
+.progress-bar.active {
+    display: block;
+}
+
+/* ==========================================
+   ФИЛЬТРЫ ДЛЯ КАРТЫ
+   ========================================== */
+
+.filter-section {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #e5e5e5;
+}
+
+.filter-section h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+.filter-section .uk-grid {
+    margin-top: 0;
+}
+
+/* Индикатор активного фильтра */
+.filter-active {
+    border-left: 3px solid #1e87f0;
+    background: #f0f7ff;
+}
+
+/* Стиль для кнопки сброса при активных фильтрах */
+.has-filters .uk-button-default {
+    border-color: #1e87f0;
+    color: #1e87f0;
+}
+
+/* Фильтры в левой колонке */
+.filter-group {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.filter-group .uk-form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.filter-group .uk-input,
+.filter-group .form-select {
+    font-size: 14px;
+}

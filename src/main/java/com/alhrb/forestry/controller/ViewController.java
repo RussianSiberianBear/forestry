@@ -27,8 +27,8 @@ public class ViewController {
     }
 
     @GetMapping("/forest-ploat")
-    public String forestPlot(Model model, HttpSession session) {
-        UserUISettings uiSettings = userUISettingsService.getOrCreateSettings(session);
+    public String forestPlot(Model model) {
+        UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
         List<Plot> plots = plotService.findAll();
 
         // Заполняем territoryPath для каждого plot
@@ -46,5 +46,27 @@ public class ViewController {
         model.addAttribute("latestPlots", latestPlots);
 
         return "forest-ploat";
+    }
+
+    @GetMapping("/forest-stand")
+    public String forestStand(Model model) {
+        UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
+        List<Plot> plots = plotService.findAll();
+
+        // Заполняем territoryPath для каждого plot
+        plots.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
+
+        model.addAttribute("plots", plots);
+        model.addAttribute("plotDto", new PlotDto());
+        model.addAttribute("uiSettings", uiSettings);
+
+        List<Plot> latestPlots = plots.stream()
+                .sorted(Comparator.comparing(Plot::getId).reversed())
+                .limit(5)
+                .toList();
+
+        model.addAttribute("latestPlots", latestPlots);
+
+        return "forest-stand";
     }
 }

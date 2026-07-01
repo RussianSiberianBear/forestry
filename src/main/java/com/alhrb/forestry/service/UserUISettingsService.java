@@ -4,6 +4,8 @@ import com.alhrb.forestry.model.User;
 import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.repository.UserUISettingsRepository;
 import com.alhrb.forestry.repository.UserRepository;
+import com.alhrb.forestry.util.SecurityHelper;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,12 +23,17 @@ public class UserUISettingsService {
 
     private final UserUISettingsRepository userUISettingsRepository;
     private final UserRepository userRepository;
+    private final SecurityHelper securityHelper;
+    private Long userId;
 
-    private static final String SESSION_USER_ID = "userId";
 
-    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО СЕССИИ =====
-    public UserUISettings getOrCreateSettings(HttpSession session) {
-        Long userId = (Long) session.getAttribute(SESSION_USER_ID);
+    @PostConstruct
+    public void init() {
+        userId = securityHelper.getCurrentUserId();
+    }
+
+    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ =====
+    public UserUISettings getOrCreateSettings() {
 
         if (userId == null) {
             log.debug("Пользователь не авторизован, возвращаем пустые настройки");
@@ -41,23 +48,15 @@ public class UserUISettingsService {
                 });
     }
 
-    // ===== ОБНОВИТЬ НАСТРОЙКИ (через сессию) =====
-    @Transactional
-    public UserUISettings updateSetting(HttpSession session, String key, String value) {
-        Long userId = (Long) session.getAttribute(SESSION_USER_ID);
-        if (userId == null) {
-            throw new RuntimeException("Пользователь не авторизован");
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-
-        return updateSetting(user, key, value);
-    }
 
     // ===== ОБНОВИТЬ НАСТРОЙКИ (через пользователя) =====
     @Transactional
-    public UserUISettings updateSetting(User user, String key, String value) {
+    public UserUISettings updateSetting(String key, String value) {
+        User user = securityHelper.getCurrentUser();
+        if (user == null){
+            throw new NullPointerException("Пользователь не авторизован!");
+        }
+
         UserUISettings settings = userUISettingsRepository.findByUser(user)
                 .orElse(new UserUISettings());
 
@@ -69,6 +68,12 @@ public class UserUISettingsService {
                 break;
             case "territory-type":
                 settings.setTerritoryType(value != null && !value.equals("0") ? value : null);
+                break;
+            case "forestry-unit":
+                settings.setForestryUnitId(value != null && !value.equals("0") ? Long.parseLong(value) : null);
+                break;
+            case "forestry-type":
+                settings.setForestryType(value != null && !value.equals("0") ? value : null);
                 break;
             case "center-lat":
                 settings.setCenterLat(value != null ? Double.parseDouble(value) : null);

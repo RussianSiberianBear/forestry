@@ -157,24 +157,14 @@ public class PlotController {
             @RequestParam(required = false) Long districtForestryId,
             @RequestParam(required = false) Long technicalUnitId,
             @RequestParam(required = false) Long quarterId,
+            @RequestParam(required = false) String numberInQuarter,
             @RequestParam(required = false) String cutType,
             @RequestParam(required = false) Integer yearOfCut) {
-
-        log.info("📡 Запрос фильтрованных делян:");
-        log.info("   federalDistrictId={}", federalDistrictId);
-        log.info("   regionId={}", regionId);
-        log.info("   municipalDistrictId={}", municipalDistrictId);
-        log.info("   forestryId={}", forestryId);
-        log.info("   districtForestryId={}", districtForestryId);
-        log.info("   technicalUnitId={}", technicalUnitId);
-        log.info("   quarterId={}", quarterId);
-        log.info("   cutType={}", cutType);
-        log.info("   yearOfCut={}", yearOfCut);
 
         List<PlotMapDto> plots = plotService.getFilteredPlotsForMap(
                 federalDistrictId, regionId, municipalDistrictId,
                 forestryId, districtForestryId, technicalUnitId,
-                quarterId, cutType, yearOfCut
+                quarterId, numberInQuarter, cutType, yearOfCut
         );
 
         log.info("📊 Найдено {} делян по фильтру", plots.size());

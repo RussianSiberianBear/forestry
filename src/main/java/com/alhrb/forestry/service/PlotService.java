@@ -15,12 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.thymeleaf.util.StringUtils.trim;
 
 @Service
 @RequiredArgsConstructor
@@ -85,19 +83,9 @@ public class PlotService {
             Long districtForestryId,
             Long technicalUnitId,
             Long quarterId,
+            String numberInQuarter,
             String cutType,
             Integer yearOfCut) {
-
-        log.info("📡 Запрос фильтрованных делян:");
-        log.info("   federalDistrictId={}", federalDistrictId);
-        log.info("   regionId={}", regionId);
-        log.info("   municipalDistrictId={}", municipalDistrictId);
-        log.info("   forestryId={}", forestryId);
-        log.info("   districtForestryId={}", districtForestryId);
-        log.info("   technicalUnitId={}", technicalUnitId);
-        log.info("   quarterId={}", quarterId);
-        log.info("   cutType={}", cutType);
-        log.info("   yearOfCut={}", yearOfCut);
 
         List<Plot> plots = new ArrayList<>();
 
@@ -139,12 +127,37 @@ public class PlotService {
         }
 
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
+        // Номера делян могут быть разделены запятой,точкой с запятой или пробелом чтобы можно было отобразить несколько
+        if (numberInQuarter != null && !numberInQuarter.isEmpty()) {
+            // Нормализуем строку: заменяем все разделители на пробелы
+            String normalized = numberInQuarter
+                    .replaceAll("[,;]", " ")  // заменяем запятые и точки с запятой на пробелы
+                    .replaceAll("\\s+", " ")  // заменяем все пробелы (включая множественные) на один
+                    .trim();                  // удаляем пробелы в начале и конце
+
+            Set<String> allowedValues = new HashSet<>();
+            if (!normalized.isEmpty()) {
+                String[] parts = normalized.split(" ");
+                for (String part : parts) {
+                    if (!part.isEmpty()) {
+                        allowedValues.add(part);
+                    }
+                }
+            }
+
+            plots = plots.stream()
+                    .filter(p -> {
+                        String pValue = p.getNumberInQuarter() != null ?
+                                p.getNumberInQuarter().trim() : "";
+                        return allowedValues.contains(pValue);
+                    })
+                    .collect(Collectors.toList());
+        }
+
         if (cutType != null && !cutType.isEmpty()) {
-            int before = plots.size();
             plots = plots.stream()
                     .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
                     .collect(Collectors.toList());
-            log.info("📊 После фильтра по типу рубки '{}': {} -> {} делян", cutType, before, plots.size());
         }
 
         if (yearOfCut != null) {
