@@ -25,13 +25,13 @@ public class UserUISettings {
     @Column(name = "territory_unit_id")
     private Long territoryUnitId;
 
-    @Column(name = "forestry_type")
+    @Column(name = "territory_type")
     private String territoryType;
 
     @Column(name = "forestry_unit_id")
     private Long forestryUnitId;
 
-    @Column(name = "territory_type")
+    @Column(name = "forestry_type")
     private String forestryType;
 
     @Column(name = "center_lat")
