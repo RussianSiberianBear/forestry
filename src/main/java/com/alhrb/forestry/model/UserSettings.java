@@ -1,7 +1,5 @@
 package com.alhrb.forestry.model;
 
-package com.alhrb.forestry.model;
-
 import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,15 +1,11 @@
 package com.alhrb.forestry.model;
 
-import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Entity
 @Table(name = "user_ui_settings")
@@ -19,42 +15,24 @@ import java.util.Map;
 public class UserUISettings {
 
     @Id
-    @Column(name = "user_id")
-    private Long userId;  // ← ТОЛЬКО ЭТО, никакого User!
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> global = new HashMap<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> dashboard = new HashMap<>();
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> profile = new HashMap<>();
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> analytics = new HashMap<>();
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> notifications = new HashMap<>();
-
-
-/*
     @Column(name = "territory_unit_id")
     private Long territoryUnitId;
 
-    @Column(name = "territory_type")
+    @Column(name = "forestry_type")
     private String territoryType;
 
     @Column(name = "forestry_unit_id")
     private Long forestryUnitId;
 
-    @Column(name = "forestry_type")
-    private String ForestryType;
+    @Column(name = "territory_type")
+    private String forestryType;
 
     @Column(name = "center_lat")
     private Double centerLat;
@@ -73,13 +51,13 @@ public class UserUISettings {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-*/
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
+        createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
