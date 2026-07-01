@@ -815,7 +815,7 @@ function loadForestries(municipalDistrictId, callback) {
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
 
-    fetch('/api/territory/forestries/by-district/' + municipalDistrictId)
+    fetch('/api/forestry/forestries/by-district/' + municipalDistrictId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -872,7 +872,7 @@ function loadDistrictForestries(forestryId, callback) {
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
 
-    fetch('/api/territory/district-forestries/by-forestry/' + forestryId)
+    fetch('/api/forestry/district-forestries/by-forestry/' + forestryId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -934,7 +934,7 @@ function loadTechnicalUnits(districtForestryId, callback) {
     techSelect.innerHTML = '<option value="">Загрузка...</option>';
     techSelect.disabled = true;
 
-    fetch('/api/territory/technical-units/by-district/' + districtForestryId)
+    fetch('/api/forestry/technical-units/by-district/' + districtForestryId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -1019,7 +1019,7 @@ function searchQuarters(query) {
             suggestionsDiv.style.display = 'block';
         }
 
-        const url = '/api/territory/quarters/search?technicalUnitId=' + parentId + '&query=' + encodeURIComponent(query.trim());
+        const url = '/api/forestry/quarters/search?technicalUnitId=' + parentId + '&query=' + encodeURIComponent(query.trim());
 
         fetch(url)
             .then(response => {

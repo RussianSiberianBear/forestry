@@ -28,6 +28,12 @@ public class UserUISettings {
     @Column(name = "territory_type")
     private String territoryType;
 
+    @Column(name = "forestry_unit_id")
+    private Long forestryUnitId;
+
+    @Column(name = "forestry_type")
+    private String ForestryType;
+
     @Column(name = "center_lat")
     private Double centerLat;
 
