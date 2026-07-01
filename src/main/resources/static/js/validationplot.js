@@ -125,13 +125,33 @@ function refreshMap() {
                     infoSpan.style.background = '#1e87f0';
                 } else {
                     let filterText = `Найдено: ${count}`;
-                    if (currentFilters.numberInQuarter) {
-                        filterText += ` (Дел. №${currentFilters.numberInQuarter})`;
+                    // Показываем номера делян из загруженных данных
+                    if (plots && plots.length > 0) {
+                        const numbers = plots
+                            .map(p => p.numberInQuarter)
+                            .filter(n => n && n !== '')
+                            .sort((a, b) => {
+                                const numA = parseFloat(a);
+                                const numB = parseFloat(b);
+                                if (!isNaN(numA) && !isNaN(numB)) {
+                                    return numA - numB;
+                                }
+                                return a.localeCompare(b);
+                            });
+                        if (numbers.length > 0) {
+                            const displayNumbers = numbers.length > 10
+                                ? numbers.slice(0, 10).join(', ') + `... +${numbers.length - 10}`
+                                : numbers.join(', ');
+                            filterText += ` (Дел. №: ${displayNumbers})`;
+                        }
                     }
                     infoSpan.textContent = filterText;
                     infoSpan.style.background = '#2e7d32';
                 }
             }
+
+            // Обновляем легенду с переданными данными
+            updateLegend(plots);
 
             if (mapContainer) {
                 mapContainer.style.opacity = '1';
@@ -155,6 +175,94 @@ function refreshMap() {
             });
         });
 }
+
+// ==========================================
+// ЛЕГЕНДА КАРТЫ
+// ==========================================
+
+function updateLegend(plotsData) {
+    const oldLegend = document.querySelector('.custom-legend');
+    if (oldLegend) {
+        oldLegend.remove();
+    }
+
+    const legend = document.createElement('div');
+    legend.className = 'custom-legend';
+    legend.style.cssText = `
+        position: absolute;
+        bottom: 30px;
+        right: 10px;
+        background: rgba(255,255,255,0.92);
+        padding: 10px 14px;
+        border-radius: 6px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-size: 12px;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        border: 1px solid #ddd;
+        pointer-events: none;
+        max-width: 220px;
+        `;
+
+    const labelsStatus = showLabels ? '🟢 Включены' : '🔴 Выключены';
+
+    let filterInfo = '';
+    const filters = collectFilters();
+    if (filters.cutType) {
+        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Тип рубки: ${filters.cutType}</div>`;
+    }
+    if (filters.yearOfCut) {
+        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Год рубки: ${filters.yearOfCut}</div>`;
+    }
+
+    // Показываем номера делян из переданных данных (plotsData)
+    if (plotsData && Array.isArray(plotsData) && plotsData.length > 0) {
+        const numbers = plotsData
+            .map(p => p.numberInQuarter)
+            .filter(n => n !== undefined && n !== null && n !== '')
+            .sort((a, b) => {
+                const numA = parseFloat(a);
+                const numB = parseFloat(b);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
+        if (numbers.length > 0) {
+            const displayNumbers = numbers.length > 10
+                ? numbers.slice(0, 10).join(', ') + `... +${numbers.length - 10}`
+                : numbers.join(', ');
+            filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${displayNumbers}</div>`;
+        }
+    }
+
+    legend.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 4px; color: #333;">📋 Информация на карте:</div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #d32f2f; border-radius: 2px; opacity: 0.3;"></span>
+                <span style="color: #555;">Красные полигоны — деляны</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 12px; height: 12px; background: #d32f2f; border-radius: 50%; border: 1px solid #d32f2f;"></span>
+                <span style="color: #555;">Метки: Квартал / Деляна / Площадь</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px; border-top: 1px solid #eee; padding-top: 4px;">
+                <span style="font-size: 10px; color: #999;">Метки: ${labelsStatus}</span>
+                <span style="font-size: 10px; color: #999;">| При наведении — увеличение</span>
+            </div>
+            ${filterInfo ? `<div style="border-top: 1px solid #eee; padding-top: 4px; margin-top: 2px;">${filterInfo}</div>` : ''}
+        </div>
+    `;
+
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+        mapContainer.style.position = 'relative';
+        mapContainer.appendChild(legend);
+    }
+}
+
+
 
 function loadAllPlots() {
     refreshMap();
@@ -1716,7 +1824,8 @@ function renderPlots(plots) {
         }
     });
 
-    updateLegend();
+    // Обновляем легенду с переданными данными
+    updateLegend(plots);
 }
 
 function getPolygonCenter(coords) {
@@ -1768,7 +1877,7 @@ function formatNumberInQuarter(value) {
     return numbers.join(', ');
 }
 
-function updateLegend() {
+function updateLegend(plotsData) {
     const oldLegend = document.querySelector('.custom-legend');
     if (oldLegend) {
         oldLegend.remove();
@@ -1802,9 +1911,26 @@ function updateLegend() {
     if (filters.yearOfCut) {
         filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Год рубки: ${filters.yearOfCut}</div>`;
     }
-    if (filters.numberInQuarter) {
-        const formattedNumbers = formatNumberInQuarter(filters.numberInQuarter);
-        filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${formattedNumbers}</div>`;
+
+    // Показываем номера делян из переданных данных (plotsData)
+    if (plotsData && Array.isArray(plotsData) && plotsData.length > 0) {
+        const numbers = plotsData
+            .map(p => p.numberInQuarter)
+            .filter(n => n !== undefined && n !== null && n !== '')
+            .sort((a, b) => {
+                const numA = parseFloat(a);
+                const numB = parseFloat(b);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return numA - numB;
+                }
+                return a.localeCompare(b);
+            });
+        if (numbers.length > 0) {
+            const displayNumbers = numbers.length > 10
+                ? numbers.slice(0, 10).join(', ') + `... +${numbers.length - 10}`
+                : numbers.join(', ');
+            filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Дел. №: ${displayNumbers}</div>`;
+        }
     }
 
     legend.innerHTML = `
