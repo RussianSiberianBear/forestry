@@ -32,7 +32,7 @@ public class UserUISettingsService {
         userId = securityHelper.getCurrentUserId();
     }
 
-    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПО СЕССИИ =====
+    // ===== ПОЛУЧИТЬ НАСТРОЙКИ ПОЛЬЗОВАТЕЛЯ =====
     public UserUISettings getOrCreateSettings() {
 
         if (userId == null) {

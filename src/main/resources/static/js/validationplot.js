@@ -512,6 +512,8 @@ function saveUISetting(endpoint, value) {
 function loadUISettingsFromServer() {
     const territoryUnitId = document.getElementById('uiTerritoryUnitId')?.value;
     const territoryType = document.getElementById('uiTerritoryType')?.value;
+    const forestryUnitId = document.getElementById('uiForestryUnitId')?.value;
+    const forestryType = document.getElementById('uiForestryType')?.value;
     const centerLat = document.getElementById('uiCenterLat')?.value;
     const centerLng = document.getElementById('uiCenterLng')?.value;
     const zoom = document.getElementById('uiZoom')?.value;
