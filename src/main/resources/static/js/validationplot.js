@@ -262,8 +262,6 @@ function updateLegend(plotsData) {
     }
 }
 
-
-
 function loadAllPlots() {
     refreshMap();
 }
