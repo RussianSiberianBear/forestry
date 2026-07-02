@@ -44,7 +44,10 @@ public class ForestryUnit {
     private ForestryUnitType type;
 
     @Column(name = "number")
-    private String number;
+    private String number;                // внутренний номер
+
+    @Column(name = "account_number")
+    private String accountNumber;         // учетный номер по НПА
 
     @Column(columnDefinition = "geometry")
     private Geometry geometry;

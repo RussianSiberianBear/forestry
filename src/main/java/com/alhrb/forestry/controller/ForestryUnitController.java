@@ -117,6 +117,7 @@ public class ForestryUnitController {
         dto.setName(unit.getName());
         dto.setType(unit.getType().name());
         dto.setNumber(unit.getNumber());
+        dto.setAccountNumber(unit.getAccountNumber());
 
         if (unit.getParent() != null) {
             dto.setParentId(unit.getParent().getId());
