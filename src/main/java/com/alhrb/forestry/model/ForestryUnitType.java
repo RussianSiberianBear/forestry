@@ -4,5 +4,7 @@ public enum ForestryUnitType {
     FORESTRY,              // Лесничество
     DISTRICT_FORESTRY,     // Участковое лесничество (опционально)
     TECHNICAL_UNIT,        // Технический участок (опционально)
-    QUARTER                // Квартал
+    QUARTER,               // Квартал
+    FOREST_STAND,          // Выдел
+
 }
