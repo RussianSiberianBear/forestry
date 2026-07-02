@@ -20,8 +20,9 @@
         <java.version>17</java.version>
         <!-- ===== ВЕРСИИ ===== -->
         <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
-        <org.projectlombok.version>1.18.38</org.projectlombok.version> <!-- ОБНОВЛЕНО! -->
+        <org.projectlombok.version>1.18.38</org.projectlombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <jackson.version>2.15.3</jackson.version>
     </properties>
 
     <dependencies>
@@ -47,7 +48,29 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ===== MAPSTRUCT (только API, процессор вынесен в Maven-плагин) ===== -->
+        <!-- ===== JACKSON для работы с JSON ===== -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- ===== MAPSTRUCT ===== -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
@@ -63,6 +86,13 @@
         <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
+        </dependency>
+
+        <!-- ===== HIBERNATE TYPES для JSONB (дополнительная поддержка) ===== -->
+        <dependency>
+            <groupId>io.hypersistence</groupId>
+            <artifactId>hypersistence-utils-hibernate-63</artifactId>
+            <version>3.7.0</version>
         </dependency>
 
         <!-- ===== JTS (Java Topology Suite) ===== -->
@@ -84,7 +114,7 @@
             <version>5.2.3</version>
         </dependency>
 
-        <!-- ===== LOMBOK (ТОЛЬКО КАК ЗАВИСИМОСТЬ, процессор в annotationProcessorPaths) ===== -->
+        <!-- ===== LOMBOK ===== -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -124,7 +154,6 @@
             <groupId>org.thymeleaf.extras</groupId>
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -149,7 +178,6 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
-                    <!-- ===== ТОЛЬКО ЗДЕСЬ ПРОЦЕССОРЫ! ===== -->
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.mapstruct</groupId>
