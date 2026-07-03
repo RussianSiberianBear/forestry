@@ -19,7 +19,7 @@ public class CuttingAreaDto {
     private String numberInQuarter;
 
     // ===== ВЫДЕЛЫ =====
-    private String plots;
+    private String forestStand;
 
     // ===== ОПИСАНИЕ =====
     private String description;

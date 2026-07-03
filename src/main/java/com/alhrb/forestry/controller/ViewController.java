@@ -34,7 +34,7 @@ public class ViewController {
         // Заполняем territoryPath для каждого plot
         cuttingAreas.forEach(area -> area.setTerritoryPath(area.getTerritoryPath()));
 
-        model.addAttribute("cuttingAreas", cuttingAreas);
+        model.addAttribute("forestStand", cuttingAreas);
         model.addAttribute("cuttingAreaDto", new CuttingAreaDto());
         model.addAttribute("uiSettings", uiSettings);
 
