@@ -872,7 +872,7 @@ function loadSubForestries(forestryId, callback) {
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
 
-    fetch('/api/forestry/district-forestries/by-forestry/' + forestryId)
+    fetch('/api/forestry/sub-forestries/by-forestry/' + forestryId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();

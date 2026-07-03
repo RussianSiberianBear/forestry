@@ -57,7 +57,7 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
     @Query("""
         SELECT tu FROM ForestryUnit tu
         WHERE tu.parent.id = :technicalUnitId
-          AND tu.type = 'QUARTER'
+          AND tu.type = 'FOREST_QUARTER'
           AND tu.number LIKE %:query%
         ORDER BY tu.number
     """)

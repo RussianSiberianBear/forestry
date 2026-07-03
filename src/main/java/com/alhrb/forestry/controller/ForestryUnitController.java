@@ -34,8 +34,8 @@ public class ForestryUnitController {
     }
 
     // ===== УЧАСТКОВЫЕ ЛЕСНИЧЕСТВА ПО ЛЕСНИЧЕСТВУ =====
-    @GetMapping("/district-forestries/by-forestry/{forestryId}")
-    public ResponseEntity<List<ForestryUnitDto>> getDistrictForestriesByForestry(@PathVariable Long forestryId) {
+    @GetMapping("/sub-forestries/by-forestry/{forestryId}")
+    public ResponseEntity<List<ForestryUnitDto>> getSubForestriesByForestry(@PathVariable Long forestryId) {
         log.info("📡 Запрос участковых лесничеств для лесничества ID: {}", forestryId);
         List<ForestryUnit> districtForestries = forestryUnitService.findDistrictForestriesByForestry(forestryId);
         log.info("📊 Найдено {} участковых лесничеств", districtForestries.size());

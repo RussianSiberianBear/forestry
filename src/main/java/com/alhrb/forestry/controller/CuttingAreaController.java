@@ -153,7 +153,7 @@ public class CuttingAreaController {
             @RequestParam(required = false) Long regionId,
             @RequestParam(required = false) Long municipalDistrictId,
             @RequestParam(required = false) Long forestryId,
-            @RequestParam(required = false) Long districtForestryId,
+            @RequestParam(required = false) Long subForestryId,
             @RequestParam(required = false) Long technicalUnitId,
             @RequestParam(required = false) Long quarterId,
             @RequestParam(required = false) String numberInQuarter,
@@ -162,7 +162,7 @@ public class CuttingAreaController {
 
         List<CuttingAreaMapDto> plots = cuttingAreaService.getFilteredCuttingAreasForMap(
                 federalDistrictId, regionId, municipalDistrictId,
-                forestryId, districtForestryId, technicalUnitId,
+                forestryId, subForestryId, technicalUnitId,
                 quarterId, numberInQuarter, cutType, yearOfCut
         );
 
@@ -200,7 +200,7 @@ public class CuttingAreaController {
                 cuttingAreas = cuttingAreaService.findByForestryUnitRecursive(id);
                 territoryName = "лесничеству";
                 break;
-            case "DISTRICT_FORESTRY":
+            case "SUB_FORESTRY":
                 cuttingAreas = cuttingAreaService.findByForestryUnitRecursive(id);
                 territoryName = "участковому лесничеству";
                 break;
