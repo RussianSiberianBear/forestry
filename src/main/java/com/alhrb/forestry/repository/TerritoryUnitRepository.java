@@ -14,6 +14,7 @@ public interface TerritoryUnitRepository extends JpaRepository<TerritoryUnit, Lo
 
     // ===== ОСНОВНЫЕ МЕТОДЫ =====
     List<TerritoryUnit> findByType(TerritoryType type);
+    List<TerritoryUnit> findByTypeOrderByName(TerritoryType type);
     List<TerritoryUnit> findByParentId(Long parentId);
     List<TerritoryUnit> findByParentIdIsNull();
 

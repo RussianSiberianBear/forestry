@@ -25,8 +25,8 @@ public class TerritoryUnitService {
         return territoryUnitRepository.findById(id);
     }
 
-    public List<TerritoryUnit> findByType(TerritoryType type) {
-        return territoryUnitRepository.findByType(type);
+    public List<TerritoryUnit> findByTypeOrderByName(TerritoryType type) {
+        return territoryUnitRepository.findByTypeOrderByName(type);
     }
 
     public List<TerritoryUnit> findByParentId(Long parentId) {

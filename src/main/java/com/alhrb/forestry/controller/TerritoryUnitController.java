@@ -27,7 +27,7 @@ public class TerritoryUnitController {
     @GetMapping("/regions")
     public ResponseEntity<List<TerritoryUnitDto>> getRegions() {
         log.info("📡 Запрос всех регионов");
-        List<TerritoryUnit> regions = territoryUnitService.findByType(TerritoryType.REGION);
+        List<TerritoryUnit> regions = territoryUnitService.findByTypeOrderByName(TerritoryType.REGION);
         log.info("📊 Найдено {} регионов", regions.size());
 
         List<TerritoryUnitDto> dtos = regions.stream()
