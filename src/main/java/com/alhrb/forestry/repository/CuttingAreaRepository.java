@@ -23,7 +23,7 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             SELECT fu.id FROM forestry_units fu
             INNER JOIN forestry_tree ft ON fu.parent_id = ft.id
         )
-        SELECT p.* FROM forest_plot p
+        SELECT p.* FROM cutting_area p
         WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)
     """, nativeQuery = true)
     List<CuttingArea> findByForestryUnitRecursive(@Param("unitId") Long unitId);
@@ -37,7 +37,7 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
         SELECT tu.id FROM territory_units tu
         INNER JOIN territory_tree tt ON tu.parent_id = tt.id
     )
-    SELECT p.* FROM forest_plot p
+    SELECT p.* FROM cutting_area p
     WHERE p.forestry_unit_id IN (
         SELECT fu.id FROM forestry_units fu
         WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
@@ -53,7 +53,7 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             SELECT tu.id FROM territory_units tu
             INNER JOIN territory_tree tt ON tu.parent_id = tt.id
         )
-        SELECT p.* FROM forest_plot p
+        SELECT p.* FROM cutting_area p
         WHERE p.forestry_unit_id IN (
             SELECT fu.id FROM forestry_units fu
             WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
@@ -80,7 +80,7 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             b.id, 
             b.full_number,
             ST_Area(ST_Intersection(:geometry, b.geometry)) AS area
-        FROM forest_plot b
+        FROM cutting_area b
         WHERE b.id != :plotId
             AND ST_Intersects(:geometry, b.geometry)
             AND ST_Area(ST_Intersection(:geometry, b.geometry)) > :minArea
@@ -96,8 +96,8 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             SELECT 
                 a.id AS plot1_id,
                 b.id AS plot2_id
-            FROM forest_plot a
-            JOIN forest_plot b ON a.id < b.id
+            FROM cutting_area a
+            JOIN cutting_area b ON a.id < b.id
             WHERE ST_Intersects(ST_Envelope(a.geometry), ST_Envelope(b.geometry))
         )
         SELECT 
@@ -105,8 +105,8 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             c.plot2_id,
             ST_Area(ST_Intersection(a.geometry, b.geometry)) AS area
         FROM candidates c
-        JOIN forest_plot a ON a.id = c.plot1_id
-        JOIN forest_plot b ON b.id = c.plot2_id
+        JOIN cutting_area a ON a.id = c.plot1_id
+        JOIN cutting_area b ON b.id = c.plot2_id
         WHERE ST_Intersects(a.geometry, b.geometry)
             AND ST_Area(ST_Intersection(a.geometry, b.geometry)) > :minArea
     """, nativeQuery = true)
