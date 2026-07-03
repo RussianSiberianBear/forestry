@@ -38,7 +38,7 @@ public class ForestryUnitService {
     }
 
     public List<ForestryUnit> findDistrictForestriesByForestry(Long parentId) {
-        return forestryUnitRepository.findByTypeAndParentId(ForestryUnitType.DISTRICT_FORESTRY, parentId);
+        return forestryUnitRepository.findByTypeAndParentId(ForestryUnitType.SUB_FORESTRY, parentId);
     }
 
     public List<ForestryUnit> findTechnicalUnit(Long districtForestryId) {

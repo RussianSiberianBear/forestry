@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
     <!-- ===== НАШИ СТИЛИ ===== -->
-    <link rel="stylesheet" href="/css/forest-ploat.css"/>
+    <link rel="stylesheet" href="/css/cutting_area.css"/>
 
 </head>
 <body>
@@ -126,7 +126,7 @@
                             Добавление новой деляны
                         </h3>
 
-                        <form th:action="@{/api/cuttingAreas/create}" th:object="${plotDto}" method="post" id="plotForm">
+                        <form th:action="@{/api/cuttingAreas/create}" th:object="${cuttingAreaDto}" method="post" id="plotForm">
 
                             <!-- ===== 1. РЕГИОН ===== -->
                             <div class="uk-margin-small">
@@ -175,13 +175,13 @@
 
                             <!-- ===== 4. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
                             <div class="uk-margin-small">
-                                <label class="uk-form-label" for="districtForestrySelect">
+                                <label class="uk-form-label" for="subForestrySelect">
                                     Участковое лесничество <span class="required-star">*</span>
                                 </label>
                                 <div class="uk-form-controls">
-                                    <select class="form-select dependent-select" id="districtForestrySelect"
-                                            name="districtForestryId"
-                                            onchange="onDistrictForestryChange(this.value)"
+                                    <select class="form-select dependent-select" id="subForestrySelect"
+                                            name="subForestryId"
+                                            onchange="onSubForestryChange(this.value)"
                                             disabled data-filter>
                                         <option value="">-- Сначала выберите лесничество --</option>
                                     </select>

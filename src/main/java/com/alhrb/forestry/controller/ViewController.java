@@ -26,7 +26,7 @@ public class ViewController {
         return "index";
     }
 
-    @GetMapping("/forest-ploat")
+    @GetMapping("/cutting_area")
     public String forestPlot(Model model) {
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
         List<CuttingArea> cuttingAreas = plotService.findAll();
@@ -35,7 +35,7 @@ public class ViewController {
         cuttingAreas.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
 
         model.addAttribute("plots", cuttingAreas);
-        model.addAttribute("plotDto", new CuttingAreaDto());
+        model.addAttribute("cuttingAreaDto", new CuttingAreaDto());
         model.addAttribute("uiSettings", uiSettings);
 
         List<CuttingArea> latestCuttingAreas = cuttingAreas.stream()
@@ -45,7 +45,7 @@ public class ViewController {
 
         model.addAttribute("latestPlots", latestCuttingAreas);
 
-        return "forest-ploat";
+        return "cutting-area";
     }
 
     @GetMapping("/forest-stand")

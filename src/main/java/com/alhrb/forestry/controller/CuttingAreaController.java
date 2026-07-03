@@ -40,7 +40,7 @@ public class CuttingAreaController {
         if (result.hasErrors()) {
             model.addAttribute("error", "Проверьте правильность заполнения формы");
             model.addAttribute("plots", plotService.findAll());
-            return "forest-ploat";
+            return "cutting-area";
         }
 
         try {

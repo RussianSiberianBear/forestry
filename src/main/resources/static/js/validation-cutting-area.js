@@ -1261,7 +1261,7 @@ function onForestryChange(forestryId) {
     updateTerritoryInfo();
 }
 
-function onDistrictForestryChange(districtForestryId) {
+function onSubForestryChange(districtForestryId) {
     console.log('🔄 onDistrictForestryChange вызван с districtForestryId:', districtForestryId);
 
     const techSelect = document.getElementById('technicalUnitSelect');
@@ -1996,7 +1996,7 @@ function toggleLabels() {
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('✅ Инициализация страницы forest-ploat.html');
+    console.log('✅ Инициализация страницы cutting-area.html');
 
     if (typeof initMap === 'undefined') {
         console.error('❌ Функция initMap не найдена!');
