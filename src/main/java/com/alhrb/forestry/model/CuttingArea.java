@@ -63,6 +63,9 @@ public class CuttingArea {
     @Column(name = "cut_type", length = 50)
     private String cutType;
 
+    @Column(name = "account_number")
+    private String accountNumber;         // учетный номер по НПА
+
     // ===== ТРАНЗИТНОЕ ПОЛЕ ДЛЯ THYMELEAF =====
     @Transient
     private String territoryPath;
