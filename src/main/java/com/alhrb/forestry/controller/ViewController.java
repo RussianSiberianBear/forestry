@@ -43,7 +43,7 @@ public class ViewController {
                 .limit(5)
                 .toList();
 
-        model.addAttribute("latestPlots", latestCuttingAreas);
+        model.addAttribute("latestCuttingAreas", latestCuttingAreas);
 
         return "cutting-area";
     }
