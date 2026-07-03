@@ -587,7 +587,7 @@ function loadFullHierarchy(unit) {
                         case 'FORESTRY':
                             forestryId = item.id;
                             break;
-                        case 'DISTRICT_FORESTRY':
+                        case 'SUB_FORESTRY':
                             districtForestryId = item.id;
                             break;
                         case 'TECHNICAL_UNIT':
@@ -1261,13 +1261,13 @@ function onForestryChange(forestryId) {
     updateTerritoryInfo();
 }
 
-function onSubForestryChange(districtForestryId) {
-    console.log('🔄 onDistrictForestryChange вызван с districtForestryId:', districtForestryId);
+function onSubForestryChange(subForestryId) {
+    console.log('🔄 onSubForestryChange вызван с subForestryId:', subForestryId);
 
     const techSelect = document.getElementById('technicalUnitSelect');
     const quarterInput = document.getElementById('quarterInput');
 
-    if (!districtForestryId) {
+    if (!subForestryId) {
         if (techSelect) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             techSelect.disabled = true;
@@ -1282,10 +1282,10 @@ function onSubForestryChange(districtForestryId) {
         techSelect.disabled = true;
     }
 
-    saveUISetting('forestry-unit', districtForestryId);
-    saveUISetting('forestry-type', 'DISTRICT_FORESTRY');
+    saveUISetting('forestry-unit', subForestryId);
+    saveUISetting('forestry-type', 'SUB_FORESTRY');
 
-    loadTechnicalUnits(districtForestryId);
+    loadTechnicalUnits(subForestryId);
 
     updateTerritoryInfo();
 }
@@ -1366,7 +1366,7 @@ function checkSelected() {
     const regionId = document.getElementById('regionSelect')?.value;
     const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
-    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('districtForestrySelect')?.value;
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
     const numberInQuarter = document.getElementById('numberInQuarter')?.value?.trim();
@@ -1376,7 +1376,7 @@ function checkSelected() {
     let name = '';
 
     if (quarterId && quarterId !== '') {
-        type = 'QUARTER';
+        type = 'FOREST_QUARTER';
         id = quarterId;
         name = document.getElementById('quarterInput')?.value || 'Квартал';
     } else if (technicalUnitId && technicalUnitId !== '') {
@@ -1384,9 +1384,9 @@ function checkSelected() {
         id = technicalUnitId;
         const select = document.getElementById('technicalUnitSelect');
         name = select?.options[select.selectedIndex]?.text || 'Технический участок';
-    } else if (districtForestryId && districtForestryId !== '') {
-        type = 'DISTRICT_FORESTRY';
-        id = districtForestryId;
+    } else if (subForestryId && subForestryId !== '') {
+        type = 'SUB_FORESTRY';
+        id = subForestryId;
         const select = document.getElementById('districtForestrySelect');
         name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
     } else if (forestryId && forestryId !== '') {
@@ -2033,7 +2033,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const selectors = ['regionSelect', 'municipalDistrictSelect', 'forestrySelect', 'districtForestrySelect', 'technicalUnitSelect'];
+    const selectors = ['regionSelect', 'municipalDistrictSelect', 'forestrySelect', 'subForestrySelect', 'technicalUnitSelect'];
     selectors.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
