@@ -38,7 +38,7 @@ function collectFiltersManual() {
     const regionSelect = document.getElementById('regionSelect');
     const municipalSelect = document.getElementById('municipalDistrictSelect');
     const forestrySelect = document.getElementById('forestrySelect');
-    const districtForestrySelect = document.getElementById('districtForestrySelect');
+    const subForestrySelect = document.getElementById('subForestrySelect');
     const technicalUnitSelect = document.getElementById('technicalUnitSelect');
     const quarterId = document.getElementById('quarterId');
     const cutTypeSelect = document.getElementById('cutType');
@@ -56,8 +56,8 @@ function collectFiltersManual() {
     const fId = forestrySelect?.value;
     if (fId && fId !== '') filters.forestryId = fId;
 
-    const dfId = districtForestrySelect?.value;
-    if (dfId && dfId !== '') filters.districtForestryId = dfId;
+    const dfId = subForestrySelect?.value;
+    if (dfId && dfId !== '') filters.subForestryId = dfId;
 
     const tId = technicalUnitSelect?.value;
     if (tId && tId !== '') filters.technicalUnitId = tId;
@@ -100,8 +100,8 @@ function refreshMap() {
     // Определяем URL для запроса
     const hasFilters = Object.keys(currentFilters).length > 0;
     const url = hasFilters
-        ? '/api/plots/map-data-filtered?' + params.toString()
-        : '/api/plots/map-data';
+        ? '/api/cutting-area/map-data-filtered?' + params.toString()
+        : '/api/cutting-area/map-data';
 
     console.log('📡 Запрос к:', url);
 
@@ -623,8 +623,8 @@ function restoreHierarchy(regionId, municipalDistrictId, forestryId,
                     if (forestrySelect && forestryId) {
                         forestrySelect.value = forestryId;
                         enableQuarterField();
-                        loadDistrictForestries(forestryId, function() {
-                            const districtSelect = document.getElementById('districtForestrySelect');
+                        loadSubForestries(forestryId, function() {
+                            const districtSelect = document.getElementById('subForestrySelect');
                             if (districtSelect && districtForestryId) {
                                 districtSelect.value = districtForestryId;
                                 loadTechnicalUnits(districtForestryId, function() {
@@ -840,7 +840,7 @@ function loadForestries(municipalDistrictId, callback) {
                     select.value = data[0].id;
                     saveUISetting('forestry', data[0].id);
                     enableQuarterField();
-                    loadDistrictForestries(data[0].id);
+                    loadSubForestries(data[0].id);
                 }
             } else {
                 select.innerHTML = '<option value="">-- Лесничества не найдены --</option>';
@@ -858,14 +858,14 @@ function loadForestries(municipalDistrictId, callback) {
         });
 }
 
-function loadDistrictForestries(forestryId, callback) {
+function loadSubForestries(forestryId, callback) {
     if (!forestryId) {
         resetDependentSelects('district');
         if (callback) callback();
         return;
     }
 
-    const select = document.getElementById('districtForestrySelect');
+    const select = document.getElementById('subForestrySelect');
     if (!select) return;
 
     select.classList.add('loading');
@@ -990,14 +990,14 @@ let quarterSearchTimeout = null;
 
 function searchQuarters(query) {
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
-    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('subForestrySelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
     const suggestionsDiv = document.getElementById('quarterSuggestions');
     const quarterInput = document.getElementById('quarterInput');
 
     if (!quarterInput) return;
 
-    let parentId = technicalUnitId || districtForestryId || forestryId;
+    let parentId = technicalUnitId || subForestryId || forestryId;
 
     if (!parentId) {
         if (suggestionsDiv) {
@@ -1096,7 +1096,7 @@ function selectQuarter(id, number, name) {
 
 function resetDependentSelects(level) {
     if (!level || level === 'forestry') {
-        const districtSelect = document.getElementById('districtForestrySelect');
+        const districtSelect = document.getElementById('subForestrySelect');
         if (districtSelect) {
             districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
             districtSelect.disabled = true;
@@ -1146,11 +1146,11 @@ function resetAllDependentSelects() {
         forestrySelect.classList.remove('loading');
     }
 
-    const districtForestrySelect = document.getElementById('districtForestrySelect');
-    if (districtForestrySelect) {
-        districtForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-        districtForestrySelect.disabled = true;
-        districtForestrySelect.classList.remove('loading');
+    const subForestrySelect = document.getElementById('subForestrySelect');
+    if (subForestrySelect) {
+        subForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+        subForestrySelect.disabled = true;
+        subForestrySelect.classList.remove('loading');
     }
 
     const techSelect = document.getElementById('technicalUnitSelect');
@@ -1256,7 +1256,7 @@ function onForestryChange(forestryId) {
 
     saveUISetting('forestry-unit', forestryId);
     saveUISetting('forestry-type', 'FORESTRY');
-    loadDistrictForestries(forestryId);
+    loadSubForestries(forestryId);
 
     updateTerritoryInfo();
 }
@@ -1323,7 +1323,7 @@ function updateTerritoryInfo() {
     const regionId = document.getElementById('regionSelect')?.value;
     const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
-    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('subForestrySelect')?.value;
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
     const quarterInput = document.getElementById('quarterInput')?.value;
@@ -1336,8 +1336,8 @@ function updateTerritoryInfo() {
     } else if (technicalUnitId && technicalUnitId !== '') {
         const select = document.getElementById('technicalUnitSelect');
         name = select?.options[select.selectedIndex]?.text || 'Технический участок';
-    } else if (districtForestryId && districtForestryId !== '') {
-        const select = document.getElementById('districtForestrySelect');
+    } else if (subForestryId && subForestryId !== '') {
+        const select = document.getElementById('subForestrySelect');
         name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
     } else if (forestryId && forestryId !== '') {
         const select = document.getElementById('forestrySelect');
@@ -1366,7 +1366,7 @@ function checkSelected() {
     const regionId = document.getElementById('regionSelect')?.value;
     const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
-    const subForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('subForestrySelect')?.value;
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
     const numberInQuarter = document.getElementById('numberInQuarter')?.value?.trim();
@@ -1387,7 +1387,7 @@ function checkSelected() {
     } else if (subForestryId && subForestryId !== '') {
         type = 'SUB_FORESTRY';
         id = subForestryId;
-        const select = document.getElementById('districtForestrySelect');
+        const select = document.getElementById('subForestrySelect');
         name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
     } else if (forestryId && forestryId !== '') {
         type = 'FORESTRY';
