@@ -32,7 +32,7 @@ public class CuttingAreaController {
     private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
     @PostMapping("/create")
-    public String createPlot(@Valid @ModelAttribute("plotDto") CuttingAreaDto plotDto,
+    public String createCuttingArea(@Valid @ModelAttribute("plotDto") CuttingAreaDto cuttingAreaDto,
                              BindingResult result,
                              Model model,
                              RedirectAttributes redirectAttributes) {
@@ -44,14 +44,14 @@ public class CuttingAreaController {
         }
 
         try {
-            var geometry = geometryService.createPolygon(plotDto.getCoordinates());
+            var geometry = geometryService.createPolygon(cuttingAreaDto.getCoordinates());
 
-            if (plotDto.getTerritoryUnitId() == null) {
+            if (cuttingAreaDto.getTerritoryUnitId() == null) {
                 throw new IllegalArgumentException("Не выбран квартал!");
             }
 
             // Получаем территориальную единицу (квартал)
-            ForestryUnit territoryUnit = forestryUnitService.findById(plotDto.getTerritoryUnitId())
+            ForestryUnit territoryUnit = forestryUnitService.findById(cuttingAreaDto.getTerritoryUnitId())
                     .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
             // Проверяем, что это квартал
@@ -63,19 +63,19 @@ public class CuttingAreaController {
                 geometryService.validatePlotInsideQuarter(
                         geometry,
                         (Polygon) territoryUnit.getGeometry(),
-                        plotDto.getNumberInQuarter(),
+                        cuttingAreaDto.getNumberInQuarter(),
                         territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName()
                 );
             }
 
             List<IntersectionReport> conflicts = cuttingAreaService.createPlotWithValidation(
-                    plotDto.getNumberInQuarter(),
-                    plotDto.getPlots(),
-                    plotDto.getDescription(),
+                    cuttingAreaDto.getNumberInQuarter(),
+                    cuttingAreaDto.getForestStand(),
+                    cuttingAreaDto.getDescription(),
                     geometry,
-                    plotDto.getTerritoryUnitId(),
-                    plotDto.getYearOfCut(),
-                    plotDto.getCutType()
+                    cuttingAreaDto.getTerritoryUnitId(),
+                    cuttingAreaDto.getYearOfCut(),
+                    cuttingAreaDto.getCutType()
             );
 
             if (!conflicts.isEmpty()) {
