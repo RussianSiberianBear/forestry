@@ -208,7 +208,7 @@ public class CuttingAreaController {
                 cuttingAreas = cuttingAreaService.findByForestryUnitRecursive(id);
                 territoryName = "техническому участку";
                 break;
-            case "QUARTER":
+            case "FOREST_QUARTER":
                 cuttingAreas = cuttingAreaService.findByForestryUnitId(id);
                 territoryName = "кварталу";
                 break;
