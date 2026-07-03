@@ -1,10 +1,10 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.dto.IntersectionReport;
-import com.alhrb.forestry.dto.PlotMapDto;
+import com.alhrb.forestry.dto.CuttingAreaMapDto;
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
-import com.alhrb.forestry.repository.PlotRepository;
+import com.alhrb.forestry.repository.CuttingAreaRepository;
 import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +18,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.thymeleaf.util.StringUtils.trim;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PlotService {
 
-    private final PlotRepository plotRepository;
+    private final CuttingAreaRepository cuttingAreaRepository;
     private final ForestryUnitRepository forestryUnitRepository;
     private final TerritoryUnitRepository  territoryUnitRepository;
     private final GeometryService geometryService;
@@ -35,47 +33,47 @@ public class PlotService {
     private double minArea;
 
     @Transactional
-    public Plot save(Plot plot) {
-        return plotRepository.save(plot);
+    public CuttingArea save(CuttingArea cuttingArea) {
+        return cuttingAreaRepository.save(cuttingArea);
     }
 
-    public List<Plot> findAll() {
-        return plotRepository.findAll();
+    public List<CuttingArea> findAll() {
+        return cuttingAreaRepository.findAll();
     }
 
-    public Optional<Plot> findById(Long id) {
-        return plotRepository.findById(id);
+    public Optional<CuttingArea> findById(Long id) {
+        return cuttingAreaRepository.findById(id);
     }
 
-    public Optional<Plot> findByFullNumber(String fullNumber) {
-        return plotRepository.findByFullNumber(fullNumber);
+    public Optional<CuttingArea> findByFullNumber(String fullNumber) {
+        return cuttingAreaRepository.findByFullNumber(fullNumber);
     }
 
-    public List<Plot> findByForestryUnitId(Long forestryUnitId) {
-        return plotRepository.findByForestryUnitIdOrderByNumberInQuarter(forestryUnitId);
+    public List<CuttingArea> findByForestryUnitId(Long forestryUnitId) {
+        return cuttingAreaRepository.findByForestryUnitIdOrderByNumberInQuarter(forestryUnitId);
     }
 
-    public Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter) {
-        return plotRepository.findByForestryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
+    public Optional<CuttingArea> findByForestryUnitIdAndNumberInQuarter(Long territoryUnitId, String numberInQuarter) {
+        return cuttingAreaRepository.findByForestryUnitIdAndNumberInQuarter(territoryUnitId, numberInQuarter);
     }
 
-    public List<Plot> findByForestryUnitRecursive(Long unitId) {
-        return plotRepository.findByForestryUnitRecursive(unitId);
+    public List<CuttingArea> findByForestryUnitRecursive(Long unitId) {
+        return cuttingAreaRepository.findByForestryUnitRecursive(unitId);
     }
 
-    public List<Plot> findByTerritoryUnitRecursive(Long unitId) {
-        return plotRepository.findByTerritoryUnitRecursive(unitId);
+    public List<CuttingArea> findByTerritoryUnitRecursive(Long unitId) {
+        return cuttingAreaRepository.findByTerritoryUnitRecursive(unitId);
     }
 
-    public List<Plot> findByForestryTypeAndIdRecursive(String type, Long id) {
-        return plotRepository.findByForestryTypeAndIdRecursive(type, id);
+    public List<CuttingArea> findByForestryTypeAndIdRecursive(String type, Long id) {
+        return cuttingAreaRepository.findByForestryTypeAndIdRecursive(type, id);
     }
 
     // ==========================================
     // МЕТОД ДЛЯ КАРТЫ С ФИЛЬТРАЦИЕЙ
     // ==========================================
 
-    public List<PlotMapDto> getFilteredPlotsForMap(
+    public List<CuttingAreaMapDto> getFilteredPlotsForMap(
             Long federalDistrictId,
             Long regionId,
             Long municipalDistrictId,
@@ -87,43 +85,43 @@ public class PlotService {
             String cutType,
             Integer yearOfCut) {
 
-        List<Plot> plots = new ArrayList<>();
+        List<CuttingArea> cuttingAreas = new ArrayList<>();
 
         // ===== ФИЛЬТР ПО ЛЕСНЫМ ЕДИНИЦАМ (иерархия forestry_units) =====
         if (quarterId != null) {
             // Квартал - лесная единица
-            plots = plotRepository.findByForestryUnitRecursive(quarterId);
-            log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByForestryUnitRecursive(quarterId);
+            log.info("📊 Фильтр по кварталу ID={}, найдено {} делян", quarterId, cuttingAreas.size());
         } else if (technicalUnitId != null) {
             // Техучасток - лесная единица
-            plots = plotRepository.findByForestryUnitRecursive(technicalUnitId);
-            log.info("📊 Фильтр по техучастку ID={}, найдено {} делян", technicalUnitId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByForestryUnitRecursive(technicalUnitId);
+            log.info("📊 Фильтр по техучастку ID={}, найдено {} делян", technicalUnitId, cuttingAreas.size());
         } else if (districtForestryId != null) {
             // Участковое лесничество - лесная единица
-            plots = plotRepository.findByForestryUnitRecursive(districtForestryId);
-            log.info("📊 Фильтр по участковому лесничеству ID={}, найдено {} делян", districtForestryId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByForestryUnitRecursive(districtForestryId);
+            log.info("📊 Фильтр по участковому лесничеству ID={}, найдено {} делян", districtForestryId, cuttingAreas.size());
         } else if (forestryId != null) {
             // Лесничество - лесная единица
-            plots = plotRepository.findByForestryUnitRecursive(forestryId);
-            log.info("📊 Фильтр по лесничеству ID={}, найдено {} делян", forestryId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByForestryUnitRecursive(forestryId);
+            log.info("📊 Фильтр по лесничеству ID={}, найдено {} делян", forestryId, cuttingAreas.size());
 
             // ===== ФИЛЬТР ПО ТЕРРИТОРИАЛЬНЫМ ЕДИНИЦАМ (иерархия territory_units) =====
         } else if (municipalDistrictId != null) {
             // Муниципальный район - территориальная единица
-            plots = plotRepository.findByTerritoryUnitRecursive(municipalDistrictId);
-            log.info("📊 Фильтр по муниципальному району ID={}, найдено {} делян", municipalDistrictId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByTerritoryUnitRecursive(municipalDistrictId);
+            log.info("📊 Фильтр по муниципальному району ID={}, найдено {} делян", municipalDistrictId, cuttingAreas.size());
         } else if (regionId != null) {
             // Регион - территориальная единица
-            plots = plotRepository.findByTerritoryUnitRecursive(regionId);
-            log.info("📊 Фильтр по региону ID={}, найдено {} делян", regionId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByTerritoryUnitRecursive(regionId);
+            log.info("📊 Фильтр по региону ID={}, найдено {} делян", regionId, cuttingAreas.size());
         } else if (federalDistrictId != null) {
             // Федеральный округ - территориальная единица
-            plots = plotRepository.findByTerritoryUnitRecursive(federalDistrictId);
-            log.info("📊 Фильтр по федеральному округу ID={}, найдено {} делян", federalDistrictId, plots.size());
+            cuttingAreas = cuttingAreaRepository.findByTerritoryUnitRecursive(federalDistrictId);
+            log.info("📊 Фильтр по федеральному округу ID={}, найдено {} делян", federalDistrictId, cuttingAreas.size());
         } else {
             // Без фильтра - все деляны
-            plots = plotRepository.findAll();
-            log.info("📊 Фильтр не применен, всего {} делян", plots.size());
+            cuttingAreas = cuttingAreaRepository.findAll();
+            log.info("📊 Фильтр не применен, всего {} делян", cuttingAreas.size());
         }
 
         // ===== ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ ПО АТРИБУТАМ =====
@@ -145,7 +143,7 @@ public class PlotService {
                 }
             }
 
-            plots = plots.stream()
+            cuttingAreas = cuttingAreas.stream()
                     .filter(p -> {
                         String pValue = p.getNumberInQuarter() != null ?
                                 p.getNumberInQuarter().trim() : "";
@@ -155,50 +153,50 @@ public class PlotService {
         }
 
         if (cutType != null && !cutType.isEmpty()) {
-            plots = plots.stream()
+            cuttingAreas = cuttingAreas.stream()
                     .filter(p -> p.getCutType() != null && p.getCutType().equals(cutType))
                     .collect(Collectors.toList());
         }
 
         if (yearOfCut != null) {
-            int before = plots.size();
-            plots = plots.stream()
+            int before = cuttingAreas.size();
+            cuttingAreas = cuttingAreas.stream()
                     .filter(p -> p.getYearOfCut() != null && p.getYearOfCut().equals(yearOfCut))
                     .collect(Collectors.toList());
-            log.info("📊 После фильтра по году рубки '{}': {} -> {} делян", yearOfCut, before, plots.size());
+            log.info("📊 После фильтра по году рубки '{}': {} -> {} делян", yearOfCut, before, cuttingAreas.size());
         }
 
-        log.info("📊 ИТОГО найдено {} делян", plots.size());
+        log.info("📊 ИТОГО найдено {} делян", cuttingAreas.size());
 
-        return plots.stream()
+        return cuttingAreas.stream()
                 .map(this::convertToMapDto)
                 .collect(Collectors.toList());
     }
 
-    public List<PlotMapDto> getAllPlotsForMap() {
-        List<Plot> plots = plotRepository.findAll();
-        log.info("📊 Всего делян для карты: {}", plots.size());
-        return plots.stream()
+    public List<CuttingAreaMapDto> getAllPlotsForMap() {
+        List<CuttingArea> cuttingAreas = cuttingAreaRepository.findAll();
+        log.info("📊 Всего делян для карты: {}", cuttingAreas.size());
+        return cuttingAreas.stream()
                 .map(this::convertToMapDto)
                 .collect(Collectors.toList());
     }
 
-    private PlotMapDto convertToMapDto(Plot plot) {
-        PlotMapDto dto = new PlotMapDto();
-        dto.setId(plot.getId());
-        dto.setFullNumber(plot.getFullNumber());
-        dto.setNumberInQuarter(plot.getNumberInQuarter());
-        dto.setVerified(plot.getVerified());
-        dto.setCutType(plot.getCutType());
-        dto.setYearOfCut(plot.getYearOfCut());
+    private CuttingAreaMapDto convertToMapDto(CuttingArea cuttingArea) {
+        CuttingAreaMapDto dto = new CuttingAreaMapDto();
+        dto.setId(cuttingArea.getId());
+        dto.setFullNumber(cuttingArea.getFullNumber());
+        dto.setNumberInQuarter(cuttingArea.getNumberInQuarter());
+        dto.setVerified(cuttingArea.getVerified());
+        dto.setCutType(cuttingArea.getCutType());
+        dto.setYearOfCut(cuttingArea.getYearOfCut());
 
-        dto.setAreaHa(plot.getAreaHa());
-        if (plot.getAreaHa() != null) {
-            dto.setAreaM2(plot.getAreaHa() * 10000);
+        dto.setAreaHa(cuttingArea.getAreaHa());
+        if (cuttingArea.getAreaHa() != null) {
+            dto.setAreaM2(cuttingArea.getAreaHa() * 10000);
         }
 
-        if (plot.getForestryUnit() != null) {
-            ForestryUnit unit = plot.getForestryUnit();
+        if (cuttingArea.getForestryUnit() != null) {
+            ForestryUnit unit = cuttingArea.getForestryUnit();
 
             // Номер квартала
             if (unit.isQuarter()) {
@@ -221,10 +219,10 @@ public class PlotService {
             dto.setTerritoryPath(unit.getFullPath());
         }
 
-        if (plot.getGeometry() != null) {
+        if (cuttingArea.getGeometry() != null) {
             try {
                 GeoJsonWriter writer = new GeoJsonWriter();
-                dto.setGeometryGeoJson(writer.write(plot.getGeometry()));
+                dto.setGeometryGeoJson(writer.write(cuttingArea.getGeometry()));
             } catch (Exception e) {
                 log.error("Ошибка конвертации геометрии в GeoJSON: {}", e.getMessage());
                 dto.setGeometryGeoJson(null);
@@ -284,7 +282,7 @@ public class PlotService {
             }
         }
 
-        Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
+        Optional<CuttingArea> existing = cuttingAreaRepository.findByForestryUnitIdAndNumberInQuarter(
                 forestryUnitId, numberInQuarter);
         if (existing.isPresent()) {
             throw new IllegalArgumentException(
@@ -294,66 +292,66 @@ public class PlotService {
             );
         }
 
-        Plot plot = new Plot();
-        plot.setNumberInQuarter(numberInQuarter);
-        plot.setPlots(plots);
-        plot.setDescription(description);
-        plot.setGeometry(geometry);
-        plot.setForestryUnit(forestryUnit);
-        plot.setYearOfCut(yearOfCut);
-        plot.setCutType(cutType);
+        CuttingArea cuttingArea = new CuttingArea();
+        cuttingArea.setNumberInQuarter(numberInQuarter);
+        cuttingArea.setForestStand(plots);
+        cuttingArea.setDescription(description);
+        cuttingArea.setGeometry(geometry);
+        cuttingArea.setForestryUnit(forestryUnit);
+        cuttingArea.setYearOfCut(yearOfCut);
+        cuttingArea.setCutType(cutType);
 
-        return saveWithValidation(plot);
+        return saveWithValidation(cuttingArea);
     }
 
     @Transactional
-    public List<IntersectionReport> saveWithValidation(Plot plot) {
-        if (plot.getGeometry() == null) {
+    public List<IntersectionReport> saveWithValidation(CuttingArea cuttingArea) {
+        if (cuttingArea.getGeometry() == null) {
             throw new IllegalArgumentException("Геометрия деляны не задана");
         }
 
-        if (!geometryService.isValid(plot.getGeometry())) {
+        if (!geometryService.isValid(cuttingArea.getGeometry())) {
             throw new IllegalArgumentException(
                     "⚠️ Деляна имеет некорректную геометрию! Возможна 'бабочка' (самопересечение)."
             );
         }
 
-        if (plot.getNumberInQuarter() == null || plot.getNumberInQuarter().isEmpty()) {
+        if (cuttingArea.getNumberInQuarter() == null || cuttingArea.getNumberInQuarter().isEmpty()) {
             throw new IllegalArgumentException("Номер деляны в квартале обязателен!");
         }
 
-        if (plot.getForestryUnit() != null) {
-            Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
-                    plot.getForestryUnit().getId(),
-                    plot.getNumberInQuarter()
+        if (cuttingArea.getForestryUnit() != null) {
+            Optional<CuttingArea> existing = cuttingAreaRepository.findByForestryUnitIdAndNumberInQuarter(
+                    cuttingArea.getForestryUnit().getId(),
+                    cuttingArea.getNumberInQuarter()
             );
-            if (existing.isPresent() && !existing.get().getId().equals(plot.getId())) {
+            if (existing.isPresent() && !existing.get().getId().equals(cuttingArea.getId())) {
                 throw new IllegalArgumentException(
                         String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
-                                plot.getNumberInQuarter(),
-                                plot.getForestryUnit().getNumber() != null ?
-                                        plot.getForestryUnit().getNumber() :
-                                        plot.getForestryUnit().getName())
+                                cuttingArea.getNumberInQuarter(),
+                                cuttingArea.getForestryUnit().getNumber() != null ?
+                                        cuttingArea.getForestryUnit().getNumber() :
+                                        cuttingArea.getForestryUnit().getName())
                 );
             }
         }
 
-        if (plot.getForestryUnit() != null && plot.getForestryUnit().getGeometry() != null) {
-            if (plot.getForestryUnit().getGeometry() instanceof Polygon) {
-                String quarterNumber = plot.getForestryUnit().getNumber() != null ?
-                        plot.getForestryUnit().getNumber() :
-                        plot.getForestryUnit().getName();
+        if (cuttingArea.getForestryUnit() != null && cuttingArea.getForestryUnit().getGeometry() != null) {
+            if (cuttingArea.getForestryUnit().getGeometry() instanceof Polygon) {
+                String quarterNumber = cuttingArea.getForestryUnit().getNumber() != null ?
+                        cuttingArea.getForestryUnit().getNumber() :
+                        cuttingArea.getForestryUnit().getName();
 
                 geometryService.validatePlotInsideQuarter(
-                        plot.getGeometry(),
-                        (Polygon) plot.getForestryUnit().getGeometry(),
-                        plot.getFullNumber() != null ? plot.getFullNumber() : plot.getNumberInQuarter(),
+                        cuttingArea.getGeometry(),
+                        (Polygon) cuttingArea.getForestryUnit().getGeometry(),
+                        cuttingArea.getFullNumber() != null ? cuttingArea.getFullNumber() : cuttingArea.getNumberInQuarter(),
                         quarterNumber  // ← String
                 );
             }
         }
 
-        Plot saved = plotRepository.save(plot);
+        CuttingArea saved = cuttingAreaRepository.save(cuttingArea);
         log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, территория: {})",
                 saved.getFullNumber(), saved.getId(), saved.getAreaHa(),
                 saved.getForestryUnit() != null ? saved.getForestryUnit().getFullPath() : "null");
@@ -362,11 +360,11 @@ public class PlotService {
 
         if (conflicts.isEmpty()) {
             saved.setVerified(true);
-            plotRepository.save(saved);
+            cuttingAreaRepository.save(saved);
             log.info("✅ Деляна {} верифицирована (пересечений нет)", saved.getFullNumber());
         } else {
             saved.setVerified(false);
-            plotRepository.save(saved);
+            cuttingAreaRepository.save(saved);
             log.warn("⚠️ Деляна {} имеет {} пересечений", saved.getFullNumber(), conflicts.size());
         }
 
@@ -374,23 +372,23 @@ public class PlotService {
     }
 
     @Transactional
-    public List<IntersectionReport> validatePlot(Plot plot) {
+    public List<IntersectionReport> validatePlot(CuttingArea cuttingArea) {
         List<IntersectionReport> reports = new ArrayList<>();
 
-        if (plot.getGeometry() == null) {
+        if (cuttingArea.getGeometry() == null) {
             return reports;
         }
 
-        List<Object[]> results = plotRepository.findIntersectionsWithPlot(
-                plot.getGeometry(),
-                plot.getId(),
+        List<Object[]> results = cuttingAreaRepository.findIntersectionsWithPlot(
+                cuttingArea.getGeometry(),
+                cuttingArea.getId(),
                 minArea
         );
 
         for (Object[] row : results) {
             IntersectionReport report = new IntersectionReport();
-            report.setPlot1Id(plot.getId());
-            report.setPlot1Number(plot.getFullNumber());
+            report.setPlot1Id(cuttingArea.getId());
+            report.setPlot1Number(cuttingArea.getFullNumber());
             report.setPlot2Id((Long) row[0]);
             report.setPlot2Number((String) row[1]);
             report.setOverlapArea((Double) row[2]);
@@ -412,7 +410,7 @@ public class PlotService {
     @Transactional
     public List<IntersectionReport> validateAllPlots() {
         List<IntersectionReport> reports = new ArrayList<>();
-        List<Object[]> results = plotRepository.findAllIntersections(minArea);
+        List<Object[]> results = cuttingAreaRepository.findAllIntersections(minArea);
 
         for (Object[] row : results) {
             IntersectionReport report = new IntersectionReport();
@@ -420,11 +418,11 @@ public class PlotService {
             report.setPlot2Id((Long) row[1]);
             report.setOverlapArea((Double) row[2]);
 
-            Plot plot1 = plotRepository.findById(report.getPlot1Id()).orElse(null);
-            Plot plot2 = plotRepository.findById(report.getPlot2Id()).orElse(null);
+            CuttingArea cuttingArea1 = cuttingAreaRepository.findById(report.getPlot1Id()).orElse(null);
+            CuttingArea cuttingArea2 = cuttingAreaRepository.findById(report.getPlot2Id()).orElse(null);
 
-            if (plot1 != null) report.setPlot1Number(plot1.getFullNumber());
-            if (plot2 != null) report.setPlot2Number(plot2.getFullNumber());
+            if (cuttingArea1 != null) report.setPlot1Number(cuttingArea1.getFullNumber());
+            if (cuttingArea2 != null) report.setPlot2Number(cuttingArea2.getFullNumber());
 
             if (report.getOverlapArea() > 1.0) {
                 report.setSeverity("CRITICAL");
@@ -438,21 +436,21 @@ public class PlotService {
         }
 
         if (reports.isEmpty()) {
-            List<Plot> allPlots = plotRepository.findAll();
-            for (Plot plot : allPlots) {
-                plot.setVerified(true);
-                plotRepository.save(plot);
+            List<CuttingArea> allCuttingAreas = cuttingAreaRepository.findAll();
+            for (CuttingArea cuttingArea : allCuttingAreas) {
+                cuttingArea.setVerified(true);
+                cuttingAreaRepository.save(cuttingArea);
             }
             log.info("✅ Все деляны верифицированы (пересечений нет)");
         } else {
             for (IntersectionReport report : reports) {
-                plotRepository.findById(report.getPlot1Id()).ifPresent(plot -> {
+                cuttingAreaRepository.findById(report.getPlot1Id()).ifPresent(plot -> {
                     plot.setVerified(false);
-                    plotRepository.save(plot);
+                    cuttingAreaRepository.save(plot);
                 });
-                plotRepository.findById(report.getPlot2Id()).ifPresent(plot -> {
+                cuttingAreaRepository.findById(report.getPlot2Id()).ifPresent(plot -> {
                     plot.setVerified(false);
-                    plotRepository.save(plot);
+                    cuttingAreaRepository.save(plot);
                 });
             }
             log.warn("⚠️ Найдено {} пересечений, верификация снята с проблемных делян", reports.size());
@@ -462,12 +460,12 @@ public class PlotService {
     }
 
     @Transactional
-    public List<IntersectionReport> validatePlots(List<Plot> plots) {
+    public List<IntersectionReport> validatePlots(List<CuttingArea> cuttingAreas) {
         List<IntersectionReport> allReports = new ArrayList<>();
 
-        for (Plot plot : plots) {
-            if (plot.getGeometry() != null) {
-                List<IntersectionReport> reports = validatePlot(plot);
+        for (CuttingArea cuttingArea : cuttingAreas) {
+            if (cuttingArea.getGeometry() != null) {
+                List<IntersectionReport> reports = validatePlot(cuttingArea);
                 allReports.addAll(reports);
             }
         }
@@ -490,31 +488,31 @@ public class PlotService {
     public List<IntersectionReport> importFromExcel(MultipartFile file) {
         log.info("Начинаем импорт из Excel: {}", file.getOriginalFilename());
 
-        List<Plot> plots = excelImportService.parseExcel(file);
-        log.info("Распаршено {} делян", plots.size());
+        List<CuttingArea> cuttingAreas = excelImportService.parseExcel(file);
+        log.info("Распаршено {} делян", cuttingAreas.size());
 
-        List<Plot> savedPlots = new ArrayList<>();
+        List<CuttingArea> savedCuttingAreas = new ArrayList<>();
         List<IntersectionReport> allConflicts = new ArrayList<>();
 
-        for (Plot plot : plots) {
+        for (CuttingArea cuttingArea : cuttingAreas) {
             try {
-                List<IntersectionReport> conflicts = saveWithValidation(plot);
-                savedPlots.add(plot);
+                List<IntersectionReport> conflicts = saveWithValidation(cuttingArea);
+                savedCuttingAreas.add(cuttingArea);
                 allConflicts.addAll(conflicts);
             } catch (Exception e) {
                 log.error("Ошибка при сохранении деляны {}: {}",
-                        plot.getNumberInQuarter(), e.getMessage());
+                        cuttingArea.getNumberInQuarter(), e.getMessage());
                 throw new RuntimeException(
                         String.format("Ошибка при импорте деляны '%s': %s",
-                                plot.getNumberInQuarter(), e.getMessage())
+                                cuttingArea.getNumberInQuarter(), e.getMessage())
                 );
             }
         }
 
         if (allConflicts.isEmpty()) {
-            for (Plot plot : savedPlots) {
-                plot.setVerified(true);
-                plotRepository.save(plot);
+            for (CuttingArea cuttingArea : savedCuttingAreas) {
+                cuttingArea.setVerified(true);
+                cuttingAreaRepository.save(cuttingArea);
             }
             log.info("Все деляны успешно импортированы и верифицированы");
         } else {
@@ -526,12 +524,12 @@ public class PlotService {
 
     @Transactional
     public int fixMissingTerritoryUnit() {
-        List<Plot> plots = plotRepository.findAll();
+        List<CuttingArea> cuttingAreas = cuttingAreaRepository.findAll();
         int fixed = 0;
 
-        for (Plot plot : plots) {
-            if (plot.getForestryUnit() == null) {
-                log.warn("⚠️ У деляны {} нет территориальной единицы", plot.getFullNumber());
+        for (CuttingArea cuttingArea : cuttingAreas) {
+            if (cuttingArea.getForestryUnit() == null) {
+                log.warn("⚠️ У деляны {} нет территориальной единицы", cuttingArea.getFullNumber());
             }
         }
 

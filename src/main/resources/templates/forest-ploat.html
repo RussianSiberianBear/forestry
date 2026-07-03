@@ -126,7 +126,7 @@
                             Добавление новой деляны
                         </h3>
 
-                        <form th:action="@{/api/plots/create}" th:object="${plotDto}" method="post" id="plotForm">
+                        <form th:action="@{/api/cuttingAreas/create}" th:object="${plotDto}" method="post" id="plotForm">
 
                             <!-- ===== 1. РЕГИОН ===== -->
                             <div class="uk-margin-small">
@@ -249,10 +249,10 @@
 
                             <!-- ===== 8. ВЫДЕЛЫ ===== -->
                             <div class="uk-margin-small">
-                                <label class="uk-form-label" for="plots">Выделы</label>
+                                <label class="uk-form-label" for="cuttingAreas">Выделы</label>
                                 <div class="uk-form-controls">
-                                    <input class="uk-input" type="text" id="plots"
-                                           th:field="*{plots}"
+                                    <input class="uk-input" type="text" id="cuttingAreas"
+                                           th:field="*{cuttingAreas}"
                                            placeholder="Например: 1, 2, 3-5, 7">
                                 </div>
                                 <div class="field-hint">
@@ -425,7 +425,7 @@
                             </div>
                         </div>
 
-                        <div class="plot-list uk-margin-top">
+                        <div class="cuttingArea-list uk-margin-top">
                             <table class="uk-table uk-table-small uk-table-divider">
                                 <thead>
                                 <tr>
@@ -437,21 +437,21 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr th:each="plot : ${plots}">
-                                    <td th:text="${plot.fullNumber}"></td>
+                                <tr th:each="cuttingArea : ${cuttingAreas}">
+                                    <td th:text="${cuttingArea.fullNumber}"></td>
                                     <td>
-                                        <span th:text="${plot.territoryPath != null ? plot.territoryPath : '-'}"></span>
+                                        <span th:text="${cuttingArea.territoryPath != null ? cuttingArea.territoryPath : '-'}"></span>
                                     </td>
-                                    <td th:text="${plot.cutType != null ? plot.cutType : '-'}"></td>
-                                    <td th:text="${plot.yearOfCut != null ? plot.yearOfCut : '-'}"></td>
+                                    <td th:text="${cuttingArea.cutType != null ? cuttingArea.cutType : '-'}"></td>
+                                    <td th:text="${cuttingArea.yearOfCut != null ? cuttingArea.yearOfCut : '-'}"></td>
                                     <td>
-                <span th:if="${plot.verified}"
+                <span th:if="${cuttingArea.verified}"
                       class="uk-badge uk-badge-success">✓ Вериф.</span>
-                                        <span th:unless="${plot.verified}"
+                                        <span th:unless="${cuttingArea.verified}"
                                               class="uk-badge uk-badge-warning">⏳ Не провер.</span>
                                     </td>
                                 </tr>
-                                <tr th:if="${plots == null or plots.empty}">
+                                <tr th:if="${cuttingAreas == null or cuttingAreas.empty}">
                                     <td colspan="5" class="uk-text-center uk-text-muted">
                                         Нет добавленных делян
                                     </td>
@@ -569,7 +569,7 @@
                             Первая строка — заголовки колонок.
                         </p>
 
-                        <form th:action="@{/api/plots/mass-import}"
+                        <form th:action="@{/api/cuttingAreas/mass-import}"
                               method="post"
                               enctype="multipart/form-data"
                               id="uploadForm">
@@ -674,14 +674,14 @@
                                 <div class="uk-width-1-2">
                                     <div style="text-align: center; padding: 5px;">
                                 <span class="stats-number" style="font-size: 24px;"
-                                      th:text="${plots != null ? plots.size() : 0}">0</span>
+                                      th:text="${cuttingAreas != null ? cuttingAreas.size() : 0}">0</span>
                                         <span class="stats-label">Всего делян</span>
                                     </div>
                                 </div>
                                 <div class="uk-width-1-2">
                                     <div style="text-align: center; padding: 5px;">
                                 <span class="stats-number" style="font-size: 24px; color: #2e7d32;"
-                                      th:text="${plots != null ? #lists.size(plots.?[verified == true]) : 0}">0</span>
+                                      th:text="${cuttingAreas != null ? #lists.size(cuttingAreas.?[verified == true]) : 0}">0</span>
                                         <span class="stats-label">Верифицировано</span>
                                     </div>
                                 </div>
@@ -690,7 +690,7 @@
                                 <div class="uk-width-1-2">
                                     <div style="text-align: center; padding: 5px;">
                                 <span class="stats-number" style="font-size: 24px; color: #f57c00;"
-                                      th:text="${plots != null ? #lists.size(plots.?[verified == false]) : 0}">0</span>
+                                      th:text="${cuttingAreas != null ? #lists.size(cuttingAreas.?[verified == false]) : 0}">0</span>
                                         <span class="stats-label">Не проверено</span>
                                     </div>
                                 </div>
@@ -708,15 +708,15 @@
                         <div class="uk-margin-top">
                             <h4>Последние добавленные</h4>
                             <ul class="uk-list uk-list-striped">
-                                <li th:each="plot : ${latestPlots}">
+                                <li th:each="cuttingArea : ${latestCuttingAreas}">
                                     <div class="uk-flex uk-flex-between">
-                                        <span th:text="${plot.fullNumber}"></span>
-                                        <span th:if="${plot.verified}" class="uk-badge uk-badge-success">✓</span>
-                                        <span th:unless="${plot.verified}" class="uk-badge uk-badge-warning">⏳</span>
+                                        <span th:text="${cuttingArea.fullNumber}"></span>
+                                        <span th:if="${cuttingArea.verified}" class="uk-badge uk-badge-success">✓</span>
+                                        <span th:unless="${cuttingArea.verified}" class="uk-badge uk-badge-warning">⏳</span>
                                     </div>
-                                    <div class="uk-text-meta uk-text-small" th:text="${plot.name}"></div>
+                                    <div class="uk-text-meta uk-text-small" th:text="${cuttingArea.name}"></div>
                                 </li>
-                                <li th:if="${plots == null or plots.empty}" class="uk-text-muted">
+                                <li th:if="${cuttingAreas == null or cuttingAreas.empty}" class="uk-text-muted">
                                     Нет добавленных делян
                                 </li>
                             </ul>
@@ -750,8 +750,8 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/common.js"></script>
-<script src="/js/validationplot.js"></script>
-<script src="/js/forest-ploat-mass-load.js"></script>
+<script src="/js/validation-cutting-area.js"></script>
+<script src="/js/cutting-area-mass-load.js"></script>
 
 </body>
 </html>

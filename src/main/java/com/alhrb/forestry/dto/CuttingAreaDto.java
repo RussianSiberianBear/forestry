@@ -8,7 +8,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class PlotDto {
+public class CuttingAreaDto {
 
     // ===== ТЕРРИТОРИЯ (вместо quarterId) =====
     @NotNull(message = "Квартал обязателен")

@@ -98,8 +98,8 @@ public class ForestryUnit {
         return type == ForestryUnitType.FORESTRY;
     }
 
-    public boolean isDistrictForestry() {
-        return type == ForestryUnitType.DISTRICT_FORESTRY;
+    public boolean isSubForestry() {
+        return type == ForestryUnitType.SUB_FORESTRY;
     }
 
     public boolean isTechnicalUnit() {
@@ -107,7 +107,19 @@ public class ForestryUnit {
     }
 
     public boolean isQuarter() {
-        return type == ForestryUnitType.QUARTER;
+        return type == ForestryUnitType.FOREST_QUARTER;
+    }
+
+    public boolean isForestStand() {
+        return type == ForestryUnitType.FOREST_STAND;
+    }
+
+    public boolean isForestPlot() {
+        return type == ForestryUnitType.FOREST_PLOT;
+    }
+
+    public boolean isCuttingArea() {
+        return type == ForestryUnitType.CUTTING_AREA;
     }
 
     @Override

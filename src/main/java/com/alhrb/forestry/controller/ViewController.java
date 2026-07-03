@@ -1,7 +1,7 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.dto.PlotDto;
-import com.alhrb.forestry.model.Plot;
+import com.alhrb.forestry.dto.CuttingAreaDto;
+import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.service.PlotService;
 import com.alhrb.forestry.service.UserUISettingsService;
@@ -29,21 +29,21 @@ public class ViewController {
     @GetMapping("/forest-ploat")
     public String forestPlot(Model model) {
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
-        List<Plot> plots = plotService.findAll();
+        List<CuttingArea> cuttingAreas = plotService.findAll();
 
         // Заполняем territoryPath для каждого plot
-        plots.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
+        cuttingAreas.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
 
-        model.addAttribute("plots", plots);
-        model.addAttribute("plotDto", new PlotDto());
+        model.addAttribute("plots", cuttingAreas);
+        model.addAttribute("plotDto", new CuttingAreaDto());
         model.addAttribute("uiSettings", uiSettings);
 
-        List<Plot> latestPlots = plots.stream()
-                .sorted(Comparator.comparing(Plot::getId).reversed())
+        List<CuttingArea> latestCuttingAreas = cuttingAreas.stream()
+                .sorted(Comparator.comparing(CuttingArea::getId).reversed())
                 .limit(5)
                 .toList();
 
-        model.addAttribute("latestPlots", latestPlots);
+        model.addAttribute("latestPlots", latestCuttingAreas);
 
         return "forest-ploat";
     }
@@ -51,21 +51,21 @@ public class ViewController {
     @GetMapping("/forest-stand")
     public String forestStand(Model model) {
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
-        List<Plot> plots = plotService.findAll();
+        List<CuttingArea> cuttingAreas = plotService.findAll();
 
         // Заполняем territoryPath для каждого plot
-        plots.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
+        cuttingAreas.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
 
-        model.addAttribute("plots", plots);
-        model.addAttribute("plotDto", new PlotDto());
+        model.addAttribute("plots", cuttingAreas);
+        model.addAttribute("plotDto", new CuttingAreaDto());
         model.addAttribute("uiSettings", uiSettings);
 
-        List<Plot> latestPlots = plots.stream()
-                .sorted(Comparator.comparing(Plot::getId).reversed())
+        List<CuttingArea> latestCuttingAreas = cuttingAreas.stream()
+                .sorted(Comparator.comparing(CuttingArea::getId).reversed())
                 .limit(5)
                 .toList();
 
-        model.addAttribute("latestPlots", latestPlots);
+        model.addAttribute("latestPlots", latestCuttingAreas);
 
         return "forest-stand";
     }

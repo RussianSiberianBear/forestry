@@ -2,7 +2,7 @@ package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
-import com.alhrb.forestry.repository.PlotRepository;
+import com.alhrb.forestry.repository.CuttingAreaRepository;
 import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,12 +26,12 @@ public class ExcelImportService {
 
     private final TerritoryUnitRepository territoryUnitRepository;
     private final ForestryUnitRepository  forestryUnitRepository;
-    private final PlotRepository plotRepository;
+    private final CuttingAreaRepository cuttingAreaRepository;
     private final GeometryService geometryService;
 
     @Transactional
-    public List<Plot> parseExcel(MultipartFile file) {
-        List<Plot> plots = new ArrayList<>();
+    public List<CuttingArea> parseExcel(MultipartFile file) {
+        List<CuttingArea> cuttingAreas = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
@@ -116,7 +116,7 @@ public class ExcelImportService {
                 if (row == null) continue;
 
                 try {
-                    Plot plot = new Plot();
+                    CuttingArea cuttingArea = new CuttingArea();
                     TerritoryUnit territoryUnit = null;
                     ForestryUnit forestryUnit = null;
 
@@ -156,14 +156,14 @@ public class ExcelImportService {
                         );
                     }
 
-                    plot.setForestryUnit(forestryUnit);
+                    cuttingArea.setForestryUnit(forestryUnit);
 
                     // Номер деляны
                     String plotNumber = getStringValue(row.getCell(plotNumberIdx));
                     if (plotNumber == null || plotNumber.isEmpty()) {
                         throw new IllegalArgumentException("Номер деляны не задан");
                     }
-                    plot.setNumberInQuarter(plotNumber);
+                    cuttingArea.setNumberInQuarter(plotNumber);
 
                     // Геометрия
                     String wkt = getStringValue(row.getCell(wktGeometryIdx));
@@ -172,19 +172,19 @@ public class ExcelImportService {
                         if (!polygon.isValid()) {
                             throw new IllegalArgumentException("Невалидный полигон (возможно 'бабочка')");
                         }
-                        plot.setGeometry(polygon);
+                        cuttingArea.setGeometry(polygon);
                     }
 
                     // Дополнительно
                     if (yearOfCutIdx != -1) {
-                        plot.setYearOfCut(getIntValue(row.getCell(yearOfCutIdx)));
+                        cuttingArea.setYearOfCut(getIntValue(row.getCell(yearOfCutIdx)));
                     }
                     if (cutTypeIdx != -1) {
-                        plot.setCutType(getStringValue(row.getCell(cutTypeIdx)));
+                        cuttingArea.setCutType(getStringValue(row.getCell(cutTypeIdx)));
                     }
 
                     // Проверяем уникальность
-                    Optional<Plot> existing = plotRepository.findByForestryUnitIdAndNumberInQuarter(
+                    Optional<CuttingArea> existing = cuttingAreaRepository.findByForestryUnitIdAndNumberInQuarter(
                             territoryUnit.getId(), plotNumber
                     );
                     if (existing.isPresent()) {
@@ -194,8 +194,8 @@ public class ExcelImportService {
                         );
                     }
 
-                    plots.add(plot);
-                    log.debug("Добавлена деляна: {}", plot.getFullNumber());
+                    cuttingAreas.add(cuttingArea);
+                    log.debug("Добавлена деляна: {}", cuttingArea.getFullNumber());
 
                 } catch (Exception e) {
                     String error = String.format("Строка %d: %s", i + 1, e.getMessage());
@@ -215,7 +215,7 @@ public class ExcelImportService {
             throw new RuntimeException("Ошибка при чтении файла: " + e.getMessage());
         }
 
-        return plots;
+        return cuttingAreas;
     }
 
     private ForestryUnit findQuarterByHierarchy(String regionName, String districtName,
@@ -254,7 +254,7 @@ public class ExcelImportService {
 
         if (forestry != null) {
             List<ForestryUnit> quarters = forestryUnitRepository.findByTypeAndParentIdAndNumber(
-                    ForestryUnitType.QUARTER, forestry.getId(), String.valueOf(quarterNumber)
+                    ForestryUnitType.FOREST_QUARTER, forestry.getId(), String.valueOf(quarterNumber)
             );
             if (!quarters.isEmpty()) {
                 return quarters.get(0);
@@ -267,7 +267,7 @@ public class ExcelImportService {
     private ForestryUnit findQuarterByNumber(Integer quarterNumber) {
         if (quarterNumber == null) return null;
         List<ForestryUnit> quarters = forestryUnitRepository.findByTypeAndNumber(
-                ForestryUnitType.QUARTER, String.valueOf(quarterNumber)
+                ForestryUnitType.FOREST_QUARTER, String.valueOf(quarterNumber)
         );
         return quarters.isEmpty() ? null : quarters.get(0);
     }

@@ -1417,9 +1417,9 @@ function checkSelected() {
         'REGION': 'региону',
         'MUNICIPAL_DISTRICT': 'муниципальному району',
         'FORESTRY': 'лесничеству',
-        'DISTRICT_FORESTRY': 'участковому лесничеству',
+        'SUB_FORESTRY': 'участковому лесничеству',
         'TECHNICAL_UNIT': 'техническому участку',
-        'QUARTER': 'кварталу'
+        'FOREST_QUARTER': 'кварталу'
     };
 
     let message = `🔍 Проверка делян по ${typeNames[type]}: "${name}"...`;

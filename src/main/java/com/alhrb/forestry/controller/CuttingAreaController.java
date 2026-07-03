@@ -1,11 +1,10 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.IntersectionReport;
-import com.alhrb.forestry.dto.PlotDto;
-import com.alhrb.forestry.dto.PlotMapDto;
+import com.alhrb.forestry.dto.CuttingAreaDto;
+import com.alhrb.forestry.dto.CuttingAreaMapDto;
+import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestryUnit;
-import com.alhrb.forestry.model.Plot;
-import com.alhrb.forestry.model.TerritoryUnit;
 import com.alhrb.forestry.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +25,14 @@ import java.util.List;
 @RequestMapping("/api/plots")
 @RequiredArgsConstructor
 @Slf4j
-public class PlotController {
+public class CuttingAreaController {
 
     private final PlotService plotService;
     private final GeometryService geometryService;
     private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
     @PostMapping("/create")
-    public String createPlot(@Valid @ModelAttribute("plotDto") PlotDto plotDto,
+    public String createPlot(@Valid @ModelAttribute("plotDto") CuttingAreaDto plotDto,
                              BindingResult result,
                              Model model,
                              RedirectAttributes redirectAttributes) {
@@ -134,13 +133,13 @@ public class PlotController {
 
     @GetMapping("/all")
     @ResponseBody
-    public ResponseEntity<List<Plot>> getAllPlots() {
+    public ResponseEntity<List<CuttingArea>> getAllCuttingAreas() {
         return ResponseEntity.ok(plotService.findAll());
     }
 
     @GetMapping("/map-data")
     @ResponseBody
-    public ResponseEntity<List<PlotMapDto>> getPlotsForMap() {
+    public ResponseEntity<List<CuttingAreaMapDto>> getCuttingAreasForMap() {
         return ResponseEntity.ok(plotService.getAllPlotsForMap());
     }
 
@@ -149,7 +148,7 @@ public class PlotController {
      */
     @GetMapping("/map-data-filtered")
     @ResponseBody
-    public ResponseEntity<List<PlotMapDto>> getFilteredPlotsForMap(
+    public ResponseEntity<List<CuttingAreaMapDto>> getFilteredCuttingAreasForMap(
             @RequestParam(required = false) Long federalDistrictId,
             @RequestParam(required = false) Long regionId,
             @RequestParam(required = false) Long municipalDistrictId,
@@ -161,7 +160,7 @@ public class PlotController {
             @RequestParam(required = false) String cutType,
             @RequestParam(required = false) Integer yearOfCut) {
 
-        List<PlotMapDto> plots = plotService.getFilteredPlotsForMap(
+        List<CuttingAreaMapDto> plots = plotService.getFilteredPlotsForMap(
                 federalDistrictId, regionId, municipalDistrictId,
                 forestryId, districtForestryId, technicalUnitId,
                 quarterId, numberInQuarter, cutType, yearOfCut
@@ -184,33 +183,33 @@ public class PlotController {
             @RequestParam String type,
             @RequestParam Long id) {
 
-        List<Plot> plots = new ArrayList<>();
+        List<CuttingArea> cuttingAreas = new ArrayList<>();
         String territoryName = "";
 
         // Используем рекурсивные методы для поиска по иерархии
         switch (type) {
             case "REGION":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                cuttingAreas = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "региону";
                 break;
             case "MUNICIPAL_DISTRICT":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                cuttingAreas = plotService.findByTerritoryUnitRecursive(id);
                 territoryName = "муниципальному району";
                 break;
             case "FORESTRY":
-                plots = plotService.findByForestryUnitRecursive(id);
+                cuttingAreas = plotService.findByForestryUnitRecursive(id);
                 territoryName = "лесничеству";
                 break;
             case "DISTRICT_FORESTRY":
-                plots = plotService.findByForestryUnitRecursive(id);
+                cuttingAreas = plotService.findByForestryUnitRecursive(id);
                 territoryName = "участковому лесничеству";
                 break;
             case "TECHNICAL_UNIT":
-                plots = plotService.findByForestryUnitRecursive(id);
+                cuttingAreas = plotService.findByForestryUnitRecursive(id);
                 territoryName = "техническому участку";
                 break;
             case "QUARTER":
-                plots = plotService.findByForestryUnitId(id);
+                cuttingAreas = plotService.findByForestryUnitId(id);
                 territoryName = "кварталу";
                 break;
             default:
@@ -218,14 +217,14 @@ public class PlotController {
         }
 
         log.info("🔍 Проверка делян по {} (ID: {})", territoryName, id);
-        log.info("📊 Найдено {} делян для проверки", plots.size());
+        log.info("📊 Найдено {} делян для проверки", cuttingAreas.size());
 
-        List<IntersectionReport> conflicts = plotService.validatePlots(plots);
+        List<IntersectionReport> conflicts = plotService.validatePlots(cuttingAreas);
 
         if (conflicts.isEmpty()) {
-            for (Plot plot : plots) {
-                plot.setVerified(true);
-                plotService.save(plot);
+            for (CuttingArea cuttingArea : cuttingAreas) {
+                cuttingArea.setVerified(true);
+                plotService.save(cuttingArea);
             }
             log.info("✅ Все деляны по территории проверены, пересечений нет");
         } else {

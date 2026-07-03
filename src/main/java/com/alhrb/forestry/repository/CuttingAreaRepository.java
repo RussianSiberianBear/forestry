@@ -1,6 +1,6 @@
 package com.alhrb.forestry.repository;
 
-import com.alhrb.forestry.model.Plot;
+import com.alhrb.forestry.model.CuttingArea;
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PlotRepository extends JpaRepository<Plot, Long> {
+public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> {
 
-    Optional<Plot> findByFullNumber(String fullNumber);
+    Optional<CuttingArea> findByFullNumber(String fullNumber);
 
     // ===== ПОИСК ПО ЛЕСНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """
@@ -26,7 +26,7 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
         SELECT p.* FROM forest_plot p
         WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)
     """, nativeQuery = true)
-    List<Plot> findByForestryUnitRecursive(@Param("unitId") Long unitId);
+    List<CuttingArea> findByForestryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву территорий) =====
 // В PlotRepository.java
@@ -43,7 +43,7 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
         WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
     )
 """, nativeQuery = true)
-    List<Plot> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
+    List<CuttingArea> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТИПУ ЛЕСНОЙ ЕДИНИЦЫ И ТЕРРИТОРИИ =====
     @Query(value = """
@@ -60,19 +60,19 @@ public interface PlotRepository extends JpaRepository<Plot, Long> {
             AND fu.type = :type
         )
     """, nativeQuery = true)
-    List<Plot> findByForestryTypeAndIdRecursive(
+    List<CuttingArea> findByForestryTypeAndIdRecursive(
             @Param("type") String type,
             @Param("unitId") Long unitId
     );
 
     // ===== ПОИСК ПО КВАРТАЛУ =====
-    List<Plot> findByForestryUnitIdOrderByNumberInQuarter(Long territoryUnitId);
+    List<CuttingArea> findByForestryUnitIdOrderByNumberInQuarter(Long territoryUnitId);
 
-    Optional<Plot> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
+    Optional<CuttingArea> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
 
     // ===== ПОИСК ПО ТИПУ И РОДИТЕЛЮ =====
-    @Query("SELECT p FROM Plot p WHERE p.forestryUnit.type = :type AND p.forestryUnit.id = :parentId")
-    List<Plot> findByForestryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
+    @Query("SELECT p FROM CuttingArea p WHERE p.forestryUnit.type = :type AND p.forestryUnit.id = :parentId")
+    List<CuttingArea> findByForestryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """

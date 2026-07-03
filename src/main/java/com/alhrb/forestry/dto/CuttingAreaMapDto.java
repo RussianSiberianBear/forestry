@@ -3,7 +3,7 @@ package com.alhrb.forestry.dto;
 import lombok.Data;
 
 @Data
-public class PlotMapDto {
+public class CuttingAreaMapDto {
     private Long id;
     private String fullNumber;
     private String numberInQuarter;

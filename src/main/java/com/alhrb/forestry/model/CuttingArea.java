@@ -10,11 +10,11 @@ import org.locationtech.jts.geom.Polygon;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "forest_plot")
+@Table(name = "cutting_area")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Plot {
+public class CuttingArea {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,8 +33,8 @@ public class Plot {
     @Column(name = "full_number", length = 300, unique = true)
     private String fullNumber;
 
-    @Column(name = "plots", length = 200)
-    private String plots;
+    @Column(name = "forest_stand", length = 200)
+    private String forestStand;
 
     @Column(name = "name", length = 100)
     private String name;
