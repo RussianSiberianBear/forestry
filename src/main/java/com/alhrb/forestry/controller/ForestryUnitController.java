@@ -37,7 +37,7 @@ public class ForestryUnitController {
     @GetMapping("/sub-forestries/by-forestry/{forestryId}")
     public ResponseEntity<List<ForestryUnitDto>> getSubForestriesByForestry(@PathVariable Long forestryId) {
         log.info("📡 Запрос участковых лесничеств для лесничества ID: {}", forestryId);
-        List<ForestryUnit> districtForestries = forestryUnitService.findDistrictForestriesByForestry(forestryId);
+        List<ForestryUnit> districtForestries = forestryUnitService.findSubForestriesByForestry(forestryId);
         log.info("📊 Найдено {} участковых лесничеств", districtForestries.size());
 
         List<ForestryUnitDto> dtos = districtForestries.stream()
