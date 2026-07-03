@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping("/api/plots")
+@RequestMapping("/api/cutting-area")
 @RequiredArgsConstructor
 @Slf4j
 public class CuttingAreaController {
@@ -39,7 +39,7 @@ public class CuttingAreaController {
 
         if (result.hasErrors()) {
             model.addAttribute("error", "Проверьте правильность заполнения формы");
-            model.addAttribute("plots", cuttingAreaService.findAll());
+            model.addAttribute("forestStand", cuttingAreaService.findAll());
             return "cutting-area";
         }
 
@@ -160,7 +160,7 @@ public class CuttingAreaController {
             @RequestParam(required = false) String cutType,
             @RequestParam(required = false) Integer yearOfCut) {
 
-        List<CuttingAreaMapDto> plots = cuttingAreaService.getFilteredPlotsForMap(
+        List<CuttingAreaMapDto> plots = cuttingAreaService.getFilteredCuttingAreasForMap(
                 federalDistrictId, regionId, municipalDistrictId,
                 forestryId, districtForestryId, technicalUnitId,
                 quarterId, numberInQuarter, cutType, yearOfCut

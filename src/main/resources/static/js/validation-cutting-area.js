@@ -1440,7 +1440,7 @@ function checkSelected() {
         params.append('numberInQuarter', numberInQuarter);
     }
 
-    fetch('/api/plots/validate-by-territory?' + params.toString(), {
+    fetch('/api/cutting-area/validate-by-territory?' + params.toString(), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1499,7 +1499,7 @@ function checkIntersectAll() {
         timeout: 3000
     });
 
-    fetch('/api/plots/validate-all', {
+    fetch('/api/cutting-area/validate-all', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

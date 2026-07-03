@@ -118,7 +118,7 @@ function checkAll() {
         timeout: 2000
     });
 
-    fetch('/api/plots/validate-all', {method: 'POST'})
+    fetch('/api/cutting-area/validate-all', {method: 'POST'})
         .then(response => {
             if (response.ok) window.location.reload();
             else throw new Error('Ошибка проверки');

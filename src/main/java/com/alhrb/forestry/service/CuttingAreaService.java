@@ -73,7 +73,7 @@ public class CuttingAreaService {
     // МЕТОД ДЛЯ КАРТЫ С ФИЛЬТРАЦИЕЙ
     // ==========================================
 
-    public List<CuttingAreaMapDto> getFilteredPlotsForMap(
+    public List<CuttingAreaMapDto> getFilteredCuttingAreasForMap(
             Long federalDistrictId,
             Long regionId,
             Long municipalDistrictId,
