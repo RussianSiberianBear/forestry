@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PlotService {
+public class CuttingAreaService {
 
     private final CuttingAreaRepository cuttingAreaRepository;
     private final ForestryUnitRepository forestryUnitRepository;

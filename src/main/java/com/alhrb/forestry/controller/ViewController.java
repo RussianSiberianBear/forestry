@@ -3,7 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.CuttingAreaDto;
 import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.UserUISettings;
-import com.alhrb.forestry.service.PlotService;
+import com.alhrb.forestry.service.CuttingAreaService;
 import com.alhrb.forestry.service.UserUISettingsService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ViewController {
 
-    private final PlotService plotService;
+    private final CuttingAreaService cuttingAreaService;
     private final UserUISettingsService userUISettingsService;
 
     @GetMapping("/")
@@ -27,14 +27,14 @@ public class ViewController {
     }
 
     @GetMapping("/cutting_area")
-    public String forestPlot(Model model) {
+    public String cuttingArea(Model model) {
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
-        List<CuttingArea> cuttingAreas = plotService.findAll();
+        List<CuttingArea> cuttingAreas = cuttingAreaService.findAll();
 
         // Заполняем territoryPath для каждого plot
-        cuttingAreas.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
+        cuttingAreas.forEach(area -> area.setTerritoryPath(area.getTerritoryPath()));
 
-        model.addAttribute("plots", cuttingAreas);
+        model.addAttribute("cuttingAreas", cuttingAreas);
         model.addAttribute("cuttingAreaDto", new CuttingAreaDto());
         model.addAttribute("uiSettings", uiSettings);
 
@@ -51,7 +51,7 @@ public class ViewController {
     @GetMapping("/forest-stand")
     public String forestStand(Model model) {
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
-        List<CuttingArea> cuttingAreas = plotService.findAll();
+        List<CuttingArea> cuttingAreas = cuttingAreaService.findAll();
 
         // Заполняем territoryPath для каждого plot
         cuttingAreas.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
