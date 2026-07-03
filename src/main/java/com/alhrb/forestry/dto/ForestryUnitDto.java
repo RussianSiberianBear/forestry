@@ -10,5 +10,6 @@ public class ForestryUnitDto {
     private String type;
     private String code;
     private String number;
+    private String accountNumber;
     private String parentName;
 }

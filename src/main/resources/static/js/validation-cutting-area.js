@@ -38,7 +38,7 @@ function collectFiltersManual() {
     const regionSelect = document.getElementById('regionSelect');
     const municipalSelect = document.getElementById('municipalDistrictSelect');
     const forestrySelect = document.getElementById('forestrySelect');
-    const districtForestrySelect = document.getElementById('districtForestrySelect');
+    const subForestrySelect = document.getElementById('subForestrySelect');
     const technicalUnitSelect = document.getElementById('technicalUnitSelect');
     const quarterId = document.getElementById('quarterId');
     const cutTypeSelect = document.getElementById('cutType');
@@ -56,8 +56,8 @@ function collectFiltersManual() {
     const fId = forestrySelect?.value;
     if (fId && fId !== '') filters.forestryId = fId;
 
-    const dfId = districtForestrySelect?.value;
-    if (dfId && dfId !== '') filters.districtForestryId = dfId;
+    const dfId = subForestrySelect?.value;
+    if (dfId && dfId !== '') filters.subForestryId = dfId;
 
     const tId = technicalUnitSelect?.value;
     if (tId && tId !== '') filters.technicalUnitId = tId;
@@ -100,8 +100,8 @@ function refreshMap() {
     // Определяем URL для запроса
     const hasFilters = Object.keys(currentFilters).length > 0;
     const url = hasFilters
-        ? '/api/plots/map-data-filtered?' + params.toString()
-        : '/api/plots/map-data';
+        ? '/api/cutting-area/map-data-filtered?' + params.toString()
+        : '/api/cutting-area/map-data';
 
     console.log('📡 Запрос к:', url);
 
@@ -587,7 +587,7 @@ function loadFullHierarchy(unit) {
                         case 'FORESTRY':
                             forestryId = item.id;
                             break;
-                        case 'DISTRICT_FORESTRY':
+                        case 'SUB_FORESTRY':
                             districtForestryId = item.id;
                             break;
                         case 'TECHNICAL_UNIT':
@@ -623,8 +623,8 @@ function restoreHierarchy(regionId, municipalDistrictId, forestryId,
                     if (forestrySelect && forestryId) {
                         forestrySelect.value = forestryId;
                         enableQuarterField();
-                        loadDistrictForestries(forestryId, function() {
-                            const districtSelect = document.getElementById('districtForestrySelect');
+                        loadSubForestries(forestryId, function() {
+                            const districtSelect = document.getElementById('subForestrySelect');
                             if (districtSelect && districtForestryId) {
                                 districtSelect.value = districtForestryId;
                                 loadTechnicalUnits(districtForestryId, function() {
@@ -840,7 +840,7 @@ function loadForestries(municipalDistrictId, callback) {
                     select.value = data[0].id;
                     saveUISetting('forestry', data[0].id);
                     enableQuarterField();
-                    loadDistrictForestries(data[0].id);
+                    loadSubForestries(data[0].id);
                 }
             } else {
                 select.innerHTML = '<option value="">-- Лесничества не найдены --</option>';
@@ -858,21 +858,21 @@ function loadForestries(municipalDistrictId, callback) {
         });
 }
 
-function loadDistrictForestries(forestryId, callback) {
+function loadSubForestries(forestryId, callback) {
     if (!forestryId) {
         resetDependentSelects('district');
         if (callback) callback();
         return;
     }
 
-    const select = document.getElementById('districtForestrySelect');
+    const select = document.getElementById('subForestrySelect');
     if (!select) return;
 
     select.classList.add('loading');
     select.innerHTML = '<option value="">Загрузка...</option>';
     select.disabled = true;
 
-    fetch('/api/forestry/district-forestries/by-forestry/' + forestryId)
+    fetch('/api/forestry/sub-forestries/by-forestry/' + forestryId)
         .then(response => {
             if (!response.ok) throw new Error('HTTP ' + response.status);
             return response.json();
@@ -990,14 +990,14 @@ let quarterSearchTimeout = null;
 
 function searchQuarters(query) {
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
-    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('subForestrySelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
     const suggestionsDiv = document.getElementById('quarterSuggestions');
     const quarterInput = document.getElementById('quarterInput');
 
     if (!quarterInput) return;
 
-    let parentId = technicalUnitId || districtForestryId || forestryId;
+    let parentId = technicalUnitId || subForestryId || forestryId;
 
     if (!parentId) {
         if (suggestionsDiv) {
@@ -1096,7 +1096,7 @@ function selectQuarter(id, number, name) {
 
 function resetDependentSelects(level) {
     if (!level || level === 'forestry') {
-        const districtSelect = document.getElementById('districtForestrySelect');
+        const districtSelect = document.getElementById('subForestrySelect');
         if (districtSelect) {
             districtSelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
             districtSelect.disabled = true;
@@ -1146,11 +1146,11 @@ function resetAllDependentSelects() {
         forestrySelect.classList.remove('loading');
     }
 
-    const districtForestrySelect = document.getElementById('districtForestrySelect');
-    if (districtForestrySelect) {
-        districtForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
-        districtForestrySelect.disabled = true;
-        districtForestrySelect.classList.remove('loading');
+    const subForestrySelect = document.getElementById('subForestrySelect');
+    if (subForestrySelect) {
+        subForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
+        subForestrySelect.disabled = true;
+        subForestrySelect.classList.remove('loading');
     }
 
     const techSelect = document.getElementById('technicalUnitSelect');
@@ -1256,18 +1256,18 @@ function onForestryChange(forestryId) {
 
     saveUISetting('forestry-unit', forestryId);
     saveUISetting('forestry-type', 'FORESTRY');
-    loadDistrictForestries(forestryId);
+    loadSubForestries(forestryId);
 
     updateTerritoryInfo();
 }
 
-function onDistrictForestryChange(districtForestryId) {
-    console.log('🔄 onDistrictForestryChange вызван с districtForestryId:', districtForestryId);
+function onSubForestryChange(subForestryId) {
+    console.log('🔄 onSubForestryChange вызван с subForestryId:', subForestryId);
 
     const techSelect = document.getElementById('technicalUnitSelect');
     const quarterInput = document.getElementById('quarterInput');
 
-    if (!districtForestryId) {
+    if (!subForestryId) {
         if (techSelect) {
             techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
             techSelect.disabled = true;
@@ -1282,10 +1282,10 @@ function onDistrictForestryChange(districtForestryId) {
         techSelect.disabled = true;
     }
 
-    saveUISetting('forestry-unit', districtForestryId);
-    saveUISetting('forestry-type', 'DISTRICT_FORESTRY');
+    saveUISetting('forestry-unit', subForestryId);
+    saveUISetting('forestry-type', 'SUB_FORESTRY');
 
-    loadTechnicalUnits(districtForestryId);
+    loadTechnicalUnits(subForestryId);
 
     updateTerritoryInfo();
 }
@@ -1323,7 +1323,7 @@ function updateTerritoryInfo() {
     const regionId = document.getElementById('regionSelect')?.value;
     const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
-    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('subForestrySelect')?.value;
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
     const quarterInput = document.getElementById('quarterInput')?.value;
@@ -1336,8 +1336,8 @@ function updateTerritoryInfo() {
     } else if (technicalUnitId && technicalUnitId !== '') {
         const select = document.getElementById('technicalUnitSelect');
         name = select?.options[select.selectedIndex]?.text || 'Технический участок';
-    } else if (districtForestryId && districtForestryId !== '') {
-        const select = document.getElementById('districtForestrySelect');
+    } else if (subForestryId && subForestryId !== '') {
+        const select = document.getElementById('subForestrySelect');
         name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
     } else if (forestryId && forestryId !== '') {
         const select = document.getElementById('forestrySelect');
@@ -1366,7 +1366,7 @@ function checkSelected() {
     const regionId = document.getElementById('regionSelect')?.value;
     const municipalDistrictId = document.getElementById('municipalDistrictSelect')?.value;
     const forestryId = document.getElementById('forestrySelect')?.value;
-    const districtForestryId = document.getElementById('districtForestrySelect')?.value;
+    const subForestryId = document.getElementById('subForestrySelect')?.value;
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const quarterId = document.getElementById('quarterId')?.value;
     const numberInQuarter = document.getElementById('numberInQuarter')?.value?.trim();
@@ -1376,7 +1376,7 @@ function checkSelected() {
     let name = '';
 
     if (quarterId && quarterId !== '') {
-        type = 'QUARTER';
+        type = 'FOREST_QUARTER';
         id = quarterId;
         name = document.getElementById('quarterInput')?.value || 'Квартал';
     } else if (technicalUnitId && technicalUnitId !== '') {
@@ -1384,10 +1384,10 @@ function checkSelected() {
         id = technicalUnitId;
         const select = document.getElementById('technicalUnitSelect');
         name = select?.options[select.selectedIndex]?.text || 'Технический участок';
-    } else if (districtForestryId && districtForestryId !== '') {
-        type = 'DISTRICT_FORESTRY';
-        id = districtForestryId;
-        const select = document.getElementById('districtForestrySelect');
+    } else if (subForestryId && subForestryId !== '') {
+        type = 'SUB_FORESTRY';
+        id = subForestryId;
+        const select = document.getElementById('subForestrySelect');
         name = select?.options[select.selectedIndex]?.text || 'Участковое лесничество';
     } else if (forestryId && forestryId !== '') {
         type = 'FORESTRY';
@@ -1417,9 +1417,9 @@ function checkSelected() {
         'REGION': 'региону',
         'MUNICIPAL_DISTRICT': 'муниципальному району',
         'FORESTRY': 'лесничеству',
-        'DISTRICT_FORESTRY': 'участковому лесничеству',
+        'SUB_FORESTRY': 'участковому лесничеству',
         'TECHNICAL_UNIT': 'техническому участку',
-        'QUARTER': 'кварталу'
+        'FOREST_QUARTER': 'кварталу'
     };
 
     let message = `🔍 Проверка делян по ${typeNames[type]}: "${name}"...`;
@@ -1440,7 +1440,7 @@ function checkSelected() {
         params.append('numberInQuarter', numberInQuarter);
     }
 
-    fetch('/api/plots/validate-by-territory?' + params.toString(), {
+    fetch('/api/cutting-area/validate-by-territory?' + params.toString(), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1499,7 +1499,7 @@ function checkIntersectAll() {
         timeout: 3000
     });
 
-    fetch('/api/plots/validate-all', {
+    fetch('/api/cutting-area/validate-all', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1996,7 +1996,7 @@ function toggleLabels() {
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('✅ Инициализация страницы forest-ploat.html');
+    console.log('✅ Инициализация страницы cutting-area.html');
 
     if (typeof initMap === 'undefined') {
         console.error('❌ Функция initMap не найдена!');
@@ -2033,7 +2033,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    const selectors = ['regionSelect', 'municipalDistrictSelect', 'forestrySelect', 'districtForestrySelect', 'technicalUnitSelect'];
+    const selectors = ['regionSelect', 'municipalDistrictSelect', 'forestrySelect', 'subForestrySelect', 'technicalUnitSelect'];
     selectors.forEach(id => {
         const el = document.getElementById(id);
         if (el) {

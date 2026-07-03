@@ -1,11 +1,10 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.IntersectionReport;
-import com.alhrb.forestry.dto.PlotDto;
-import com.alhrb.forestry.dto.PlotMapDto;
+import com.alhrb.forestry.dto.CuttingAreaDto;
+import com.alhrb.forestry.dto.CuttingAreaMapDto;
+import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestryUnit;
-import com.alhrb.forestry.model.Plot;
-import com.alhrb.forestry.model.TerritoryUnit;
 import com.alhrb.forestry.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,36 +22,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping("/api/plots")
+@RequestMapping("/api/cutting-area")
 @RequiredArgsConstructor
 @Slf4j
-public class PlotController {
+public class CuttingAreaController {
 
-    private final PlotService plotService;
+    private final CuttingAreaService cuttingAreaService;
     private final GeometryService geometryService;
     private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
     @PostMapping("/create")
-    public String createPlot(@Valid @ModelAttribute("plotDto") PlotDto plotDto,
+    public String createCuttingArea(@Valid @ModelAttribute("plotDto") CuttingAreaDto cuttingAreaDto,
                              BindingResult result,
                              Model model,
                              RedirectAttributes redirectAttributes) {
 
         if (result.hasErrors()) {
             model.addAttribute("error", "Проверьте правильность заполнения формы");
-            model.addAttribute("plots", plotService.findAll());
-            return "forest-ploat";
+            model.addAttribute("forestStand", cuttingAreaService.findAll());
+            return "cutting-area";
         }
 
         try {
-            var geometry = geometryService.createPolygon(plotDto.getCoordinates());
+            var geometry = geometryService.createPolygon(cuttingAreaDto.getCoordinates());
 
-            if (plotDto.getTerritoryUnitId() == null) {
+            if (cuttingAreaDto.getTerritoryUnitId() == null) {
                 throw new IllegalArgumentException("Не выбран квартал!");
             }
 
             // Получаем территориальную единицу (квартал)
-            ForestryUnit territoryUnit = forestryUnitService.findById(plotDto.getTerritoryUnitId())
+            ForestryUnit territoryUnit = forestryUnitService.findById(cuttingAreaDto.getTerritoryUnitId())
                     .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
             // Проверяем, что это квартал
@@ -64,19 +63,19 @@ public class PlotController {
                 geometryService.validatePlotInsideQuarter(
                         geometry,
                         (Polygon) territoryUnit.getGeometry(),
-                        plotDto.getNumberInQuarter(),
+                        cuttingAreaDto.getNumberInQuarter(),
                         territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName()
                 );
             }
 
-            List<IntersectionReport> conflicts = plotService.createPlotWithValidation(
-                    plotDto.getNumberInQuarter(),
-                    plotDto.getPlots(),
-                    plotDto.getDescription(),
+            List<IntersectionReport> conflicts = cuttingAreaService.createPlotWithValidation(
+                    cuttingAreaDto.getNumberInQuarter(),
+                    cuttingAreaDto.getForestStand(),
+                    cuttingAreaDto.getDescription(),
                     geometry,
-                    plotDto.getTerritoryUnitId(),
-                    plotDto.getYearOfCut(),
-                    plotDto.getCutType()
+                    cuttingAreaDto.getTerritoryUnitId(),
+                    cuttingAreaDto.getYearOfCut(),
+                    cuttingAreaDto.getCutType()
             );
 
             if (!conflicts.isEmpty()) {
@@ -108,7 +107,7 @@ public class PlotController {
         }
 
         try {
-            List<IntersectionReport> conflicts = plotService.importFromExcel(file);
+            List<IntersectionReport> conflicts = cuttingAreaService.importFromExcel(file);
 
             if (conflicts.isEmpty()) {
                 redirectAttributes.addFlashAttribute("success", "Все деляны успешно загружены и проверены!");
@@ -134,14 +133,14 @@ public class PlotController {
 
     @GetMapping("/all")
     @ResponseBody
-    public ResponseEntity<List<Plot>> getAllPlots() {
-        return ResponseEntity.ok(plotService.findAll());
+    public ResponseEntity<List<CuttingArea>> getAllCuttingAreas() {
+        return ResponseEntity.ok(cuttingAreaService.findAll());
     }
 
     @GetMapping("/map-data")
     @ResponseBody
-    public ResponseEntity<List<PlotMapDto>> getPlotsForMap() {
-        return ResponseEntity.ok(plotService.getAllPlotsForMap());
+    public ResponseEntity<List<CuttingAreaMapDto>> getCuttingAreasForMap() {
+        return ResponseEntity.ok(cuttingAreaService.getAllPlotsForMap());
     }
 
     /**
@@ -149,21 +148,21 @@ public class PlotController {
      */
     @GetMapping("/map-data-filtered")
     @ResponseBody
-    public ResponseEntity<List<PlotMapDto>> getFilteredPlotsForMap(
+    public ResponseEntity<List<CuttingAreaMapDto>> getFilteredCuttingAreasForMap(
             @RequestParam(required = false) Long federalDistrictId,
             @RequestParam(required = false) Long regionId,
             @RequestParam(required = false) Long municipalDistrictId,
             @RequestParam(required = false) Long forestryId,
-            @RequestParam(required = false) Long districtForestryId,
+            @RequestParam(required = false) Long subForestryId,
             @RequestParam(required = false) Long technicalUnitId,
             @RequestParam(required = false) Long quarterId,
             @RequestParam(required = false) String numberInQuarter,
             @RequestParam(required = false) String cutType,
             @RequestParam(required = false) Integer yearOfCut) {
 
-        List<PlotMapDto> plots = plotService.getFilteredPlotsForMap(
+        List<CuttingAreaMapDto> plots = cuttingAreaService.getFilteredCuttingAreasForMap(
                 federalDistrictId, regionId, municipalDistrictId,
-                forestryId, districtForestryId, technicalUnitId,
+                forestryId, subForestryId, technicalUnitId,
                 quarterId, numberInQuarter, cutType, yearOfCut
         );
 
@@ -174,7 +173,7 @@ public class PlotController {
     @PostMapping("/validate-all")
     @ResponseBody
     public ResponseEntity<List<IntersectionReport>> validateAll() {
-        List<IntersectionReport> conflicts = plotService.validateAllPlots();
+        List<IntersectionReport> conflicts = cuttingAreaService.validateAllPlots();
         return ResponseEntity.ok(conflicts);
     }
 
@@ -184,33 +183,33 @@ public class PlotController {
             @RequestParam String type,
             @RequestParam Long id) {
 
-        List<Plot> plots = new ArrayList<>();
+        List<CuttingArea> cuttingAreas = new ArrayList<>();
         String territoryName = "";
 
         // Используем рекурсивные методы для поиска по иерархии
         switch (type) {
             case "REGION":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                cuttingAreas = cuttingAreaService.findByTerritoryUnitRecursive(id);
                 territoryName = "региону";
                 break;
             case "MUNICIPAL_DISTRICT":
-                plots = plotService.findByTerritoryUnitRecursive(id);
+                cuttingAreas = cuttingAreaService.findByTerritoryUnitRecursive(id);
                 territoryName = "муниципальному району";
                 break;
             case "FORESTRY":
-                plots = plotService.findByForestryUnitRecursive(id);
+                cuttingAreas = cuttingAreaService.findByForestryUnitRecursive(id);
                 territoryName = "лесничеству";
                 break;
-            case "DISTRICT_FORESTRY":
-                plots = plotService.findByForestryUnitRecursive(id);
+            case "SUB_FORESTRY":
+                cuttingAreas = cuttingAreaService.findByForestryUnitRecursive(id);
                 territoryName = "участковому лесничеству";
                 break;
             case "TECHNICAL_UNIT":
-                plots = plotService.findByForestryUnitRecursive(id);
+                cuttingAreas = cuttingAreaService.findByForestryUnitRecursive(id);
                 territoryName = "техническому участку";
                 break;
             case "QUARTER":
-                plots = plotService.findByForestryUnitId(id);
+                cuttingAreas = cuttingAreaService.findByForestryUnitId(id);
                 territoryName = "кварталу";
                 break;
             default:
@@ -218,25 +217,25 @@ public class PlotController {
         }
 
         log.info("🔍 Проверка делян по {} (ID: {})", territoryName, id);
-        log.info("📊 Найдено {} делян для проверки", plots.size());
+        log.info("📊 Найдено {} делян для проверки", cuttingAreas.size());
 
-        List<IntersectionReport> conflicts = plotService.validatePlots(plots);
+        List<IntersectionReport> conflicts = cuttingAreaService.validatePlots(cuttingAreas);
 
         if (conflicts.isEmpty()) {
-            for (Plot plot : plots) {
-                plot.setVerified(true);
-                plotService.save(plot);
+            for (CuttingArea cuttingArea : cuttingAreas) {
+                cuttingArea.setVerified(true);
+                cuttingAreaService.save(cuttingArea);
             }
             log.info("✅ Все деляны по территории проверены, пересечений нет");
         } else {
             for (IntersectionReport report : conflicts) {
-                plotService.findById(report.getPlot1Id()).ifPresent(plot -> {
+                cuttingAreaService.findById(report.getPlot1Id()).ifPresent(plot -> {
                     plot.setVerified(false);
-                    plotService.save(plot);
+                    cuttingAreaService.save(plot);
                 });
-                plotService.findById(report.getPlot2Id()).ifPresent(plot -> {
+                cuttingAreaService.findById(report.getPlot2Id()).ifPresent(plot -> {
                     plot.setVerified(false);
-                    plotService.save(plot);
+                    cuttingAreaService.save(plot);
                 });
             }
             log.warn("⚠️ Найдено {} пересечений по территории", conflicts.size());

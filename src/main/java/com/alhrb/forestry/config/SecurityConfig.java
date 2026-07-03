@@ -31,13 +31,13 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register", "/api/users/register").permitAll()
                         .requestMatchers("/api/territory/**").permitAll()
                         .requestMatchers("/api/ui-settings/**").permitAll()
-                        .requestMatchers("/api/plots/map-data").permitAll()
-                        .requestMatchers("/api/plots/map-data-filtered").permitAll()
+                        .requestMatchers("/api/cutting-area/map-data").permitAll()
+                        .requestMatchers("/api/cutting-area/map-data-filtered").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/forest-ploat", true)
+                        .defaultSuccessUrl("/cutting_area", true)
                         .permitAll()
                 )
                 .logout(logout -> logout

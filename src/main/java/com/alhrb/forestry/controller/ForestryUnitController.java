@@ -34,10 +34,10 @@ public class ForestryUnitController {
     }
 
     // ===== УЧАСТКОВЫЕ ЛЕСНИЧЕСТВА ПО ЛЕСНИЧЕСТВУ =====
-    @GetMapping("/district-forestries/by-forestry/{forestryId}")
-    public ResponseEntity<List<ForestryUnitDto>> getDistrictForestriesByForestry(@PathVariable Long forestryId) {
+    @GetMapping("/sub-forestries/by-forestry/{forestryId}")
+    public ResponseEntity<List<ForestryUnitDto>> getSubForestriesByForestry(@PathVariable Long forestryId) {
         log.info("📡 Запрос участковых лесничеств для лесничества ID: {}", forestryId);
-        List<ForestryUnit> districtForestries = forestryUnitService.findDistrictForestriesByForestry(forestryId);
+        List<ForestryUnit> districtForestries = forestryUnitService.findSubForestriesByForestry(forestryId);
         log.info("📊 Найдено {} участковых лесничеств", districtForestries.size());
 
         List<ForestryUnitDto> dtos = districtForestries.stream()
@@ -117,6 +117,7 @@ public class ForestryUnitController {
         dto.setName(unit.getName());
         dto.setType(unit.getType().name());
         dto.setNumber(unit.getNumber());
+        dto.setAccountNumber(unit.getAccountNumber());
 
         if (unit.getParent() != null) {
             dto.setParentId(unit.getParent().getId());

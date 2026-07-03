@@ -27,14 +27,14 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
             @Param("name") String name
     );
 
-    @Query("SELECT tu FROM ForestryUnit tu WHERE tu.type = :type AND tu.parent.id = :parentId")
+    @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.parent.id = :parentId ORDER by fu.name")
     List<ForestryUnit> findByTypeAndParentId(
             @Param("type") ForestryUnitType type,
             @Param("parentId") Long parentId
     );
 
     // ===== ИСПРАВЛЕНО: territoryUnit.id вместо territory.units.id =====
-    @Query("SELECT tu FROM ForestryUnit tu WHERE tu.type = :type AND tu.territoryUnit.id = :territoryUnitId")
+    @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.territoryUnit.id = :territoryUnitId ORDER by fu.name")
     List<ForestryUnit> findByTypeAndDistrictId(
             @Param("type") ForestryUnitType type,
             @Param("territoryUnitId") Long territoryUnitId
@@ -57,7 +57,7 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
     @Query("""
         SELECT tu FROM ForestryUnit tu
         WHERE tu.parent.id = :technicalUnitId
-          AND tu.type = 'QUARTER'
+          AND tu.type = 'FOREST_QUARTER'
           AND tu.number LIKE %:query%
         ORDER BY tu.number
     """)
