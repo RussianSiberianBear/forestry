@@ -6,11 +6,8 @@ import com.alhrb.forestry.repository.UserUISettingsRepository;
 import com.alhrb.forestry.repository.UserRepository;
 import com.alhrb.forestry.util.SecurityHelper;
 import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

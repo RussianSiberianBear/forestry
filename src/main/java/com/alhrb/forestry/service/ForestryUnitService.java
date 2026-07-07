@@ -17,6 +17,11 @@ import java.util.Optional;
 public class ForestryUnitService {
     private final ForestryUnitRepository forestryUnitRepository;
 
+
+    public List<ForestryUnit> findAllowedForestries(Long userId) {
+        return forestryUnitRepository.findAllowedForestryByType(ForestryUnitType.FORESTRY, userId);
+    }
+
     public List<ForestryUnit> findAll() {
         return forestryUnitRepository.findAll();
     }
