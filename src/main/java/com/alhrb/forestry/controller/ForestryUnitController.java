@@ -3,6 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.ForestryUnitDto;
 import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.service.ForestryUnitService;
+import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,18 @@ import java.util.stream.Collectors;
 public class ForestryUnitController {
 
     private final ForestryUnitService forestryUnitService;
+    private final SecurityHelper securityHelper;
+
+    // ===== Допустимые ЛЕСНИЧЕСТВА =====
+    @GetMapping("/forestries/all")
+    public ResponseEntity<List<ForestryUnitDto>> getAllowedForestries() {
+         List<ForestryUnit> forestries = forestryUnitService.findAllowedForestries(securityHelper.getCurrentUserId());
+         List<ForestryUnitDto> dtos = forestries.stream()
+                .map(this::toForestryDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
 
     // ===== ЛЕСНИЧЕСТВА ПО РАЙОНУ =====
     @GetMapping("/forestries/by-district/{districtId}")

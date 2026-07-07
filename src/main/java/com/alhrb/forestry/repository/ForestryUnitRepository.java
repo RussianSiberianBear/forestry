@@ -65,7 +65,8 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
             @Param("query") String query
     );
 
-    // ===== ИСПРАВЛЕНО: Правильный рекурсивный запрос для лесных единиц =====
+    // ===== ИСПРАВЛЕНО: Правильный рекурсивный запрос для лесных единиц.
+    // Загружается родитель и все его потомки(прямые и потомки потомков =====
     @Query(value = """
         WITH RECURSIVE forestry_tree AS (
             SELECT id, name, type, parent_id, 0 as depth
@@ -101,4 +102,12 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
 
     // ===== ДОПОЛНИТЕЛЬНЫЙ МЕТОД: Проверка существования =====
     boolean existsByTerritoryUnitIdAndTypeAndName(Long territoryUnitId, ForestryUnitType type, String name);
+
+    // ===== Загрузка всех разрешенных для пользователя forestry_unit по типу type и userId
+    @Query("SELECT fu FROM ForestryUnit fu " +
+            "JOIN AllowedForestDepartment afd ON fu.id = afd.forestryUnitId " +
+            "WHERE fu.type = :type AND afd.userId = :userId")
+    List<ForestryUnit> findAllowedForestryByType(@Param("type") ForestryUnitType type,@Param("userId") Long userId);
+
+
 }
