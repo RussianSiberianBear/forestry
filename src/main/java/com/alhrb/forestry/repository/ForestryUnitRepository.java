@@ -17,10 +17,10 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
     List<ForestryUnit> findByParentIdIsNull();
 
     // ===== ПОИСК ПО ТИПУ И ИМЕНИ =====
-    @Query("SELECT tu FROM ForestryUnit tu WHERE tu.type = :type AND tu.name = :name")
+    @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.name = :name")
     List<ForestryUnit> findByTypeAndName(@Param("type") ForestryUnitType type, @Param("name") String name);
 
-    @Query("SELECT tu FROM ForestryUnit tu WHERE tu.type = :type AND tu.parent.id = :parentId AND tu.name = :name")
+    @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.parent.id = :parentId AND fu.name = :name")
     List<ForestryUnit> findByTypeAndParentIdAndName(
             @Param("type") ForestryUnitType type,
             @Param("parentId") Long parentId,
@@ -33,21 +33,20 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
             @Param("parentId") Long parentId
     );
 
-    // ===== ИСПРАВЛЕНО: territoryUnit.id вместо territory.units.id =====
     @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.territoryUnit.id = :territoryUnitId ORDER by fu.name")
     List<ForestryUnit> findByTypeAndDistrictId(
             @Param("type") ForestryUnitType type,
             @Param("territoryUnitId") Long territoryUnitId
     );
 
-    @Query("SELECT tu FROM ForestryUnit tu WHERE tu.type = :type AND tu.parent.id = :parentId AND tu.number = :number")
+    @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.parent.id = :parentId AND fu.number = :number")
     List<ForestryUnit> findByTypeAndParentIdAndNumber(
             @Param("type") ForestryUnitType type,
             @Param("parentId") Long parentId,
             @Param("number") String number
     );
 
-    @Query("SELECT tu FROM ForestryUnit tu WHERE tu.type = :type AND tu.number = :number")
+    @Query("SELECT fu FROM ForestryUnit fu WHERE fu.type = :type AND fu.number = :number")
     List<ForestryUnit> findByTypeAndNumber(
             @Param("type") ForestryUnitType type,
             @Param("number") String number
@@ -55,11 +54,11 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
 
     // ===== ПОИСК КВАРТАЛОВ ДЛЯ AUTOCOMPLETE =====
     @Query("""
-        SELECT tu FROM ForestryUnit tu
-        WHERE tu.parent.id = :technicalUnitId
-          AND tu.type = 'FOREST_QUARTER'
-          AND tu.number LIKE %:query%
-        ORDER BY tu.number
+        SELECT fu FROM ForestryUnit fu
+        WHERE fu.parent.id = :technicalUnitId
+          AND fu.type = 'FOREST_QUARTER'
+          AND fu.number LIKE %:query%
+        ORDER BY fu.number
     """)
     List<ForestryUnit> searchQuarters(
             @Param("technicalUnitId") Long technicalUnitId,
