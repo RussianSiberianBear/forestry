@@ -252,4 +252,29 @@ public class ForestStand {
      */
     @Column(name = "relevance_year")
     private Integer relevanceYear;
+
+    // ===== ТРАНЗИТНОЕ ПОЛЕ ДЛЯ THYMELEAF =====
+    @Transient
+    private String territoryPath;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+
+        if (fullNumber == null && forestryUnit != null) {
+            fullNumber = forestryUnit.getFullPath() + " / Дел." + numberInQuarter;
+        }
+    }
+
+    public String getForestryPath() {
+        if (forestryUnit != null) {
+            return forestryUnit.getFullPath();
+        }
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return fullNumber != null ? fullNumber : (numberInQuarter != null ? "Выд." + numberInQuarter : "Новый выдел");
+    }
 }

@@ -1,6 +1,7 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.CuttingAreaDto;
+import com.alhrb.forestry.dto.ForestStandDto;
 import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestStand;
 import com.alhrb.forestry.model.UserUISettings;
@@ -57,18 +58,18 @@ public class ViewController {
         List<ForestStand> forestStands = forestStandService.findAll();
 
         // Заполняем territoryPath для каждого plot
-        forestStands.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
+        forestStands.forEach(stand -> stand.setTerritoryPath(stand.getTerritoryPath()));
 
-        model.addAttribute("plots", cuttingAreas);
-        model.addAttribute("plotDto", new CuttingAreaDto());
+        model.addAttribute("stands", forestStands);
+        model.addAttribute("standDto", new ForestStandDto());
         model.addAttribute("uiSettings", uiSettings);
 
-        List<CuttingArea> latestCuttingAreas = cuttingAreas.stream()
-                .sorted(Comparator.comparing(CuttingArea::getId).reversed())
+        List<ForestStand> latestForestStands = forestStands.stream()
+                .sorted(Comparator.comparing(ForestStand::getId).reversed())
                 .limit(5)
                 .toList();
 
-        model.addAttribute("latestPlots", latestCuttingAreas);
+        model.addAttribute("latestStands", latestForestStands);
 
         return "forest-stand";
     }
