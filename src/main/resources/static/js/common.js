@@ -81,7 +81,6 @@ function collectFilterAuto(root, opts = {}) {
     return filter;
 }
 
-
 function formatDate(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -132,4 +131,67 @@ function setYearPeriod(from,to) {
 
     document.getElementById(from).value = formatDate(fromDate);
     document.getElementById(to).value = formatDate(toDate);
+}
+
+function getMapCenterCoordinates(){
+    // пока возвращаем координаты с.Бичура
+
+    return [50.592834,107.598389];
+}
+
+// ==========================================
+// КАРТА
+// ==========================================
+
+let map = null;
+let osmLayer = null;
+let googleSatLayer = null;
+function initMap(element,centerCoordinate, zoom) {
+    try {
+        if (document.getElementById(element)) {
+            map = L.map(element).setView(centerCoordinate, zoom);
+
+            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            });
+
+            googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                attribution: '© Google Maps'
+            });
+
+            var baseMaps = {
+                "🛰️ Спутник": googleSatLayer,
+                "🗺️ Схема": osmLayer
+            };
+
+            googleSatLayer.addTo(map);
+            L.control.layers(baseMaps).addTo(map);
+
+            loadUISettingsFromServer();
+
+            updateCoordCounter();
+            updateTerritoryInfo();
+
+            console.log('✅ Карта инициализирована');
+        } else {
+            console.warn('⚠️ Элемент #'+element+' не найден на странице');
+        }
+    } catch (e) {
+        console.error('❌ Ошибка инициализации карты:', e);
+    }
+}
+
+function getPolygonCenter(coords) {
+    let lat = 0, lng = 0;
+    coords.forEach(c => {
+        lat += c[0];
+        lng += c[1];
+    });
+    return {
+        lat: lat / coords.length,
+        lng: lng / coords.length
+    };
 }
