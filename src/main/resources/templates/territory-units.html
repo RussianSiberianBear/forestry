@@ -1,0 +1,13 @@
+<!-- ===== 1. РЕГИОН ===== -->
+<div class="uk-margin" th:fragment="regiom">
+    <label class="uk-form-label" for="regionSelect">
+        Регион <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls">
+        <select class="form-select" id="regionSelect"
+                name="regionId"
+                onchange="onRegionChange(this.value)">
+            <option value="">-- Выберите регион --</option>
+        </select>
+    </div>
+</div>

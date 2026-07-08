@@ -128,111 +128,24 @@
 
                         <form th:action="@{/api/stands/create}" th:object="${standDto}" method="post" id="standForm">
 
-                            <!-- ===== 1. РЕГИОН ===== -->
-                            <div class="uk-margin">
-                                <label class="uk-form-label" for="regionSelect">
-                                    Регион <span class="required-star">*</span>
-                                </label>
-                                <div class="uk-form-controls">
-                                    <select class="form-select" id="regionSelect"
-                                            name="regionId"
-                                            onchange="onRegionChange(this.value)">
-                                        <option value="">-- Выберите регион --</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <!-- ===== 1. ЛЕСНИЧЕСТВО ===== -->
+                            <div th:replace="~{forestry-units::forestry}"></div>
 
+                            <!-- ===== 2. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
+                            <div th:replace="~{forestry-units::subForestry}"></div>
 
-                            <!-- ===== 3. ЛЕСНИЧЕСТВО ===== -->
-                            <div class="uk-margin">
-                                <label class="uk-form-label" for="forestrySelect">
-                                    Лесничество <span class="required-star">*</span>
-                                </label>
-                                <div class="uk-form-controls">
-                                    <select class="form-select dependent-select" id="forestrySelect"
-                                            name="forestryId"
-                                            onchange="onForestryChange(this.value)"
-                                            disabled>
-                                        <option value="">-- Сначала выберите район --</option>
-                                    </select>
-                                </div>
-                            </div>
+                            <!-- ===== 3. ТЕХНИЧЕСКИЙ УЧАСТОК ===== -->
+                            <div th:replace="~{forestry-units::technicalUnit}"></div>
 
-                            <!-- ===== 4. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
-                            <div class="uk-margin">
-                                <label class="uk-form-label" for="districtForestrySelect">
-                                    Участковое лесничество <span class="required-star">*</span>
-                                </label>
-                                <div class="uk-form-controls">
-                                    <select class="form-select dependent-select" id="districtForestrySelect"
-                                            name="districtForestryId"
-                                            onchange="onSubForestryChange(this.value)"
-                                            disabled>
-                                        <option value="">-- Сначала выберите лесничество --</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- ===== 5. ТЕХНИЧЕСКИЙ УЧАСТОК ===== -->
-                            <div class="uk-margin">
-                                <label class="uk-form-label" for="technicalUnitSelect">
-                                    Технический участок <span class="required-star">*</span>
-                                </label>
-                                <div class="uk-form-controls">
-                                    <select class="form-select dependent-select" id="technicalUnitSelect"
-                                            name="technicalUnitId"
-                                            onchange="onTechnicalUnitChange(this.value)"
-                                            disabled>
-                                        <option value="">-- Сначала выберите участковое лесничество --</option>
-                                    </select>
-                                </div>
-                                <div class="field-hint">
-                                    <span uk-icon="icon: info"></span>
-                                    Если участок только один, он будет выбран автоматически
-                                </div>
-                            </div>
-
-                            <!-- ===== 6. КВАРТАЛ (AUTOCOMPLETE) ===== -->
-                            <div class="uk-margin">
-                                <label class="uk-form-label" for="quarterInput">
-                                    Квартал <span class="required-star">*</span>
-                                </label>
-                                <div class="uk-form-controls autocomplete-wrapper">
-                                    <input class="uk-input" type="text" id="quarterInput"
-                                           placeholder="Введите номер квартала (например: 12)"
-                                           autocomplete="off"
-                                           oninput="searchQuarters(this.value)"
-                                           onfocus="searchQuarters(this.value)"
-                                           disabled>
-                                    <input type="hidden" id="quarterId" name="quarterId">
-                                    <div id="quarterSuggestions" class="autocomplete-suggestions"></div>
-                                </div>
-                                <div class="field-hint">
-                                    <span uk-icon="icon: info"></span>
-                                    Введите номер квартала — система покажет подходящие варианты
-                                </div>
-                            </div>
+                            <!-- ===== 4. КВАРТАЛ (AUTOCOMPLETE) ===== -->
+                            <div th:replace="~{forestry-units::forestQuarter}"></div>
 
                             <hr>
 
-                            <!-- ===== 7. НОМЕР ВЫДЕЛА ===== -->
-                            <div class="uk-margin">
-                                <label class="uk-form-label" for="numberInQuarter">
-                                    Номер выдела в квартале <span class="required-star">*</span>
-                                </label>
-                                <div class="uk-form-controls">
-                                    <input class="uk-input" type="text" id="numberInQuarter"
-                                           th:field="*{numberInQuarter}"
-                                           placeholder="Например: 1, 2, 3-5, 7"
-                                           required>
-                                </div>
-                                <div class="field-hint">
-                                    <span uk-icon="icon: info"></span>
-                                    Номер должен быть уникальным в пределах квартала
-                                </div>
-                            </div>
+                            <!-- ===== 6. НОМЕР ВЫДЕЛА ===== -->
+                            <div th:replace="~{forestry-units::forestStand}"></div>
 
-                            <!-- ===== 8. ОПИСАНИЕ ===== -->
+                            <!-- ===== 7. ОПИСАНИЕ ===== -->
                             <div class="uk-margin">
                                 <label class="uk-form-label" for="description">Описание</label>
                                 <div class="uk-form-controls">
@@ -242,7 +155,7 @@
                                 </div>
                             </div>
 
-                            <!-- ===== 9. ГОД АКТУАЛЬНОСТИ КООРДИНАТ ===== -->
+                            <!-- ===== 8. ГОД АКТУАЛЬНОСТИ КООРДИНАТ ===== -->
                             <div class="uk-margin">
                                 <label class="uk-form-label" for="yearOfRelevance">
                                     Год актуальности координат
@@ -260,7 +173,7 @@
                                 </div>
                             </div>
 
-                            <!-- ===== 10. ТИП ПОКРЫТИЯ ===== -->
+                            <!-- ===== 9. ТИП ПОКРЫТИЯ ===== -->
                             <div class="uk-margin">
                                 <label class="uk-form-label" for="coverType">Тип покрытия</label>
                                 <div class="uk-form-controls">
@@ -279,7 +192,7 @@
 
                             <hr>
 
-                            <!-- ===== 11. КООРДИНАТЫ ===== -->
+                            <!-- ===== 10. КООРДИНАТЫ ===== -->
                             <div class="uk-alert-primary uk-margin-small" uk-alert>
                                 <p>
                                     <span uk-icon="icon: info"></span>
@@ -339,7 +252,7 @@
                                 </div>
                             </div>
 
-                            <!-- ===== 12. КНОПКИ ===== -->
+                            <!-- ===== 11. КНОПКИ ===== -->
                             <div class="uk-margin">
                                 <button type="submit" class="uk-button uk-button-primary">
                                     <span uk-icon="icon: check"></span> Создать и проверить
@@ -736,6 +649,7 @@
 <!-- ============================================ -->
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/common.js"></script>
 <script src="/js/validation-stand.js"></script>
 <script src="/js/forest-stand-mass-load.js"></script>
 

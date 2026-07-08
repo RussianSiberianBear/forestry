@@ -13,6 +13,7 @@
     <!-- ===== LEAFLET ===== -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
+    <link rel="stylesheet" href="/css/common.css"/>
     <!-- ===== НАШИ СТИЛИ ===== -->
     <link rel="stylesheet" href="/css/cutting_area.css"/>
 
@@ -129,24 +130,24 @@
                         <form th:action="@{/api/cuttingAreas/create}" th:object="${cuttingAreaDto}" method="post" id="plotForm">
 
                             <!-- ===== 1. ЛЕСНИЧЕСТВО ===== -->
-                            <div th:replace="~{forestry::forestry}"></div>
+                            <div th:replace="~{forestry-units::forestry}"></div>
 
                             <!-- ===== 2. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
-                            <div th:replace="~{forestry::subForestry}"></div>
+                            <div th:replace="~{forestry-units::subForestry}"></div>
 
                             <!-- ===== 3. ТЕХНИЧЕСКИЙ УЧАСТОК ===== -->
-                            <div th:replace="~{forestry::technicalUnit}"></div>
+                            <div th:replace="~{forestry-units::technicalUnit}"></div>
 
                             <!-- ===== 4. КВАРТАЛ (AUTOCOMPLETE) ===== -->
-                            <div th:replace="~{forestry::forestQuarter}"></div>
+                            <div th:replace="~{forestry-units::forestQuarter}"></div>
 
                             <hr>
 
                             <!-- ===== 5. НОМЕР ДЕЛЯНЫ ===== -->
-                            <div th:replace="~{forestry::cuttingArea}"></div>
+                            <div th:replace="~{forestry-units::cuttingArea}"></div>
 
                             <!-- ===== 6. ВЫДЕЛЫ ===== -->
-                            <div th:replace="~{forestry::forestStand}"></div>
+                            <div th:replace="~{forestry-units::forestStand}"></div>
 
                             <!-- ===== 7. ОПИСАНИЕ ===== -->
                             <div class="uk-margin-small">
