@@ -5,7 +5,6 @@ import com.alhrb.forestry.dto.CuttingAreaMapDto;
 import com.alhrb.forestry.model.*;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.CuttingAreaRepository;
-import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
@@ -172,7 +171,7 @@ public class CuttingAreaService {
                 .collect(Collectors.toList());
     }
 
-    public List<CuttingAreaMapDto> getAllPlotsForMap() {
+    public List<CuttingAreaMapDto> getAllCuttingAreasForMap() {
         List<CuttingArea> cuttingAreas = cuttingAreaRepository.findAll();
         log.info("📊 Всего делян для карты: {}", cuttingAreas.size());
         return cuttingAreas.stream()
@@ -378,7 +377,7 @@ public class CuttingAreaService {
             return reports;
         }
 
-        List<Object[]> results = cuttingAreaRepository.findIntersectionsWithPlot(
+        List<Object[]> results = cuttingAreaRepository.findIntersectionsWithCuttingArea(
                 cuttingArea.getGeometry(),
                 cuttingArea.getId(),
                 minArea

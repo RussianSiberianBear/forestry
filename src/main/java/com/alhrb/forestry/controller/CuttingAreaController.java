@@ -140,7 +140,7 @@ public class CuttingAreaController {
     @GetMapping("/map-data")
     @ResponseBody
     public ResponseEntity<List<CuttingAreaMapDto>> getCuttingAreasForMap() {
-        return ResponseEntity.ok(cuttingAreaService.getAllPlotsForMap());
+        return ResponseEntity.ok(cuttingAreaService.getAllCuttingAreasForMap());
     }
 
     /**
