@@ -2,8 +2,10 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.CuttingAreaDto;
 import com.alhrb.forestry.model.CuttingArea;
+import com.alhrb.forestry.model.ForestStand;
 import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.service.CuttingAreaService;
+import com.alhrb.forestry.service.ForestStandService;
 import com.alhrb.forestry.service.UserUISettingsService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.List;
 public class ViewController {
 
     private final CuttingAreaService cuttingAreaService;
+    private final ForestStandService forestStandService;
     private final UserUISettingsService userUISettingsService;
 
     @GetMapping("/")
@@ -51,10 +54,10 @@ public class ViewController {
     @GetMapping("/forest-stand")
     public String forestStand(Model model) {
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
-        List<CuttingArea> cuttingAreas = cuttingAreaService.findAll();
+        List<ForestStand> forestStands = forestStandService.findAll();
 
         // Заполняем territoryPath для каждого plot
-        cuttingAreas.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
+        forestStands.forEach(plot -> plot.setTerritoryPath(plot.getTerritoryPath()));
 
         model.addAttribute("plots", cuttingAreas);
         model.addAttribute("plotDto", new CuttingAreaDto());

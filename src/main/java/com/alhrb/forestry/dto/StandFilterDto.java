@@ -32,7 +32,7 @@ public class StandFilterDto {
     /**
      * Номер выдела
      */
-    private String standNumber;
+    private String numberInQuarter;;
 
     /**
      * Год актуальности

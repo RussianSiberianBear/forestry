@@ -51,8 +51,8 @@ public class ForestStand {
      * Из KML: выдел
      * Пример: 1, 2, 3, 12
      */
-    @Column(name = "stand_number", nullable = false, length = 50)
-    private String standNumber;
+    @Column(name = "number_in_quarter", nullable = false, length = 50)
+    private String numberInQuarter;
 
     /**
      * Полный номер выдела (уникальный)

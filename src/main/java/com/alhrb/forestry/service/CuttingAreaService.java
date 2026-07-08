@@ -25,7 +25,6 @@ public class CuttingAreaService {
 
     private final CuttingAreaRepository cuttingAreaRepository;
     private final ForestryUnitRepository forestryUnitRepository;
-    private final TerritoryUnitRepository  territoryUnitRepository;
     private final GeometryService geometryService;
     private final ExcelImportService excelImportService;
 
