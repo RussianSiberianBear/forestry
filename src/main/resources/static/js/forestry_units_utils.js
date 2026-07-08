@@ -1,7 +1,8 @@
 // ==========================================
 // ЗАГРУЗКА СПИСКОВ (С DTO)
 // ==========================================
-
+let forestries = null;
+let subForestries = null;
 function loadForestries(callback) {
     const forestrySelect = document.getElementById('forestrySelect');
     if (!forestrySelect) return;
@@ -23,7 +24,8 @@ function loadForestries(callback) {
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status);
             }
-            return response.json();
+            forestries = response.json();
+            return forestries;
         })
         .then(data => {
             forestrySelect.innerHTML = '';

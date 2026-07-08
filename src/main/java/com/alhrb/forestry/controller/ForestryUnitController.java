@@ -131,6 +131,9 @@ public class ForestryUnitController {
         dto.setType(unit.getType().name());
         dto.setNumber(unit.getNumber());
         dto.setAccountNumber(unit.getAccountNumber());
+        dto.setLat(unit.getCenterLat());
+        dto.setLng(unit.getCenterLng());
+        dto.setZoom(unit.getZoom());
 
         if (unit.getParent() != null) {
             dto.setParentId(unit.getParent().getId());

@@ -135,6 +135,7 @@ function setYearPeriod(from,to) {
 
 function getMapCenterCoordinates(){
     // пока возвращаем координаты с.Бичура
+    const forestrySelect = document.getElementById('forestrySelect');
 
     return [50.592834,107.598389];
 }

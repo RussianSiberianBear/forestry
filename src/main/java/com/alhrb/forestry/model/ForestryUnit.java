@@ -43,17 +43,21 @@ public class ForestryUnit {
     @Enumerated(EnumType.STRING)
     private ForestryUnitType type;
 
-    @Column(name = "number")
     private String number;                // внутренний номер
 
-    @Column(name = "account_number")
-    private String accountNumber;         // учетный номер по НПА
-
-    @Column(columnDefinition = "geometry")
     private Geometry geometry;
 
-    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    private Long coordinateSystemId;
+
+    private Double centerLat;
+
+    private Double centerLng;
+
+    private Integer zoom;
+
+    private String accountNumber;         // учетный номер по НПА
 
     @PrePersist
     protected void onCreate() {

@@ -12,4 +12,7 @@ public class ForestryUnitDto {
     private String number;
     private String accountNumber;
     private String parentName;
+    private Double lat;
+    private Double lng;
+    private Integer zoom;
 }
