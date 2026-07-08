@@ -1,0 +1,102 @@
+<!-- ===== 1. ЛЕСНИЧЕСТВО ===== -->
+<div class="uk-margin-small" th:fragment="forestry">
+    <label class="uk-form-label" for="forestrySelect">
+        Лесничество <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls">
+        <select class="form-select dependent-select" id="forestrySelect"
+                name="forestryId"
+                onchange="onForestryChange(this.value)"
+                disabled data-filter>
+            <option value="">-- Сначала выберите район --</option>
+        </select>
+    </div>
+</div>
+
+<!-- ===== 2. УЧАСТКОВОЕ ЛЕСНИЧЕСТВО ===== -->
+<div class="uk-margin-small" th:fragment="subForestry">
+    <label class="uk-form-label" for="subForestrySelect">
+        Участковое лесничество <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls" >
+        <select class="form-select dependent-select" id="subForestrySelect"
+                name="subForestryId"
+                onchange="onSubForestryChange(this.value)"
+                disabled data-filter>
+            <option value="">-- Сначала выберите лесничество --</option>
+        </select>
+    </div>
+</div>
+
+<!-- ===== 3. ТЕХНИЧЕСКИЙ УЧАСТОК ===== -->
+<div class="uk-margin-small" th:fragment="technicalUnit">
+    <label class="uk-form-label" for="technicalUnitSelect">
+        Технический участок <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls">
+        <select class="form-select dependent-select" id="technicalUnitSelect"
+                name="technicalUnitId"
+                onchange="onTechnicalUnitChange(this.value)"
+                disabled data-filter>
+            <option value="">-- Сначала выберите участковое лесничество --</option>
+        </select>
+    </div>
+    <div class="field-hint">
+        <span uk-icon="icon: info"></span>
+        Если участок только один, он будет выбран автоматически
+    </div>
+</div>
+
+<!-- ===== 4. КВАРТАЛ (AUTOCOMPLETE) ===== -->
+<div class="uk-margin-small" th:fragment="forestQuarter">
+    <label class="uk-form-label" for="quarterInput">
+        Квартал <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls autocomplete-wrapper">
+        <input class="uk-input" type="text" id="quarterInput"
+               placeholder="Введите номер квартала (например: 12)"
+               autocomplete="off"
+               oninput="searchQuarters(this.value)"
+               onfocus="searchQuarters(this.value)"
+               disabled>
+        <input type="hidden" id="quarterId" name="quarterId" data-filter>
+        <div id="quarterSuggestions" class="autocomplete-suggestions"></div>
+    </div>
+    <div class="field-hint">
+        <span uk-icon="icon: info"></span>
+        Введите номер квартала — система покажет подходящие варианты
+    </div>
+</div>
+
+
+<!-- ===== 5. НОМЕР ДЕЛЯНЫ ===== -->
+<div class="uk-margin-small" th:fragment="cuttingArea">
+    <label class="uk-form-label" for="numberInQuarter">
+        Номер деляны в квартале <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls">
+        <input class="uk-input" type="text" id="numberInQuarter"
+               th:field="*{numberInQuarter}"
+               placeholder="Например: 12, 12а, 12/1"
+               required disabled data-filter>
+    </div>
+    <div class="field-hint">
+        <span uk-icon="icon: info"></span>
+        Номер должен быть уникальным в пределах квартала
+    </div>
+</div>
+
+
+<!-- ===== 6. ВЫДЕЛЫ ===== -->
+<div class="uk-margin-small" th:fragment="forestStand">
+    <label class="uk-form-label" for="forestStand">Выделы</label>
+    <div class="uk-form-controls">
+        <input class="uk-input" type="text" id="forestStand"
+               th:field="*{forestStand}"
+               placeholder="Например: 1, 2, 3-5, 7">
+    </div>
+    <div class="field-hint">
+        <span uk-icon="icon: info"></span>
+        Несколько выделов через запятую
+    </div>
+</div>
