@@ -1,5 +1,6 @@
 package com.alhrb.forestry.repository;
 
+import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestStand;
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,6 +42,26 @@ public interface ForestStandRepository extends JpaRepository<ForestStand, Long> 
     )
 """, nativeQuery = true)
     List<ForestStand> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
+
+    // ===== ПОИСК ПО ТИПУ ЛЕСНОЙ ЕДИНИЦЫ И ТЕРРИТОРИИ =====
+    @Query(value = """
+        WITH RECURSIVE territory_tree AS (
+            SELECT id FROM territory_units WHERE id = :unitId
+            UNION ALL
+            SELECT tu.id FROM territory_units tu
+            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+        )
+        SELECT fs.* FROM forest_stand fs
+        WHERE fs.forestry_unit_id IN (
+            SELECT fu.id FROM forestry_units fu
+            WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+            AND fu.type = :type
+        )
+    """, nativeQuery = true)
+    List<ForestStand> findByForestryTypeAndIdRecursive(
+            @Param("type") String type,
+            @Param("unitId") Long unitId
+    );
 
     // ===== ПОИСК ПО КВАРТАЛУ =====
     List<ForestStand> findByForestryUnitIdOrderByNumberInQuarter(Long forestryUnitId);
