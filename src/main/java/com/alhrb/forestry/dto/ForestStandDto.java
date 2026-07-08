@@ -13,9 +13,6 @@ import java.util.List;
  * DTO для работы с выделами (forest_stand)
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ForestStandDto {
 
     /**
@@ -31,7 +28,7 @@ public class ForestStandDto {
     /**
      * Номер выдела в пределах квартала
      */
-    private String standNumber;
+    private String numberInQuarter;;
 
     /**
      * Полный номер выдела: лесничество_квартал_выдел

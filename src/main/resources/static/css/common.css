@@ -1,0 +1,172 @@
+
+/* ==========================================
+   AUTOCOMPLETE
+   ========================================== */
+
+.autocomplete-wrapper {
+    position: relative;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: none;
+}
+
+.autocomplete-suggestions .suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    transition: background 0.2s ease;
+}
+
+.autocomplete-suggestions .suggestion-item:hover {
+    background: #e3f0ff;
+}
+
+.autocomplete-suggestions .suggestion-item.active {
+    background: #1e87f0;
+    color: white;
+}
+
+.autocomplete-suggestions .suggestion-item .suggestion-number {
+    font-weight: bold;
+}
+
+.autocomplete-suggestions .suggestion-item .suggestion-name {
+    color: #666;
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.autocomplete-suggestions .no-results {
+    padding: 12px;
+    color: #999;
+    text-align: center;
+}
+
+.autocomplete-suggestions .loading-suggestions {
+    padding: 12px;
+    color: #666;
+    text-align: center;
+}
+
+/* ==========================================
+   КОНФЛИКТЫ
+   ========================================== */
+
+.conflict-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.severity-critical {
+    color: #d32f2f;
+    font-weight: bold;
+}
+.severity-warning {
+    color: #f57c00;
+    font-weight: bold;
+}
+.severity-ok {
+    color: #388e3c;
+}
+
+/* ==========================================
+   КАРТОЧКИ
+   ========================================== */
+
+.uk-card {
+    transition: all 0.3s ease;
+}
+.uk-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================
+   КООРДИНАТЫ - ОДНА СТРОКА
+   ========================================== */
+#coordInput {
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    padding: 10px 14px;
+    border: 2px solid #e5e5e5;
+    border-radius: 4px;
+    transition: border-color 0.3s ease;
+}
+#coordInput:focus {
+    border-color: #1e87f0;
+    outline: none;
+}
+
+.coordinate-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+.coordinate-row:last-child {
+    border-bottom: none;
+}
+
+.coordinate-row .coord-index {
+    font-weight: bold;
+    color: #1e87f0;
+    min-width: 24px;
+}
+.coordinate-row .coord-lat,
+.coordinate-row .coord-lng {
+    font-family: 'Courier New', monospace;
+    color: #333;
+}
+.coordinate-row .coord-lat {
+    color: #2e7d32;
+}
+.coordinate-row .coord-lng {
+    color: #d32f2f;
+}
+
+#coordCounter {
+    font-weight: bold;
+    color: #666;
+}
+
+.progress-bar {
+    margin-top: 15px;
+    display: none;
+}
+
+.progress-bar.active {
+    display: block;
+}
+
+.stats-number {
+    font-size: 28px;
+    font-weight: bold;
+    display: block;
+}
+
+.stats-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.stats-critical {
+    color: #d32f2f;
+}
+
+.stats-warning {
+    color: #f57c00;
+}
+
+.stats-success {
+    color: #388e3c;
+}

@@ -1,19 +1,18 @@
 package com.alhrb.forestry.repository;
 
 import com.alhrb.forestry.model.CuttingArea;
+import com.alhrb.forestry.model.ForestStand;
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> {
+public interface ForestStandRepository extends JpaRepository<ForestStand, Long> {
 
-    Optional<CuttingArea> findByFullNumber(String fullNumber);
+    Optional<ForestStand> findByFullNumber(String fullNumber);
 
     // ===== ПОИСК ПО ЛЕСНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """
@@ -23,10 +22,10 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             SELECT fu.id FROM forestry_units fu
             INNER JOIN forestry_tree ft ON fu.parent_id = ft.id
         )
-        SELECT p.* FROM cutting_area p
-        WHERE p.forestry_unit_id IN (SELECT id FROM forestry_tree)
+        SELECT fs.* FROM forest_stand fs
+        WHERE fs.forestry_unit_id IN (SELECT id FROM forestry_tree)
     """, nativeQuery = true)
-    List<CuttingArea> findByForestryUnitRecursive(@Param("unitId") Long unitId);
+    List<ForestStand> findByForestryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву территорий) =====
     @Query(value = """
@@ -36,13 +35,13 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
         SELECT tu.id FROM territory_units tu
         INNER JOIN territory_tree tt ON tu.parent_id = tt.id
     )
-    SELECT p.* FROM cutting_area p
-    WHERE p.forestry_unit_id IN (
+    SELECT fs.* FROM forest_stand fs
+    WHERE fs.forestry_unit_id IN (
         SELECT fu.id FROM forestry_units fu
         WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
     )
 """, nativeQuery = true)
-    List<CuttingArea> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
+    List<ForestStand> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТИПУ ЛЕСНОЙ ЕДИНИЦЫ И ТЕРРИТОРИИ =====
     @Query(value = """
@@ -52,26 +51,26 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             SELECT tu.id FROM territory_units tu
             INNER JOIN territory_tree tt ON tu.parent_id = tt.id
         )
-        SELECT p.* FROM cutting_area p
-        WHERE p.forestry_unit_id IN (
+        SELECT fs.* FROM forest_stand fs
+        WHERE fs.forestry_unit_id IN (
             SELECT fu.id FROM forestry_units fu
             WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
             AND fu.type = :type
         )
     """, nativeQuery = true)
-    List<CuttingArea> findByForestryTypeAndIdRecursive(
+    List<ForestStand> findByForestryTypeAndIdRecursive(
             @Param("type") String type,
             @Param("unitId") Long unitId
     );
 
     // ===== ПОИСК ПО КВАРТАЛУ =====
-    List<CuttingArea> findByForestryUnitIdOrderByNumberInQuarter(Long forestryUnitId);
+    List<ForestStand> findByForestryUnitIdOrderByNumberInQuarter(Long forestryUnitId);
 
-    Optional<CuttingArea> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
+    Optional<ForestStand> findByForestryUnitIdAndNumberInQuarter(Long forestryUnitId, String numberInQuarter);
 
     // ===== ПОИСК ПО ТИПУ И РОДИТЕЛЮ =====
     @Query("SELECT p FROM CuttingArea p WHERE p.forestryUnit.type = :type AND p.forestryUnit.id = :parentId")
-    List<CuttingArea> findByForestryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
+    List<ForestStand> findByForestryTypeAndParentId(@Param("type") String type, @Param("parentId") Long parentId);
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """
@@ -79,33 +78,33 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
             b.id, 
             b.full_number,
             ST_Area(ST_Intersection(:geometry, b.geometry)) AS area
-        FROM cutting_area b
-        WHERE b.id != :plotId
+        FROM forest_stand b
+        WHERE b.id != :standId
             AND ST_Intersects(:geometry, b.geometry)
             AND ST_Area(ST_Intersection(:geometry, b.geometry)) > :minArea
     """, nativeQuery = true)
-    List<Object[]> findIntersectionsWithCuttingArea(
+    List<Object[]> findIntersectionsWithForestStand(
             @Param("geometry") Polygon geometry,
-            @Param("plotId") Long plotId,
+            @Param("standId") Long standId,
             @Param("minArea") Double minArea
     );
 
     @Query(value = """
         WITH candidates AS (
             SELECT 
-                a.id AS plot1_id,
-                b.id AS plot2_id
-            FROM cutting_area a
-            JOIN cutting_area b ON a.id < b.id
+                a.id AS stand1_id,
+                b.id AS stand2_id
+            FROM forest_stand a
+            JOIN forest_stand b ON a.id < b.id
             WHERE ST_Intersects(ST_Envelope(a.geometry), ST_Envelope(b.geometry))
         )
         SELECT 
-            c.plot1_id,
-            c.plot2_id,
+            c.stand1_id,
+            c.stand2_id,
             ST_Area(ST_Intersection(a.geometry, b.geometry)) AS area
         FROM candidates c
-        JOIN cutting_area a ON a.id = c.plot1_id
-        JOIN cutting_area b ON b.id = c.plot2_id
+        JOIN forest_stand a ON a.id = c.plot1_id
+        JOIN forest_stand b ON b.id = c.plot2_id
         WHERE ST_Intersects(a.geometry, b.geometry)
             AND ST_Area(ST_Intersection(a.geometry, b.geometry)) > :minArea
     """, nativeQuery = true)
