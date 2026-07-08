@@ -146,10 +146,10 @@ function getMapCenterCoordinates(){
 let map = null;
 let osmLayer = null;
 let googleSatLayer = null;
-function initMap(element,centerCoordinate, zoom) {
+function initMap(element,centerCoordinates, zoom) {
     try {
         if (document.getElementById(element)) {
-            map = L.map(element).setView(centerCoordinate, zoom);
+            map = L.map(element).setView(centerCoordinates, zoom);
 
             osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
