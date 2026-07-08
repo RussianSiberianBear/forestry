@@ -262,7 +262,7 @@ public class ForestStand {
         createdAt = LocalDateTime.now();
 
         if (fullNumber == null && forestryUnit != null) {
-            fullNumber = forestryUnit.getFullPath() + " / Дел." + numberInQuarter;
+            fullNumber = forestryUnit.getFullPath() + " / Выд." + numberInQuarter;
         }
     }
 
