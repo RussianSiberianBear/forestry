@@ -100,3 +100,20 @@
         Несколько выделов через запятую
     </div>
 </div>
+
+<!-- ===== 7. НОМЕР ВЫДЕЛА ===== -->
+<div class="uk-margin-small" th:fragment="forestStandOne">
+    <label class="uk-form-label" for="numberInQuarter">
+        Номер выдела в квартале <span class="required-star">*</span>
+    </label>
+    <div class="uk-form-controls">
+        <input class="uk-input" type="text" id="numberInQuarter"
+               th:field="*{numberInQuarter}"
+               placeholder="Например: 12, 12а, 12/1"
+               required disabled data-filter>
+    </div>
+    <div class="field-hint">
+        <span uk-icon="icon: info"></span>
+        Номер должен быть уникальным в пределах квартала
+    </div>
+</div>

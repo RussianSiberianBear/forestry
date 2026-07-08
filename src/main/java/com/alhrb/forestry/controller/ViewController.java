@@ -38,7 +38,7 @@ public class ViewController {
         // Заполняем territoryPath для каждого plot
         cuttingAreas.forEach(area -> area.setTerritoryPath(area.getTerritoryPath()));
 
-        model.addAttribute("forestStand", cuttingAreas);
+        model.addAttribute("forestStand", "");
         model.addAttribute("cuttingAreaDto", new CuttingAreaDto());
         model.addAttribute("uiSettings", uiSettings);
 
@@ -60,8 +60,7 @@ public class ViewController {
         // Заполняем territoryPath для каждого plot
         forestStands.forEach(stand -> stand.setTerritoryPath(stand.getTerritoryPath()));
 
-        model.addAttribute("stands", forestStands);
-        model.addAttribute("standDto", new ForestStandDto());
+        model.addAttribute("forestStandDto", new ForestStandDto());
         model.addAttribute("uiSettings", uiSettings);
 
         List<ForestStand> latestForestStands = forestStands.stream()

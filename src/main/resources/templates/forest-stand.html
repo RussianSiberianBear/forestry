@@ -126,7 +126,7 @@
                             Добавление нового выдела
                         </h3>
 
-                        <form th:action="@{/api/stands/create}" th:object="${standDto}" method="post" id="standForm">
+                        <form th:action="@{/api/stands/create}" th:object="${forestStandDto}" method="post" id="standForm">
 
                             <!-- ===== 1. ЛЕСНИЧЕСТВО ===== -->
                             <div th:replace="~{forestry-units::forestry}"></div>
@@ -143,7 +143,7 @@
                             <hr>
 
                             <!-- ===== 6. НОМЕР ВЫДЕЛА ===== -->
-                            <div th:replace="~{forestry-units::forestStand}"></div>
+                            <div th:replace="~{forestry-units::forestStandOne}"></div>
 
                             <!-- ===== 7. ОПИСАНИЕ ===== -->
                             <div class="uk-margin">
@@ -157,13 +157,13 @@
 
                             <!-- ===== 8. ГОД АКТУАЛЬНОСТИ КООРДИНАТ ===== -->
                             <div class="uk-margin">
-                                <label class="uk-form-label" for="yearOfRelevance">
+                                <label class="uk-form-label" for="relevanceYear">
                                     Год актуальности координат
                                 </label>
                                 <div class="uk-form-controls">
-                                    <input class="uk-input" type="number" id="yearOfRelevance"
-                                           th:field="*{yearOfRelevance}"
-                                           placeholder="2024"
+                                    <input class="uk-input" type="number" id="relevanceYear"
+                                           th:field="*{relevanceYear}"
+                                           placeholder="2025"
                                            min="1900"
                                            max="2100">
                                 </div>
@@ -650,7 +650,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/common.js"></script>
-<script src="/js/validation-stand.js"></script>
+<script src="/js/forest-stand.js"></script>
 <script src="/js/forest-stand-mass-load.js"></script>
 
 </body>

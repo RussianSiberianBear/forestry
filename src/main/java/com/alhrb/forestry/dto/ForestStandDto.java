@@ -13,9 +13,6 @@ import java.util.List;
  * DTO для работы с выделами (forest_stand)
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ForestStandDto {
 
     /**
