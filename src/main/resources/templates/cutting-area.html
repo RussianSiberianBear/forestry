@@ -127,8 +127,8 @@
                             Добавление новой деляны
                         </h3>
 
-                        <form th:action="@{/api/cutting-area/create}" th:object="${cuttingAreaDto}" method="post" id="plotForm">
-
+                        <!-- В cutting-area.html замените форму на эту: -->
+                        <form id="plotForm" novalidate>
                             <!-- ===== 1. ЛЕСНИЧЕСТВО ===== -->
                             <div th:replace="~{forestry-units::forestry}"></div>
 
@@ -153,9 +153,9 @@
                             <div class="uk-margin-small">
                                 <label class="uk-form-label" for="description">Описание</label>
                                 <div class="uk-form-controls">
-                                    <textarea class="uk-textarea" id="description"
-                                              th:field="*{description}" rows="2"
-                                              placeholder="Дополнительная информация"></textarea>
+            <textarea class="uk-textarea" id="description"
+                      name="description" rows="2"
+                      placeholder="Дополнительная информация"></textarea>
                                 </div>
                             </div>
 
@@ -166,7 +166,7 @@
                                         <label class="uk-form-label" for="yearOfCut">Год рубки</label>
                                         <div class="uk-form-controls">
                                             <input class="uk-input" type="number" id="yearOfCut"
-                                                   th:field="*{yearOfCut}"
+                                                   name="yearOfCut"
                                                    placeholder="2024"
                                                    onchange="onYearOfCutChange(this.value)"
                                                    oninput="onYearOfCutChange(this.value)" data-filter>
@@ -178,7 +178,7 @@
                                         <label class="uk-form-label" for="cutType">Тип рубки</label>
                                         <div class="uk-form-controls">
                                             <select class="form-select" id="cutType"
-                                                    th:field="*{cutType}"
+                                                    name="cutType"
                                                     onchange="onCutTypeChange(this.value)" data-filter>
                                                 <option value="">-- Выберите --</option>
                                                 <option value="Сплошная">Сплошная</option>
@@ -198,12 +198,9 @@
                                 <p>
                                     <span uk-icon="icon: info"></span>
                                     <strong>Как вводить координаты:</strong><br>
-                                    1. Введите <span class="uk-text-bold">Широту</span> и <span
-                                        class="uk-text-bold">Долготу</span><br>
-                                    2. Нажмите <span class="uk-text-bold">Enter</span> в поле "Долгота" — добавится
-                                    новая строка для следующей точки<br>
-                                    3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система
-                                    замкнёт сама
+                                    1. Введите <span class="uk-text-bold">Широту</span> и <span class="uk-text-bold">Долготу</span><br>
+                                    2. Нажмите <span class="uk-text-bold">Enter</span> в поле "Долгота" — добавится новая строка для следующей точки<br>
+                                    3. <span class="uk-text-bold">Последнюю точку вводить НЕ НАДО</span> — система замкнёт сама
                                 </p>
                             </div>
 
@@ -214,24 +211,7 @@
                                 </label>
 
                                 <div id="coordinates-container">
-                                    <div th:each="coord, iter : *{coordinates}"
-                                         th:id="'coord-row-' + ${iter.index}"
-                                         class="coordinate-row">
-                                        <input class="uk-input uk-form-width-small coord-input" type="text"
-                                               th:field="*{coordinates[__${iter.index}__].lat}"
-                                               placeholder="Широта"
-                                               onkeydown="handleCoordInput(event, 'lat', ${iter.index})"
-                                               oninput="validateCoordInput(this)">
-                                        <input class="uk-input uk-form-width-small coord-input" type="text"
-                                               th:field="*{coordinates[__${iter.index}__].lng}"
-                                               placeholder="Долгота"
-                                               onkeydown="handleCoordInput(event, 'lng', ${iter.index})"
-                                               oninput="validateCoordInput(this)">
-                                        <button type="button" class="uk-button uk-button-danger uk-button-small"
-                                                th:onclick="'removeCoordinate(' + ${iter.index} + ')'">
-                                            <span uk-icon="icon: close"></span>
-                                        </button>
-                                    </div>
+                                    <!-- Координаты будут добавлены через JS -->
                                 </div>
 
                                 <div class="uk-margin-small-top">
@@ -255,10 +235,10 @@
 
                             <!-- ===== 10. КНОПКИ ===== -->
                             <div class="uk-margin">
-                                <button type="submit" class="uk-button uk-button-primary">
+                                <button type="button" class="uk-button uk-button-primary" onclick="submitPlotForm()">
                                     <span uk-icon="icon: check"></span> Создать и проверить
                                 </button>
-                                <button type="reset" class="uk-button uk-button-default" onclick="resetForm()">
+                                <button type="button" class="uk-button uk-button-default" onclick="resetForm()">
                                     <span uk-icon="icon: refresh"></span> Очистить
                                 </button>
                             </div>

@@ -3,6 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.CuttingAreaDto;
 import com.alhrb.forestry.dto.CuttingAreaMapDto;
+import com.alhrb.forestry.dto.IntersectionResponseDto;
 import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.service.*;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,7 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/api/cutting-area")
@@ -31,11 +35,85 @@ public class CuttingAreaController {
     private final GeometryService geometryService;
     private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
+    // Добавьте этот метод в CuttingAreaController.java
+
+    @PostMapping("/create-json")
+    @ResponseBody
+    public ResponseEntity<IntersectionResponseDto> createCuttingAreaJson(
+            @Valid @RequestBody CuttingAreaDto cuttingAreaDto) {
+
+        IntersectionResponseDto response = new IntersectionResponseDto();
+
+        try {
+            var geometry = geometryService.createPolygon(cuttingAreaDto.getCoordinates());
+
+            if (cuttingAreaDto.getQuarterId() == null) {
+                throw new IllegalArgumentException("Не выбран квартал!");
+            }
+
+            // Получаем территориальную единицу (квартал)
+            ForestryUnit forestryUnit = forestryUnitService.findById(cuttingAreaDto.getQuarterId())
+                    .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
+
+            // Проверяем, что это квартал
+            if (!forestryUnit.isQuarter()) {
+                throw new IllegalArgumentException("Выбранная территория не является кварталом!");
+            }
+
+            if (forestryUnit.getGeometry() != null) {
+                geometryService.validatePlotInsideQuarter(
+                        geometry,
+                        (Polygon) forestryUnit.getGeometry(),
+                        cuttingAreaDto.getNumberInQuarter(),
+                        forestryUnit.getNumber() != null ? forestryUnit.getNumber() : forestryUnit.getName()
+                );
+            }
+
+            List<IntersectionReport> conflicts = cuttingAreaService.createPlotWithValidation(
+                    cuttingAreaDto.getNumberInQuarter(),
+                    cuttingAreaDto.getForestStand(),
+                    cuttingAreaDto.getDescription(),
+                    geometry,
+                    cuttingAreaDto.getQuarterId(),
+                    cuttingAreaDto.getYearOfCut(),
+                    cuttingAreaDto.getCutType()
+            );
+
+            if (!conflicts.isEmpty()) {
+                response.setSuccess(true);
+                response.setStatus("warning");
+                response.setMessage("Деляна создана, но обнаружены пересечения!");
+                response.setConflicts(conflicts);
+            } else {
+                response.setSuccess(true);
+                response.setStatus("success");
+                response.setMessage("Деляна успешно создана и верифицирована!");
+            }
+
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Ошибка валидации: {}", e.getMessage());
+            response.setSuccess(false);
+            response.setStatus("error");
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+
+        } catch (Exception e) {
+            log.error("Ошибка при создании деляны", e);
+            response.setSuccess(false);
+            response.setStatus("error");
+            response.setMessage("Ошибка: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
     @PostMapping("/create")
     public String createCuttingArea(@Valid @ModelAttribute("cuttingAreaDto") CuttingAreaDto cuttingAreaDto,
-                             BindingResult result,
-                             Model model,
-                             RedirectAttributes redirectAttributes) {
+                                    BindingResult result,
+                                    Model model,
+                                    RedirectAttributes redirectAttributes) {
 
         if (result.hasErrors()) {
             model.addAttribute("error", "Проверьте правильность заполнения формы");

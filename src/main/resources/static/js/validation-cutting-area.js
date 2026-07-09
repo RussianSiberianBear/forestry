@@ -1006,6 +1006,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    // Инициализация координат
+    if (typeof initCoordinateFields === 'function') {
+        initCoordinateFields();
+    }
+
     loadForestries();
 
     if (typeof updateCoordCounter === 'function') {
@@ -1062,3 +1067,207 @@ document.addEventListener('DOMContentLoaded', function () {
 
     console.log('✅ Инициализация завершена');
 });
+
+// ==========================================
+// ОТПРАВКА ФОРМЫ ЧЕРЕЗ FETCH
+// ==========================================
+
+function submitPlotForm() {
+    // Собираем данные формы
+    const formData = collectFormData();
+
+    // Валидация
+    if (!validateFormData(formData)) {
+        return;
+    }
+
+    // Показываем индикатор загрузки
+    const submitBtn = document.querySelector('#plotForm .uk-button-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span uk-icon="icon: spinner; ratio: 1.2" class="uk-animation-rotate"></span> Отправка...';
+    submitBtn.disabled = true;
+
+    // Отправляем запрос
+    fetch('/api/cutting-area/create-json', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Ошибка сервера');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Восстанавливаем кнопку
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+
+            // Обрабатываем ответ
+            handleSubmitResponse(data);
+
+            // Если успешно - обновляем карту
+            if (data.success) {
+                // Обновляем карту с новыми данными
+                setTimeout(() => {
+                    refreshMap();
+                }, 500);
+            }
+        })
+        .catch(error => {
+            // Восстанавливаем кнопку
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+
+            console.error('❌ Ошибка при создании деляны:', error);
+            showNotification(error.message || 'Ошибка при создании деляны', 'danger');
+        });
+}
+
+// ==========================================
+// СБОР ДАННЫХ ФОРМЫ
+// ==========================================
+
+function collectFormData() {
+    const data = {
+        numberInQuarter: document.getElementById('numberInQuarter').value.trim(),
+        forestStand: document.getElementById('forestStand').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        quarterId: document.getElementById('quarterId').value,
+        yearOfCut: document.getElementById('yearOfCut').value,
+        cutType: document.getElementById('cutType').value,
+        coordinates: []
+    };
+
+    // Собираем координаты
+    const rows = document.querySelectorAll('#coordinates-container .coordinate-row');
+    rows.forEach(row => {
+        const latInput = row.querySelector('input[placeholder="Широта"]');
+        const lngInput = row.querySelector('input[placeholder="Долгота"]');
+
+        if (latInput && lngInput) {
+            const lat = parseFloat(latInput.value.replace(',', '.').trim());
+            const lng = parseFloat(lngInput.value.replace(',', '.').trim());
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                data.coordinates.push({ lat, lng });
+            }
+        }
+    });
+
+    return data;
+}
+
+// ==========================================
+// ВАЛИДАЦИЯ ДАННЫХ ФОРМЫ
+// ==========================================
+
+function validateFormData(data) {
+    // Проверка номера деляны
+    if (!data.numberInQuarter || data.numberInQuarter === '') {
+        showNotification('Введите номер деляны', 'warning');
+        document.getElementById('numberInQuarter').focus();
+        return false;
+    }
+
+    // Проверка квартала
+    if (!data.quarterId || data.quarterId === '') {
+        showNotification('Выберите квартал', 'warning');
+        document.getElementById('quarterInput').focus();
+        return false;
+    }
+
+    // Проверка координат (минимум 3 точки)
+    if (data.coordinates.length < 3) {
+        showNotification('Введите минимум 3 точки координат', 'warning');
+        return false;
+    }
+
+    return true;
+}
+
+// ==========================================
+// ОБРАБОТКА ОТВЕТА СЕРВЕРА
+// ==========================================
+
+function handleSubmitResponse(data) {
+    console.log('📥 Ответ сервера:', data);
+
+    if (data.success) {
+        // Показываем сообщение в зависимости от статуса
+        if (data.status === 'warning') {
+            showNotification(data.message, 'warning');
+
+            // Если есть конфликты, показываем их
+            if (data.conflicts && data.conflicts.length > 0) {
+                showConflicts(data.conflicts);
+            }
+        } else {
+            showNotification(data.message, 'success');
+
+            // Очищаем форму при успешном создании
+            if (data.status === 'success') {
+                resetForm();
+            }
+        }
+    } else {
+        showNotification(data.message, 'danger');
+    }
+}
+
+// ==========================================
+// ПОКАЗ УВЕДОМЛЕНИЙ
+// ==========================================
+
+function showNotification(message, status = 'info') {
+    // Используем UIkit если доступен
+    if (typeof UIkit !== 'undefined') {
+        UIkit.notification({
+            message: message,
+            status: status,
+            timeout: 5000
+        });
+    } else {
+        // Fallback - обычный alert
+        alert(message);
+    }
+}
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ КООРДИНАТ ПРИ ЗАГРУЗКЕ
+// ==========================================
+
+// Добавьте вызов этой функции при загрузке страницы
+function initCoordinateFields() {
+    const container = document.getElementById('coordinates-container');
+    // Создаем 3 пустые строки по умолчанию
+    for (let i = 0; i < 3; i++) {
+        const row = document.createElement('div');
+        row.className = 'coordinate-row';
+        row.id = 'coord-row-' + i;
+        row.innerHTML = `
+            <input class="uk-input uk-form-width-small coord-input" type="text"
+                   name="coordinates[${i}].lat"
+                   placeholder="Широта"
+                   onkeydown="handleCoordInput(event, 'lat', ${i})"
+                   oninput="validateCoordInput(this)">
+            <input class="uk-input uk-form-width-small coord-input" type="text"
+                   name="coordinates[${i}].lng"
+                   placeholder="Долгота"
+                   onkeydown="handleCoordInput(event, 'lng', ${i})"
+                   oninput="validateCoordInput(this)">
+            <button type="button" class="uk-button uk-button-danger uk-button-small"
+                    onclick="removeCoordinate(${i})">
+                <span uk-icon="icon: close"></span>
+            </button>
+        `;
+        container.appendChild(row);
+    }
+    updateCoordCounter();
+}
+
