@@ -19,11 +19,12 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
 }
 .coordinate-row input {
-    width: 140px;
+    width: 100px;
     display: inline-block;
+    padding-left: 4px;
+    padding-right: 4px;
 }
 
 .coord-input {

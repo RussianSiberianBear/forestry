@@ -42,25 +42,27 @@ function collectFiltersManual() {
     const filters = {};
 
     const fId = forestrySelect?.value;
-    if (fId && fId !== '') filters.forestryId = fId;
+    if (fId && fId !== '' && fId !== 'null' && fId !== 'undefined') filters.forestryId = fId;
 
     const dfId = subForestrySelect?.value;
-    if (dfId && dfId !== '') filters.subForestryId = dfId;
+    if (dfId && dfId !== '' && dfId !== 'null' && dfId !== 'undefined') filters.subForestryId = dfId;
 
     const tId = technicalUnitSelect?.value;
-    if (tId && tId !== '') filters.technicalUnitId = tId;
+    if (tId && tId !== '' && tId !== 'null' && tId !== 'undefined') filters.technicalUnitId = tId;
 
     const qId = quarterId?.value;
-    if (qId && qId !== '') filters.quarterId = qId;
+    if (qId && qId !== '' && qId !== 'null' && qId !== 'undefined') filters.quarterId = qId;
 
     const cutType = cutTypeSelect?.value;
-    if (cutType && cutType !== '') filters.cutType = cutType;
+    if (cutType && cutType !== '' && cutType !== 'null' && cutType !== 'undefined') filters.cutType = cutType;
 
     const yearOfCut = yearOfCutInput?.value;
-    if (yearOfCut && yearOfCut !== '') filters.yearOfCut = yearOfCut;
+    if (yearOfCut && yearOfCut !== '' && yearOfCut !== 'null' && yearOfCut !== 'undefined') filters.yearOfCut = yearOfCut;
 
     const numberInQuarter = numberInQuarterInput?.value?.trim();
-    if (numberInQuarter && numberInQuarter !== '') filters.numberInQuarter = numberInQuarter;
+    if (numberInQuarter && numberInQuarter !== '' && numberInQuarter !== 'null' && numberInQuarter !== 'undefined') {
+        filters.numberInQuarter = numberInQuarter;
+    }
 
     console.log('📋 Собранные фильтры (ручной):', filters);
     return filters;
@@ -253,17 +255,102 @@ function loadAllPlots() {
 // КООРДИНАТЫ
 // ==========================================
 
+// ==========================================
+// КООРДИНАТЫ
+// ==========================================
+
+// ==========================================
+// КООРДИНАТЫ
+// ==========================================
+
 function handleCoordInput(event, field, index) {
     if (event.key === 'Enter') {
         event.preventDefault();
 
         if (field === 'lat') {
+            // Переход из поля широты в поле долготы
             const row = document.getElementById('coord-row-' + index);
             if (row) {
                 const lngInput = row.querySelector('input[placeholder="Долгота"]');
-                if (lngInput) lngInput.focus();
+                if (lngInput) {
+                    lngInput.focus();
+                    lngInput.select();
+                }
             }
         } else if (field === 'lng') {
+            // Проверяем, что текущая строка заполнена
+            const row = document.getElementById('coord-row-' + index);
+            if (row) {
+                const latInput = row.querySelector('input[placeholder="Широта"]');
+                const lngInput = row.querySelector('input[placeholder="Долгота"]');
+
+                if (latInput && lngInput) {
+                    const lat = parseFloat(latInput.value.replace(',', '.').trim());
+                    const lng = parseFloat(lngInput.value.replace(',', '.').trim());
+
+                    if (isNaN(lat) || isNaN(lng)) {
+                        UIkit.notification({
+                            message: '❌ Заполните оба поля: Широту и Долготу',
+                            status: 'warning',
+                            timeout: 2000
+                        });
+                        if (isNaN(lat)) {
+                            latInput.focus();
+                        } else {
+                            lngInput.focus();
+                        }
+                        return;
+                    }
+
+                    if (lat < -90 || lat > 90) {
+                        UIkit.notification({
+                            message: '❌ Широта должна быть в диапазоне -90...90',
+                            status: 'warning',
+                            timeout: 2000
+                        });
+                        latInput.focus();
+                        latInput.select();
+                        return;
+                    }
+
+                    if (lng < -180 || lng > 180) {
+                        UIkit.notification({
+                            message: '❌ Долгота должна быть в диапазоне -180...180',
+                            status: 'warning',
+                            timeout: 2000
+                        });
+                        lngInput.focus();
+                        lngInput.select();
+                        return;
+                    }
+                }
+            }
+
+            // Проверяем, есть ли пустые строки после текущей
+            const container = document.getElementById('coordinates-container');
+            const rows = container.querySelectorAll('.coordinate-row');
+
+            // Проверяем, есть ли следующая строка и пуста ли она
+            const nextRowIndex = index + 1;
+            const nextRow = document.getElementById('coord-row-' + nextRowIndex);
+
+            if (nextRow) {
+                // Если следующая строка существует, проверяем, пуста ли она
+                const nextLatInput = nextRow.querySelector('input[placeholder="Широта"]');
+                const nextLngInput = nextRow.querySelector('input[placeholder="Долгота"]');
+                const nextLat = nextLatInput ? nextLatInput.value.trim() : '';
+                const nextLng = nextLngInput ? nextLngInput.value.trim() : '';
+
+                if (nextLat === '' && nextLng === '') {
+                    // Если следующая строка пуста, переходим в нее
+                    if (nextLatInput) {
+                        nextLatInput.focus();
+                    }
+                    return;
+                }
+            }
+
+            // Если следующей строки нет или она не пуста, создаем новую
             addNewCoordinateRow();
         }
     }
@@ -271,10 +358,12 @@ function handleCoordInput(event, field, index) {
 
 function addNewCoordinateRow() {
     const container = document.getElementById('coordinates-container');
-    const index = container.children.length;
+    const currentCount = container.children.length;
+    const newIndex = currentCount;
 
-    if (index > 0) {
-        const lastRow = container.children[index - 1];
+    // Проверяем, что последняя строка заполнена
+    if (currentCount > 0) {
+        const lastRow = container.children[currentCount - 1];
         const latInput = lastRow.querySelector('input[placeholder="Широта"]');
         const lngInput = lastRow.querySelector('input[placeholder="Долгота"]');
 
@@ -283,60 +372,58 @@ function addNewCoordinateRow() {
             const lng = parseFloat(lngInput.value.replace(',', '.').trim());
 
             if (isNaN(lat) || isNaN(lng)) {
-                UIkit.notification({
-                    message: '❌ Заполните оба поля: Широту и Долготу',
-                    status: 'warning',
-                    timeout: 2000
-                });
-                return;
-            }
-
-            if (lat < -90 || lat > 90) {
-                UIkit.notification({
-                    message: '❌ Широта должна быть в диапазоне -90...90',
-                    status: 'warning',
-                    timeout: 2000
-                });
-                return;
-            }
-
-            if (lng < -180 || lng > 180) {
-                UIkit.notification({
-                    message: '❌ Долгота должна быть в диапазоне -180...180',
-                    status: 'warning',
-                    timeout: 2000
-                });
+                if (isNaN(lat)) {
+                    latInput.focus();
+                } else {
+                    lngInput.focus();
+                }
                 return;
             }
         }
     }
 
+    // Проверяем, не существует ли уже строка с таким индексом
+    const existingRow = document.getElementById('coord-row-' + newIndex);
+    if (existingRow) {
+        // Если строка существует, фокусируемся на ней
+        const latInput = existingRow.querySelector('input[placeholder="Широта"]');
+        if (latInput) {
+            latInput.focus();
+        }
+        return;
+    }
+
+    // Создаем новую строку
     const row = document.createElement('div');
     row.className = 'coordinate-row';
-    row.id = 'coord-row-' + index;
+    row.id = 'coord-row-' + newIndex;
     row.innerHTML = `
         <input class="uk-input uk-form-width-small coord-input" type="text"
-               name="coordinates[${index}].lat"
+               name="coordinates[${newIndex}].lat"
                placeholder="Широта"
-               onkeydown="handleCoordInput(event, 'lat', ${index})"
+               onkeydown="handleCoordInput(event, 'lat', ${newIndex})"
                oninput="validateCoordInput(this)">
         <input class="uk-input uk-form-width-small coord-input" type="text"
-               name="coordinates[${index}].lng"
+               name="coordinates[${newIndex}].lng"
                placeholder="Долгота"
-               onkeydown="handleCoordInput(event, 'lng', ${index})"
+               onkeydown="handleCoordInput(event, 'lng', ${newIndex})"
                oninput="validateCoordInput(this)">
-        <button type="button" class="uk-button uk-button-danger uk-button-small"
-                onclick="removeCoordinate(${index})">
+        <button type="button" class="uk-button-danger"
+                onclick="removeCoordinate(${newIndex})">
             <span uk-icon="icon: close"></span>
         </button>
     `;
     container.appendChild(row);
 
+    // Фокусируемся на поле широты новой строки
     const newLatInput = row.querySelector('input[placeholder="Широта"]');
-    if (newLatInput) newLatInput.focus();
+    if (newLatInput) {
+        setTimeout(() => {
+            newLatInput.focus();
+        }, 50);
+    }
 
     updateCoordCounter();
-    updateIndices();
 }
 
 function removeCoordinate(index) {
@@ -355,6 +442,7 @@ function removeCoordinate(index) {
     const element = document.getElementById('coord-row-' + index);
     if (element) {
         element.remove();
+        // После удаления обновляем все индексы
         updateIndices();
         updateCoordCounter();
 
@@ -364,6 +452,30 @@ function removeCoordinate(index) {
             timeout: 1000
         });
     }
+}
+
+function updateIndices() {
+    const rows = document.querySelectorAll('#coordinates-container .coordinate-row');
+    rows.forEach((row, index) => {
+        row.id = 'coord-row-' + index;
+
+        const latInput = row.querySelector('input[placeholder="Широта"]');
+        const lngInput = row.querySelector('input[placeholder="Долгота"]');
+
+        if (latInput) {
+            latInput.name = 'coordinates[' + index + '].lat';
+            latInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lat\', ' + index + ')');
+        }
+        if (lngInput) {
+            lngInput.name = 'coordinates[' + index + '].lng';
+            lngInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lng\', ' + index + ')');
+        }
+
+        const btn = row.querySelector('button');
+        if (btn) {
+            btn.setAttribute('onclick', 'removeCoordinate(' + index + ')');
+        }
+    });
 }
 
 function clearAllCoordinates() {
@@ -400,29 +512,6 @@ function clearAllCoordinates() {
     });
 }
 
-function updateIndices() {
-    const rows = document.querySelectorAll('#coordinates-container .coordinate-row');
-    rows.forEach((row, index) => {
-        row.id = 'coord-row-' + index;
-
-        const latInput = row.querySelector('input[placeholder="Широта"]');
-        const lngInput = row.querySelector('input[placeholder="Долгота"]');
-        if (latInput) {
-            latInput.name = 'coordinates[' + index + '].lat';
-            latInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lat\', ' + index + ')');
-        }
-        if (lngInput) {
-            lngInput.name = 'coordinates[' + index + '].lng';
-            lngInput.setAttribute('onkeydown', 'handleCoordInput(event, \'lng\', ' + index + ')');
-        }
-
-        const btn = row.querySelector('button');
-        if (btn) {
-            btn.setAttribute('onclick', 'removeCoordinate(' + index + ')');
-        }
-    });
-}
-
 function updateCoordCounter() {
     const container = document.getElementById('coordinates-container');
     const count = container.children.length;
@@ -445,22 +534,50 @@ function validateCoordInput(input) {
 // СБРОС ФОРМЫ
 // ==========================================
 
-function resetForm() {
-    const container = document.getElementById('coordinates-container');
-    while (container.children.length > 3) {
-        container.removeChild(container.lastChild);
-    }
-    container.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
-    updateIndices();
-    updateCoordCounter();
+// ==========================================
+// СБРОС ФОРМЫ (исправленная версия)
+// ==========================================
 
+// ==========================================
+// СБРОС ФОРМЫ (исправленная версия)
+// ==========================================
+
+function resetForm() {
+    // Очищаем ТОЛЬКО поля, которые должны быть очищены
     document.getElementById('numberInQuarter').value = '';
-    document.getElementById('plots').value = '';
+    document.getElementById('forestStand').value = '';
     document.getElementById('description').value = '';
     document.getElementById('yearOfCut').value = '';
     document.getElementById('cutType').value = '';
 
-    resetAllDependentSelects();
+    // Пересоздаём блок координат с 3 пустыми строками
+    initCoordinateFields();
+
+    // НЕ ТРОГАЕМ:
+    // - forestrySelect
+    // - subForestrySelect
+    // - technicalUnitSelect
+    // - quarterId
+    // - quarterInput
+
+    // Убеждаемся, что поле квартала осталось заполненным
+    const quarterId = document.getElementById('quarterId');
+    if (quarterId && quarterId.value && quarterId.value !== '') {
+        // Поле квартала уже заполнено, активируем поле номера деляны
+        const numberInQuarterInput = document.getElementById('numberInQuarter');
+        if (numberInQuarterInput) {
+            numberInQuarterInput.disabled = false;
+            numberInQuarterInput.placeholder = 'Введите номер деляны...';
+        }
+    }
+
+    // Фокусируемся на номере деляны
+    const numberInput = document.getElementById('numberInQuarter');
+    if (numberInput) {
+        setTimeout(() => {
+            numberInput.focus();
+        }, 100);
+    }
 }
 
 // ==========================================
@@ -1006,6 +1123,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    // Инициализация координат
+    if (typeof initCoordinateFields === 'function') {
+        initCoordinateFields();
+    }
+
     loadForestries();
 
     if (typeof updateCoordCounter === 'function') {
@@ -1051,7 +1173,6 @@ document.addEventListener('DOMContentLoaded', function () {
             initMap(mapElement, getDefaultCoordinateCenterMap(), 8);
         }
 
-
         setTimeout(function () {
             if (map) {
                 map.invalidateSize();
@@ -1062,3 +1183,189 @@ document.addEventListener('DOMContentLoaded', function () {
 
     console.log('✅ Инициализация завершена');
 });
+
+// ==========================================
+// ОТПРАВКА ФОРМЫ ЧЕРЕЗ FETCH
+// ==========================================
+
+function submitPlotForm() {
+    const formData = collectFormData();
+
+    if (!validateFormData(formData)) {
+        return;
+    }
+
+    const submitBtn = document.querySelector('#plotForm .uk-button-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span uk-icon="icon: spinner; ratio: 1.2" class="uk-animation-rotate"></span> Отправка...';
+    submitBtn.disabled = true;
+
+    fetch('/api/cutting-area/create-json', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Ошибка сервера');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            handleSubmitResponse(data);
+
+            if (data.success) {
+                setTimeout(() => {
+                    refreshMap();
+                }, 500);
+            }
+        })
+        .catch(error => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            console.error('❌ Ошибка при создании деляны:', error);
+            showNotification(error.message || 'Ошибка при создании деляны', 'danger');
+        });
+}
+
+// ==========================================
+// СБОР ДАННЫХ ФОРМЫ
+// ==========================================
+
+function collectFormData() {
+    const data = {
+        numberInQuarter: document.getElementById('numberInQuarter').value.trim(),
+        forestStand: document.getElementById('forestStand').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        quarterId: document.getElementById('quarterId').value,
+        yearOfCut: document.getElementById('yearOfCut').value,
+        cutType: document.getElementById('cutType').value,
+        coordinates: []
+    };
+
+    const rows = document.querySelectorAll('#coordinates-container .coordinate-row');
+    rows.forEach(row => {
+        const latInput = row.querySelector('input[placeholder="Широта"]');
+        const lngInput = row.querySelector('input[placeholder="Долгота"]');
+
+        if (latInput && lngInput) {
+            const lat = parseFloat(latInput.value.replace(',', '.').trim());
+            const lng = parseFloat(lngInput.value.replace(',', '.').trim());
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                data.coordinates.push({ lat, lng });
+            }
+        }
+    });
+
+    return data;
+}
+
+// ==========================================
+// ВАЛИДАЦИЯ ДАННЫХ ФОРМЫ
+// ==========================================
+
+function validateFormData(data) {
+    if (!data.numberInQuarter || data.numberInQuarter === '') {
+        showNotification('Введите номер деляны', 'warning');
+        document.getElementById('numberInQuarter').focus();
+        return false;
+    }
+
+    if (!data.quarterId || data.quarterId === '') {
+        showNotification('Выберите квартал', 'warning');
+        document.getElementById('quarterInput').focus();
+        return false;
+    }
+
+    if (data.coordinates.length < 3) {
+        showNotification('Введите минимум 3 точки координат', 'warning');
+        return false;
+    }
+
+    return true;
+}
+
+// ==========================================
+// ОБРАБОТКА ОТВЕТА СЕРВЕРА
+// ==========================================
+
+function handleSubmitResponse(data) {
+    console.log('📥 Ответ сервера:', data);
+
+    if (data.success) {
+        if (data.status === 'warning') {
+            showNotification(data.message, 'warning');
+            if (data.conflicts && data.conflicts.length > 0) {
+                showConflicts(data.conflicts);
+            }
+            // При предупреждении НЕ сбрасываем форму, чтобы пользователь мог исправить
+        } else {
+            showNotification(data.message, 'success');
+            if (data.status === 'success') {
+                // Сбрасываем ТОЛЬКО при успешном сохранении
+                resetForm();
+            }
+        }
+    } else {
+        showNotification(data.message, 'danger');
+        // При ошибке НЕ сбрасываем форму
+    }
+}
+
+// ==========================================
+// ПОКАЗ УВЕДОМЛЕНИЙ
+// ==========================================
+
+function showNotification(message, status = 'info') {
+    if (typeof UIkit !== 'undefined') {
+        UIkit.notification({
+            message: message,
+            status: status,
+            timeout: 5000
+        });
+    } else {
+        alert(message);
+    }
+}
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ КООРДИНАТ ПРИ ЗАГРУЗКЕ
+// ==========================================
+function initCoordinateFields() {
+    const container = document.getElementById('coordinates-container');
+    container.innerHTML = '';
+
+    for (let i = 0; i < 3; i++) {
+        const row = document.createElement('div');
+        row.className = 'coordinate-row';
+        row.id = 'coord-row-' + i;
+        row.innerHTML = `
+            <input class="uk-input uk-form-width-small coord-input" type="text"
+                   name="coordinates[${i}].lat"
+                   placeholder="Широта"
+                   onkeydown="handleCoordInput(event, 'lat', ${i})"
+                   oninput="validateCoordInput(this)">
+            <input class="uk-input uk-form-width-small coord-input" type="text"
+                   name="coordinates[${i}].lng"
+                   placeholder="Долгота"
+                   onkeydown="handleCoordInput(event, 'lng', ${i})"
+                   oninput="validateCoordInput(this)">
+            <button type="button" class="uk-button-danger"
+                    onclick="removeCoordinate(${i})">
+                <span uk-icon="icon: close"></span>
+            </button>
+        `;
+        container.appendChild(row);
+    }
+
+    // Обновляем индексы и счётчик в правильном порядке
+    updateIndices();
+    updateCoordCounter();
+}
