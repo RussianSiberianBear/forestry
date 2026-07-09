@@ -1,7 +1,8 @@
 // ==========================================
 // ЗАГРУЗКА СПИСКОВ (С DTO)
 // ==========================================
-
+let forestries = null;
+let subForestries = null;
 function loadForestries(callback) {
     const forestrySelect = document.getElementById('forestrySelect');
     if (!forestrySelect) return;
@@ -32,7 +33,7 @@ function loadForestries(callback) {
                 defaultOption.value = '';
                 defaultOption.textContent = '-- Выберите лесничество --';
                 forestrySelect.appendChild(defaultOption);
-
+                forestries = data;
                 data.forEach(item => {
                     const option = document.createElement('option');
                     option.value = item.id;

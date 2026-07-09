@@ -6,6 +6,7 @@ let showLabels = true;
 let cachedPlots = null;
 let polygonLayer = null;
 let labelLayer = null;
+let mapElement = 'map';
 
 // ==========================================
 // ФИЛЬТРЫ ДЛЯ КАРТЫ
@@ -73,7 +74,7 @@ function refreshMap() {
     currentFilters = collectFilters();
     console.log('🔍 Обновление карты с фильтрами:', currentFilters);
 
-    const mapContainer = document.getElementById('map');
+    const mapContainer = document.getElementById(mapElement);
     if (mapContainer) {
         mapContainer.style.opacity = '0.6';
     }
@@ -237,7 +238,7 @@ function updateLegend(plotsData) {
         </div>
     `;
 
-    const mapContainer = document.getElementById('map');
+    const mapContainer = document.getElementById(mapElement);
     if (mapContainer) {
         mapContainer.style.position = 'relative';
         mapContainer.appendChild(legend);
@@ -583,11 +584,11 @@ function restoreHierarchy(forestryId, districtForestryId, technicalUnitId, quart
     if (forestrySelect && forestryId) {
         forestrySelect.value = forestryId;
         enableQuarterField();
-        loadSubForestries(forestryId, function() {
+        loadSubForestries(forestryId, function () {
             const districtSelect = document.getElementById('subForestrySelect');
             if (districtSelect && districtForestryId) {
                 districtSelect.value = districtForestryId;
-                loadTechnicalUnits(districtForestryId, function() {
+                loadTechnicalUnits(districtForestryId, function () {
                     const techSelect = document.getElementById('technicalUnitSelect');
                     if (techSelect && technicalUnitId) {
                         techSelect.value = technicalUnitId;
@@ -779,51 +780,8 @@ function showConflicts(conflicts) {
 }
 
 // ==========================================
-// КАРТА
+// Отрисовка делян
 // ==========================================
-
-let map = null;
-let osmLayer = null;
-let googleSatLayer = null;
-
-function initMap() {
-    try {
-        if (document.getElementById('map')) {
-            map = L.map('map').setView([56.0, 92.0], 6);
-
-            osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            });
-
-            googleSatLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-                maxZoom: 20,
-                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-                attribution: '© Google Maps'
-            });
-
-            var baseMaps = {
-                "🗺️ Схема": osmLayer,
-                "🛰️ Спутник": googleSatLayer
-            };
-
-            googleSatLayer.addTo(map);
-            L.control.layers(baseMaps).addTo(map);
-
-            loadUISettingsFromServer();
-
-            updateCoordCounter();
-            updateTerritoryInfo();
-
-            console.log('✅ Карта инициализирована');
-        } else {
-            console.warn('⚠️ Элемент #map не найден на странице');
-        }
-    } catch (e) {
-        console.error('❌ Ошибка инициализации карты:', e);
-    }
-}
-
 function renderPlots(plots) {
     if (!map) return;
 
@@ -939,8 +897,8 @@ function renderPlots(plots) {
                             zIndexOffset: 1000
                         }).addTo(labelLayer);
 
-                        polygon.on('mouseover', function(e) {
-                            this.setStyle({ fillOpacity: 0.4, weight: 3 });
+                        polygon.on('mouseover', function (e) {
+                            this.setStyle({fillOpacity: 0.4, weight: 3});
                             const labelEl = label._icon;
                             if (labelEl) {
                                 const div = labelEl.querySelector('div');
@@ -953,8 +911,8 @@ function renderPlots(plots) {
                             this._container.style.cursor = 'pointer';
                         });
 
-                        polygon.on('mouseout', function(e) {
-                            this.setStyle({ fillOpacity: 0.2, weight: 2.5 });
+                        polygon.on('mouseout', function (e) {
+                            this.setStyle({fillOpacity: 0.2, weight: 2.5});
                             const labelEl = label._icon;
                             if (labelEl) {
                                 const div = labelEl.querySelector('div');
@@ -967,25 +925,13 @@ function renderPlots(plots) {
                         });
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
             }
         }
     });
 
     updateLegend(plots);
-}
-
-function getPolygonCenter(coords) {
-    let lat = 0, lng = 0;
-    coords.forEach(c => {
-        lat += c[0];
-        lng += c[1];
-    });
-    return {
-        lat: lat / coords.length,
-        lng: lng / coords.length
-    };
 }
 
 function formatNumberInQuarter(value) {
@@ -1080,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const numberInQuarterInput = document.getElementById('numberInQuarter');
     if (numberInQuarterInput) {
-        numberInQuarterInput.addEventListener('input', function() {
+        numberInQuarterInput.addEventListener('input', function () {
             updateTerritoryInfo();
         });
     }
@@ -1089,17 +1035,24 @@ document.addEventListener('DOMContentLoaded', function () {
     selectors.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            el.addEventListener('change', function() {
+            el.addEventListener('change', function () {
                 updateTerritoryInfo();
             });
         }
     });
 
-    setTimeout(function() {
+    setTimeout(function () {
         console.log('🔄 Запускаем initMap с задержкой 300мс...');
-        initMap();
+        const forestry = getCurrentForestry();
+        if (forestry) {
+            initMap(mapElement, [forestry.lat, forestry.lng], forestry.zoom);
+        } else {
+            console.log('Лесничество не определено!');
+            initMap(mapElement, getDefaultCoordinateCenterMap(), 8);
+        }
 
-        setTimeout(function() {
+
+        setTimeout(function () {
             if (map) {
                 map.invalidateSize();
                 console.log('🔄 Размер карты принудительно обновлён');

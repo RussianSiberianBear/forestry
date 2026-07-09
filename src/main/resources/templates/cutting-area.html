@@ -127,7 +127,7 @@
                             Добавление новой деляны
                         </h3>
 
-                        <form th:action="@{/api/cuttingAreas/create}" th:object="${cuttingAreaDto}" method="post" id="plotForm">
+                        <form th:action="@{/api/cutting-area/create}" th:object="${cuttingAreaDto}" method="post" id="plotForm">
 
                             <!-- ===== 1. ЛЕСНИЧЕСТВО ===== -->
                             <div th:replace="~{forestry-units::forestry}"></div>

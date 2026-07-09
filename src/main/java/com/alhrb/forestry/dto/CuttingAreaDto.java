@@ -10,9 +10,9 @@ import java.util.List;
 @Data
 public class CuttingAreaDto {
 
-    // ===== ТЕРРИТОРИЯ (вместо quarterId) =====
+    // ===== ЛЕСНАЯ ТЕРРИТОРИЯ  =====
     @NotNull(message = "Квартал обязателен")
-    private Long territoryUnitId;  // ← вместо quarterId
+    private Long quarterId;
 
     // ===== НОМЕР ДЕЛЯНЫ В КВАРТАЛЕ =====
     @NotBlank(message = "Номер деляны в квартале обязателен")

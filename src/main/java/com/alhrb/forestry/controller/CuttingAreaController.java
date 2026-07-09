@@ -32,13 +32,14 @@ public class CuttingAreaController {
     private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
     @PostMapping("/create")
-    public String createCuttingArea(@Valid @ModelAttribute("plotDto") CuttingAreaDto cuttingAreaDto,
+    public String createCuttingArea(@Valid @ModelAttribute("cuttingAreaDto") CuttingAreaDto cuttingAreaDto,
                              BindingResult result,
                              Model model,
                              RedirectAttributes redirectAttributes) {
 
         if (result.hasErrors()) {
             model.addAttribute("error", "Проверьте правильность заполнения формы");
+            model.addAttribute("cuttingAreaDto", new CuttingAreaDto());
             model.addAttribute("forestStand", cuttingAreaService.findAll());
             return "cutting-area";
         }
@@ -46,25 +47,25 @@ public class CuttingAreaController {
         try {
             var geometry = geometryService.createPolygon(cuttingAreaDto.getCoordinates());
 
-            if (cuttingAreaDto.getTerritoryUnitId() == null) {
+            if (cuttingAreaDto.getQuarterId() == null) {
                 throw new IllegalArgumentException("Не выбран квартал!");
             }
 
             // Получаем территориальную единицу (квартал)
-            ForestryUnit territoryUnit = forestryUnitService.findById(cuttingAreaDto.getTerritoryUnitId())
+            ForestryUnit forestryUnit = forestryUnitService.findById(cuttingAreaDto.getQuarterId())
                     .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
 
             // Проверяем, что это квартал
-            if (!territoryUnit.isQuarter()) {
+            if (!forestryUnit.isQuarter()) {
                 throw new IllegalArgumentException("Выбранная территория не является кварталом!");
             }
 
-            if (territoryUnit.getGeometry() != null) {
+            if (forestryUnit.getGeometry() != null) {
                 geometryService.validatePlotInsideQuarter(
                         geometry,
-                        (Polygon) territoryUnit.getGeometry(),
+                        (Polygon) forestryUnit.getGeometry(),
                         cuttingAreaDto.getNumberInQuarter(),
-                        territoryUnit.getNumber() != null ? territoryUnit.getNumber() : territoryUnit.getName()
+                        forestryUnit.getNumber() != null ? forestryUnit.getNumber() : forestryUnit.getName()
                 );
             }
 
@@ -73,7 +74,7 @@ public class CuttingAreaController {
                     cuttingAreaDto.getForestStand(),
                     cuttingAreaDto.getDescription(),
                     geometry,
-                    cuttingAreaDto.getTerritoryUnitId(),
+                    cuttingAreaDto.getQuarterId(),
                     cuttingAreaDto.getYearOfCut(),
                     cuttingAreaDto.getCutType()
             );
