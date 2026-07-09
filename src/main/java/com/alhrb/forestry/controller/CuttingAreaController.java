@@ -35,9 +35,7 @@ public class CuttingAreaController {
     private final GeometryService geometryService;
     private final ForestryUnitService forestryUnitService;  // ← вместо QuarterService
 
-    // Добавьте этот метод в CuttingAreaController.java
-
-    @PostMapping("/create-json")
+    @PostMapping("/create")
     @ResponseBody
     public ResponseEntity<IntersectionResponseDto> createCuttingAreaJson(
             @Valid @RequestBody CuttingAreaDto cuttingAreaDto) {
@@ -106,73 +104,6 @@ public class CuttingAreaController {
             response.setMessage("Ошибка: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
-    }
-
-    @PostMapping("/create")
-    public String createCuttingArea(@Valid @ModelAttribute("cuttingAreaDto") CuttingAreaDto cuttingAreaDto,
-                                    BindingResult result,
-                                    Model model,
-                                    RedirectAttributes redirectAttributes) {
-
-        if (result.hasErrors()) {
-            model.addAttribute("error", "Проверьте правильность заполнения формы");
-            model.addAttribute("cuttingAreaDto", new CuttingAreaDto());
-            model.addAttribute("forestStand", cuttingAreaService.findAll());
-            return "cutting-area";
-        }
-
-        try {
-            var geometry = geometryService.createPolygon(cuttingAreaDto.getCoordinates());
-
-            if (cuttingAreaDto.getQuarterId() == null) {
-                throw new IllegalArgumentException("Не выбран квартал!");
-            }
-
-            // Получаем территориальную единицу (квартал)
-            ForestryUnit forestryUnit = forestryUnitService.findById(cuttingAreaDto.getQuarterId())
-                    .orElseThrow(() -> new IllegalArgumentException("Квартал не найден"));
-
-            // Проверяем, что это квартал
-            if (!forestryUnit.isQuarter()) {
-                throw new IllegalArgumentException("Выбранная территория не является кварталом!");
-            }
-
-            if (forestryUnit.getGeometry() != null) {
-                geometryService.validatePlotInsideQuarter(
-                        geometry,
-                        (Polygon) forestryUnit.getGeometry(),
-                        cuttingAreaDto.getNumberInQuarter(),
-                        forestryUnit.getNumber() != null ? forestryUnit.getNumber() : forestryUnit.getName()
-                );
-            }
-
-            List<IntersectionReport> conflicts = cuttingAreaService.createPlotWithValidation(
-                    cuttingAreaDto.getNumberInQuarter(),
-                    cuttingAreaDto.getForestStand(),
-                    cuttingAreaDto.getDescription(),
-                    geometry,
-                    cuttingAreaDto.getQuarterId(),
-                    cuttingAreaDto.getYearOfCut(),
-                    cuttingAreaDto.getCutType()
-            );
-
-            if (!conflicts.isEmpty()) {
-                redirectAttributes.addFlashAttribute("conflicts", conflicts);
-                redirectAttributes.addFlashAttribute("warning", "Обнаружены пересечения с существующими делянами!");
-            } else {
-                redirectAttributes.addFlashAttribute("success", "Деляна успешно создана и верифицирована!");
-            }
-
-        } catch (IllegalArgumentException e) {
-            log.error("Ошибка валидации: {}", e.getMessage());
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-
-        } catch (Exception e) {
-            log.error("Ошибка при создании деляны", e);
-            redirectAttributes.addFlashAttribute("error", "Ошибка: " + e.getMessage());
-        }
-
-        return "redirect:/";
     }
 
     @PostMapping("/mass-import")

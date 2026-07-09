@@ -1200,7 +1200,7 @@ function submitPlotForm() {
     submitBtn.innerHTML = '<span uk-icon="icon: spinner; ratio: 1.2" class="uk-animation-rotate"></span> Отправка...';
     submitBtn.disabled = true;
 
-    fetch('/api/cutting-area/create-json', {
+    fetch('/api/cutting-area/create', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
