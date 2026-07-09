@@ -42,25 +42,27 @@ function collectFiltersManual() {
     const filters = {};
 
     const fId = forestrySelect?.value;
-    if (fId && fId !== '') filters.forestryId = fId;
+    if (fId && fId !== '' && fId !== 'null' && fId !== 'undefined') filters.forestryId = fId;
 
     const dfId = subForestrySelect?.value;
-    if (dfId && dfId !== '') filters.subForestryId = dfId;
+    if (dfId && dfId !== '' && dfId !== 'null' && dfId !== 'undefined') filters.subForestryId = dfId;
 
     const tId = technicalUnitSelect?.value;
-    if (tId && tId !== '') filters.technicalUnitId = tId;
+    if (tId && tId !== '' && tId !== 'null' && tId !== 'undefined') filters.technicalUnitId = tId;
 
     const qId = quarterId?.value;
-    if (qId && qId !== '') filters.quarterId = qId;
+    if (qId && qId !== '' && qId !== 'null' && qId !== 'undefined') filters.quarterId = qId;
 
     const cutType = cutTypeSelect?.value;
-    if (cutType && cutType !== '') filters.cutType = cutType;
+    if (cutType && cutType !== '' && cutType !== 'null' && cutType !== 'undefined') filters.cutType = cutType;
 
     const yearOfCut = yearOfCutInput?.value;
-    if (yearOfCut && yearOfCut !== '') filters.yearOfCut = yearOfCut;
+    if (yearOfCut && yearOfCut !== '' && yearOfCut !== 'null' && yearOfCut !== 'undefined') filters.yearOfCut = yearOfCut;
 
     const numberInQuarter = numberInQuarterInput?.value?.trim();
-    if (numberInQuarter && numberInQuarter !== '') filters.numberInQuarter = numberInQuarter;
+    if (numberInQuarter && numberInQuarter !== '' && numberInQuarter !== 'null' && numberInQuarter !== 'undefined') {
+        filters.numberInQuarter = numberInQuarter;
+    }
 
     console.log('📋 Собранные фильтры (ручной):', filters);
     return filters;
@@ -406,7 +408,7 @@ function addNewCoordinateRow() {
                placeholder="Долгота"
                onkeydown="handleCoordInput(event, 'lng', ${newIndex})"
                oninput="validateCoordInput(this)">
-        <button type="button" class="uk-button uk-button-danger uk-button-small"
+        <button type="button" class="uk-button-danger"
                 onclick="removeCoordinate(${newIndex})">
             <span uk-icon="icon: close"></span>
         </button>
@@ -532,23 +534,49 @@ function validateCoordInput(input) {
 // СБРОС ФОРМЫ
 // ==========================================
 
-function resetForm() {
-    const container = document.getElementById('coordinates-container');
-    while (container.children.length > 3) {
-        container.removeChild(container.lastChild);
-    }
-    container.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
-    updateIndices();
-    updateCoordCounter();
+// ==========================================
+// СБРОС ФОРМЫ (исправленная версия)
+// ==========================================
 
+// ==========================================
+// СБРОС ФОРМЫ (исправленная версия)
+// ==========================================
+
+function resetForm() {
+    // Очищаем ТОЛЬКО поля, которые должны быть очищены
     document.getElementById('numberInQuarter').value = '';
     document.getElementById('forestStand').value = '';
     document.getElementById('description').value = '';
     document.getElementById('yearOfCut').value = '';
     document.getElementById('cutType').value = '';
 
-    if (typeof resetAllDependentSelects === 'function') {
-        resetAllDependentSelects();
+    // Пересоздаём блок координат с 3 пустыми строками
+    initCoordinateFields();
+
+    // НЕ ТРОГАЕМ:
+    // - forestrySelect
+    // - subForestrySelect
+    // - technicalUnitSelect
+    // - quarterId
+    // - quarterInput
+
+    // Убеждаемся, что поле квартала осталось заполненным
+    const quarterId = document.getElementById('quarterId');
+    if (quarterId && quarterId.value && quarterId.value !== '') {
+        // Поле квартала уже заполнено, активируем поле номера деляны
+        const numberInQuarterInput = document.getElementById('numberInQuarter');
+        if (numberInQuarterInput) {
+            numberInQuarterInput.disabled = false;
+            numberInQuarterInput.placeholder = 'Введите номер деляны...';
+        }
+    }
+
+    // Фокусируемся на номере деляны
+    const numberInput = document.getElementById('numberInQuarter');
+    if (numberInput) {
+        setTimeout(() => {
+            numberInput.focus();
+        }, 100);
     }
 }
 
@@ -1277,14 +1305,17 @@ function handleSubmitResponse(data) {
             if (data.conflicts && data.conflicts.length > 0) {
                 showConflicts(data.conflicts);
             }
+            // При предупреждении НЕ сбрасываем форму, чтобы пользователь мог исправить
         } else {
             showNotification(data.message, 'success');
             if (data.status === 'success') {
+                // Сбрасываем ТОЛЬКО при успешном сохранении
                 resetForm();
             }
         }
     } else {
         showNotification(data.message, 'danger');
+        // При ошибке НЕ сбрасываем форму
     }
 }
 
@@ -1307,7 +1338,6 @@ function showNotification(message, status = 'info') {
 // ==========================================
 // ИНИЦИАЛИЗАЦИЯ КООРДИНАТ ПРИ ЗАГРУЗКЕ
 // ==========================================
-
 function initCoordinateFields() {
     const container = document.getElementById('coordinates-container');
     container.innerHTML = '';
@@ -1327,12 +1357,15 @@ function initCoordinateFields() {
                    placeholder="Долгота"
                    onkeydown="handleCoordInput(event, 'lng', ${i})"
                    oninput="validateCoordInput(this)">
-            <button type="button" class="uk-button-danger"
+            <button type="button" class="uk-button uk-button-danger uk-button-small"
                     onclick="removeCoordinate(${i})">
                 <span uk-icon="icon: close"></span>
             </button>
         `;
         container.appendChild(row);
     }
+
+    // Обновляем индексы и счётчик в правильном порядке
+    updateIndices();
     updateCoordCounter();
 }
