@@ -157,20 +157,8 @@ function setYearPeriod(from,to) {
     document.getElementById(to).value = formatDate(toDate);
 }
 
-function getMapCenterCoordinates(){
-
-    const forestrySelect = document.getElementById('forestrySelect');
-    const forestryId = forestrySelect.value;
-    if (forestryId && forestries){
-        const forestry = findById(forestries,forestryId);
-        if (forestry) {
-            const lat = forestry.lat;
-            const lng = forestry.lng;
-            return [lat,lng];
-        }
-    }
-
-    // пока возвращаем координаты с.Бичурапо умолчанию
+function getDefaultCoordinateCenterMap(){
+    // пока возвращаем по умолчанию координаты с.Бичура
     return [50.592834,107.598389];
 }
 

@@ -1047,8 +1047,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (forestry) {
             initMap(mapElement, [forestry.lat, forestry.lng], forestry.zoom);
         } else {
-            alert(123);
-            initMap(mapElement, getMapCenterCoordinates(), 8);
+            console.log('Лесничество не определено!');
+            initMap(mapElement, getDefaultCoordinateCenterMap(), 8);
         }
 
 
