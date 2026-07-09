@@ -90,7 +90,6 @@ public class CuttingAreaController {
                 response.setMessage("Деляна успешно создана и верифицирована!");
             }
 
-
             return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
