@@ -24,8 +24,7 @@ function loadForestries(callback) {
             if (!response.ok) {
                 throw new Error('HTTP ' + response.status);
             }
-            forestries = response.json();
-            return forestries;
+            return response.json();
         })
         .then(data => {
             forestrySelect.innerHTML = '';
@@ -34,7 +33,7 @@ function loadForestries(callback) {
                 defaultOption.value = '';
                 defaultOption.textContent = '-- Выберите лесничество --';
                 forestrySelect.appendChild(defaultOption);
-
+                forestries = data;
                 data.forEach(item => {
                     const option = document.createElement('option');
                     option.value = item.id;

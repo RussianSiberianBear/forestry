@@ -6,7 +6,7 @@ let showLabels = true;
 let cachedPlots = null;
 let polygonLayer = null;
 let labelLayer = null;
-let mapElement='map';
+let mapElement = 'map';
 
 // ==========================================
 // ФИЛЬТРЫ ДЛЯ КАРТЫ
@@ -584,11 +584,11 @@ function restoreHierarchy(forestryId, districtForestryId, technicalUnitId, quart
     if (forestrySelect && forestryId) {
         forestrySelect.value = forestryId;
         enableQuarterField();
-        loadSubForestries(forestryId, function() {
+        loadSubForestries(forestryId, function () {
             const districtSelect = document.getElementById('subForestrySelect');
             if (districtSelect && districtForestryId) {
                 districtSelect.value = districtForestryId;
-                loadTechnicalUnits(districtForestryId, function() {
+                loadTechnicalUnits(districtForestryId, function () {
                     const techSelect = document.getElementById('technicalUnitSelect');
                     if (techSelect && technicalUnitId) {
                         techSelect.value = technicalUnitId;
@@ -897,8 +897,8 @@ function renderPlots(plots) {
                             zIndexOffset: 1000
                         }).addTo(labelLayer);
 
-                        polygon.on('mouseover', function(e) {
-                            this.setStyle({ fillOpacity: 0.4, weight: 3 });
+                        polygon.on('mouseover', function (e) {
+                            this.setStyle({fillOpacity: 0.4, weight: 3});
                             const labelEl = label._icon;
                             if (labelEl) {
                                 const div = labelEl.querySelector('div');
@@ -911,8 +911,8 @@ function renderPlots(plots) {
                             this._container.style.cursor = 'pointer';
                         });
 
-                        polygon.on('mouseout', function(e) {
-                            this.setStyle({ fillOpacity: 0.2, weight: 2.5 });
+                        polygon.on('mouseout', function (e) {
+                            this.setStyle({fillOpacity: 0.2, weight: 2.5});
                             const labelEl = label._icon;
                             if (labelEl) {
                                 const div = labelEl.querySelector('div');
@@ -925,7 +925,7 @@ function renderPlots(plots) {
                         });
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 console.error('Ошибка при отображении деляны:', plot.fullNumber, e);
             }
         }
@@ -1026,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const numberInQuarterInput = document.getElementById('numberInQuarter');
     if (numberInQuarterInput) {
-        numberInQuarterInput.addEventListener('input', function() {
+        numberInQuarterInput.addEventListener('input', function () {
             updateTerritoryInfo();
         });
     }
@@ -1035,17 +1035,24 @@ document.addEventListener('DOMContentLoaded', function () {
     selectors.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            el.addEventListener('change', function() {
+            el.addEventListener('change', function () {
                 updateTerritoryInfo();
             });
         }
     });
 
-    setTimeout(function() {
+    setTimeout(function () {
         console.log('🔄 Запускаем initMap с задержкой 300мс...');
-        initMap(mapElement,getMapCenterCoordinates(),8);
+        const forestry = getCurrentForestry();
+        if (forestry) {
+            initMap(mapElement, [forestry.lat, forestry.lng], forestry.zoom);
+        } else {
+            alert(123);
+            initMap(mapElement, getMapCenterCoordinates(), 8);
+        }
 
-        setTimeout(function() {
+
+        setTimeout(function () {
             if (map) {
                 map.invalidateSize();
                 console.log('🔄 Размер карты принудительно обновлён');

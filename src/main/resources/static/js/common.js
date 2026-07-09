@@ -1,3 +1,27 @@
+/**
+ *
+ * @param arr массив объектов
+ * @param id искомый идентификатор объекта
+ * @returns {*|null} найденный объект или null
+ */
+function findById(arr, id) {
+    // Проверяем, что arr - это массив
+    if (!Array.isArray(arr)) {
+        console.error('Первый аргумент должен быть массивом');
+        return null;
+    }
+    const found = arr.find(item => item.id == id);
+    return found || null; // или undefined
+}
+
+function getCurrentForestry(){
+    const forestrySelect = document.getElementById('forestrySelect');
+    const forestryId = forestrySelect.value;
+    if (forestryId && forestries){
+        return findById(forestries,forestryId);
+    }
+    return null;
+}
 
 function resetFilterUI(root) {
     root = root?.root ?? root;
@@ -134,9 +158,19 @@ function setYearPeriod(from,to) {
 }
 
 function getMapCenterCoordinates(){
-    // пока возвращаем координаты с.Бичура
-    const forestrySelect = document.getElementById('forestrySelect');
 
+    const forestrySelect = document.getElementById('forestrySelect');
+    const forestryId = forestrySelect.value;
+    if (forestryId && forestries){
+        const forestry = findById(forestries,forestryId);
+        if (forestry) {
+            const lat = forestry.lat;
+            const lng = forestry.lng;
+            return [lat,lng];
+        }
+    }
+
+    // пока возвращаем координаты с.Бичурапо умолчанию
     return [50.592834,107.598389];
 }
 

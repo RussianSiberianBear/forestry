@@ -44,8 +44,6 @@ public class ForestStand {
     @JoinColumn(name = "forestry_unit_id", nullable = false)
     private ForestryUnit forestryUnit;
 
-
-
     /**
      * Номер выдела в пределах квартала
      * Из KML: выдел
