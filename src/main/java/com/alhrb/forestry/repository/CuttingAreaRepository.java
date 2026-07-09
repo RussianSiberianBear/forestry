@@ -102,32 +102,25 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
     // ==========================================================
 
     @Query(value = """
-        SELECT
-            b.id,
-            b.full_number,
-            ST_Area(
-                ST_Transform(
-                    ST_Intersection(:geometry, b.geometry),
-                    3857
-                )
-            ) AS area
-        FROM cutting_area b
-        WHERE (:plotId IS NULL OR b.id <> :plotId)
-          AND b.geometry && :geometry
-          AND ST_Intersects(:geometry, b.geometry)
-          AND ST_Area(
-                ST_Transform(
-                    ST_Intersection(:geometry, b.geometry),
-                    3857
-                )
-              ) > :minArea
-        """, nativeQuery = true)
+    SELECT
+        b.id,
+        b.full_number,
+        ST_Area(
+            CAST(ST_Intersection(:geometry, b.geometry) AS geography)
+        ) AS area
+    FROM cutting_area b
+    WHERE (:plotId IS NULL OR b.id <> :plotId)
+      AND b.geometry && :geometry
+      AND ST_Intersects(:geometry, b.geometry)
+      AND ST_Area(
+            CAST(ST_Intersection(:geometry, b.geometry) AS geography)
+          ) > :minArea
+    """, nativeQuery = true)
     List<Object[]> findIntersectionsWithCuttingArea(
             @Param("geometry") Polygon geometry,
             @Param("plotId") Long plotId,
             @Param("minArea") Double minArea
     );
-
 
     // ==========================================================
     // ПРОВЕРКА ВСЕХ ДЕЛЯН
@@ -135,29 +128,20 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
     // ==========================================================
 
     @Query(value = """
-        SELECT
-            a.id,
-            b.id,
-            ST_Area(
-                ST_Transform(
-                    ST_Intersection(a.geometry, b.geometry),
-                    3857
-                )
-            ) AS area
-        FROM cutting_area a
-        JOIN cutting_area b
-          ON a.id < b.id
-        WHERE a.geometry && b.geometry
-          AND ST_Intersects(a.geometry, b.geometry)
-          AND ST_Area(
-                ST_Transform(
-                    ST_Intersection(a.geometry, b.geometry),
-                    3857
-                )
-              ) > :minArea
-        """, nativeQuery = true)
-    List<Object[]> findAllIntersections(
-            @Param("minArea") Double minArea
-    );
+    SELECT
+        a.id,
+        b.id,
+        ST_Area(
+            CAST(ST_Intersection(a.geometry, b.geometry) AS geography)
+        ) AS area
+    FROM cutting_area a
+    JOIN cutting_area b ON a.id < b.id
+    WHERE a.geometry && b.geometry
+      AND ST_Intersects(a.geometry, b.geometry)
+      AND ST_Area(
+            CAST(ST_Intersection(a.geometry, b.geometry) AS geography)
+          ) > :minArea
+    """, nativeQuery = true)
+    List<Object[]> findAllIntersections(@Param("minArea") Double minArea);
 
 }
