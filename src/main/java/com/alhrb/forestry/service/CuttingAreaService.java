@@ -311,99 +311,133 @@ public class CuttingAreaService {
 
     @Transactional
     public List<IntersectionReport> saveWithValidation(CuttingArea cuttingArea) {
+
         // 1. Проверяем наличие геометрии
         if (cuttingArea.getGeometry() == null) {
             throw new IllegalArgumentException("Геометрия деляны не задана");
         }
 
-        // 2. НОРМАЛИЗУЕМ ГЕОМЕТРИЮ (самое важное!)
-        // Это гарантирует, что все полигоны будут сохранены в едином формате:
-        // - против часовой стрелки
-        // - с одинаковой начальной точкой (минимальная)
-        // - без дублирующихся точек
+        // 2. Нормализация
         Polygon normalizedGeometry = geometryService.normalizePolygon(cuttingArea.getGeometry());
         cuttingArea.setGeometry(normalizedGeometry);
 
-        // 3. Проверяем валидность геометрии после нормализации
+        // 3. Проверка валидности
         if (!geometryService.isValid(normalizedGeometry)) {
             throw new IllegalArgumentException(
                     "⚠️ Деляна имеет некорректную геометрию! Возможна 'бабочка' (самопересечение)."
             );
         }
 
-        // 4. Проверяем обязательные поля
-        if (cuttingArea.getNumberInQuarter() == null || cuttingArea.getNumberInQuarter().isEmpty()) {
+        // 4. Обязательные поля
+        if (cuttingArea.getNumberInQuarter() == null || cuttingArea.getNumberInQuarter().isBlank()) {
             throw new IllegalArgumentException("Номер деляны в квартале обязателен!");
         }
 
-        // 5. Проверяем уникальность номера деляны в квартале
+        // 5. Проверка уникальности
         if (cuttingArea.getForestryUnit() != null) {
-            Optional<CuttingArea> existing = cuttingAreaRepository.findByForestryUnitIdAndNumberInQuarter(
-                    cuttingArea.getForestryUnit().getId(),
-                    cuttingArea.getNumberInQuarter()
-            );
-            if (existing.isPresent() && !existing.get().getId().equals(cuttingArea.getId())) {
+            Optional<CuttingArea> existing =
+                    cuttingAreaRepository.findByForestryUnitIdAndNumberInQuarter(
+                            cuttingArea.getForestryUnit().getId(),
+                            cuttingArea.getNumberInQuarter());
+
+            if (existing.isPresent()
+                    && (cuttingArea.getId() == null
+                    || !existing.get().getId().equals(cuttingArea.getId()))) {
+
                 throw new IllegalArgumentException(
-                        String.format("❌ Деляна с номером '%s' уже существует в квартале %s!",
+                        String.format(
+                                "❌ Деляна с номером '%s' уже существует в квартале %s!",
                                 cuttingArea.getNumberInQuarter(),
-                                cuttingArea.getForestryUnit().getNumber() != null ?
-                                        cuttingArea.getForestryUnit().getNumber() :
-                                        cuttingArea.getForestryUnit().getName())
+                                cuttingArea.getForestryUnit().getNumber() != null
+                                        ? cuttingArea.getForestryUnit().getNumber()
+                                        : cuttingArea.getForestryUnit().getName()
+                        )
                 );
             }
         }
 
-        // 6. Проверяем, что деляна находится внутри квартала
-        if (cuttingArea.getForestryUnit() != null && cuttingArea.getForestryUnit().getGeometry() != null) {
-            if (cuttingArea.getForestryUnit().getGeometry() instanceof Polygon) {
-                // Нормализуем геометрию квартала для корректного сравнения
-                Polygon normalizedQuarter = geometryService.normalizePolygon(
-                        (Polygon) cuttingArea.getForestryUnit().getGeometry()
-                );
+        // 6. Проверка внутри квартала
+        if (cuttingArea.getForestryUnit() != null
+                && cuttingArea.getForestryUnit().getGeometry() instanceof Polygon quarter) {
 
-                String quarterNumber = cuttingArea.getForestryUnit().getNumber() != null ?
-                        cuttingArea.getForestryUnit().getNumber() :
-                        cuttingArea.getForestryUnit().getName();
+            Polygon normalizedQuarter = geometryService.normalizePolygon(quarter);
 
-                // Используем номер деляны для сообщений
-                String plotIdentifier = cuttingArea.getFullNumber() != null ?
-                        cuttingArea.getFullNumber() :
-                        cuttingArea.getNumberInQuarter();
+            String quarterNumber =
+                    cuttingArea.getForestryUnit().getNumber() != null
+                            ? cuttingArea.getForestryUnit().getNumber()
+                            : cuttingArea.getForestryUnit().getName();
 
-                geometryService.validatePlotInsideQuarter(
-                        normalizedGeometry,           // нормализованная деляна
-                        normalizedQuarter,            // нормализованный квартал
-                        plotIdentifier,
-                        quarterNumber
-                );
-            } else {
-                log.warn("⚠️ Геометрия квартала не является Polygon, проверка пропущена");
-            }
+            String plotIdentifier =
+                    cuttingArea.getFullNumber() != null
+                            ? cuttingArea.getFullNumber()
+                            : cuttingArea.getNumberInQuarter();
+
+            geometryService.validatePlotInsideQuarter(
+                    normalizedGeometry,
+                    normalizedQuarter,
+                    plotIdentifier,
+                    quarterNumber
+            );
         }
 
-        // 7. Сохраняем деляну в БД
+        // ============================================================
+        // ГЛАВНОЕ ИЗМЕНЕНИЕ
+        // Проверяем пересечения ДО сохранения
+        // ============================================================
+
+        List<Object[]> intersections =
+                cuttingAreaRepository.findIntersectionsWithCuttingArea(
+                        normalizedGeometry,
+                        cuttingArea.getId(),
+                        minArea
+                );
+
+        if (!intersections.isEmpty()) {
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("❌ Деляна пересекается с существующими делянами:\n\n");
+
+            List<IntersectionReport> reports = new ArrayList<>();
+
+            for (Object[] row : intersections) {
+
+                Long otherId = ((Number) row[0]).longValue();
+                String number = (String) row[1];
+                double area = ((Number) row[2]).doubleValue();
+
+                reports.add(
+                        new IntersectionReport(
+                                cuttingArea.getId(),
+                                cuttingArea.getFullNumber(),
+                                otherId,
+                                number,
+                                area,
+                                "CRITICAL"
+                        )
+                );
+
+                sb.append("• ")
+                        .append(number)
+                        .append(" (")
+                        .append(String.format(Locale.US, "%.2f", area))
+                        .append(" м²)\n");
+            }
+
+            throw new IllegalArgumentException(sb.toString());
+        }
+
+        // ============================================================
+        // Только теперь сохраняем
+        // ============================================================
+
+        cuttingArea.setVerified(true);
+
         CuttingArea saved = cuttingAreaRepository.save(cuttingArea);
-        log.info("✅ Сохранена деляна: {} (ID: {}, площадь: {} га, территория: {})",
-                saved.getFullNumber(),
-                saved.getId(),
-                saved.getAreaHa(),
-                saved.getForestryUnit() != null ? saved.getForestryUnit().getFullPath() : "null");
 
-        // 8. Проверяем пересечения с другими делянами
-        List<IntersectionReport> conflicts = validatePlot(saved);
+        log.info("✅ Деляна {} успешно сохранена",
+                saved.getFullNumber());
 
-        // 9. Обновляем статус верификации
-        if (conflicts.isEmpty()) {
-            saved.setVerified(true);
-            cuttingAreaRepository.save(saved);
-            log.info("✅ Деляна {} верифицирована (пересечений нет)", saved.getFullNumber());
-        } else {
-            saved.setVerified(false);
-            cuttingAreaRepository.save(saved);
-            log.warn("⚠️ Деляна {} имеет {} пересечений", saved.getFullNumber(), conflicts.size());
-        }
-
-        return conflicts;
+        return Collections.emptyList();
     }
 
     @Transactional

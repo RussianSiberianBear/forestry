@@ -1357,7 +1357,7 @@ function initCoordinateFields() {
                    placeholder="Долгота"
                    onkeydown="handleCoordInput(event, 'lng', ${i})"
                    oninput="validateCoordInput(this)">
-            <button type="button" class="uk-button uk-button-danger uk-button-small"
+            <button type="button" class="uk-button-danger"
                     onclick="removeCoordinate(${i})">
                 <span uk-icon="icon: close"></span>
             </button>
