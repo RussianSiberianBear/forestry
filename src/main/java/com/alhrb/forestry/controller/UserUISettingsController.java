@@ -2,7 +2,6 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.model.UserUISettings;
 import com.alhrb.forestry.service.UserUISettingsService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

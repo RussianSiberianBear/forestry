@@ -2,8 +2,8 @@ package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.User;
 import com.alhrb.forestry.model.UserUISettings;
-import com.alhrb.forestry.repository.UserUISettingsRepository;
 import com.alhrb.forestry.repository.UserRepository;
+import com.alhrb.forestry.repository.UserUISettingsRepository;
 import com.alhrb.forestry.util.SecurityHelper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

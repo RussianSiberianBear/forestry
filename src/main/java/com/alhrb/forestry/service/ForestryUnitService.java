@@ -2,7 +2,6 @@ package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.model.ForestryUnitType;
-import com.alhrb.forestry.model.TerritoryType;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

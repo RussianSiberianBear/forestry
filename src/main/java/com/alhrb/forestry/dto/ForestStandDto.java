@@ -1,9 +1,6 @@
 package com.alhrb.forestry.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.locationtech.jts.geom.Polygon;
 
 import java.math.BigDecimal;

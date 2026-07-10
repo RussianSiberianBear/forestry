@@ -16,7 +16,6 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
     Optional<CuttingArea> findByFullNumber(String fullNumber);
 
     // ===== ПОИСК ПО ЛЕСНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
-
     @Query(value = """
         WITH RECURSIVE forestry_tree AS (
             SELECT id FROM forestry_units WHERE id = :unitId
@@ -33,7 +32,6 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
 
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ =====
-
     @Query(value = """
         WITH RECURSIVE territory_tree AS (
             SELECT id FROM territory_units WHERE id = :unitId
@@ -54,7 +52,6 @@ public interface CuttingAreaRepository extends JpaRepository<CuttingArea, Long> 
 
 
     // ===== ПОИСК ПО ТИПУ =====
-
     @Query(value = """
         WITH RECURSIVE territory_tree AS (
             SELECT id FROM territory_units WHERE id = :unitId

@@ -1,8 +1,6 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.ForestStand;
-import com.alhrb.forestry.model.ForestStand;
-import com.alhrb.forestry.model.ForestStand;
 import com.alhrb.forestry.repository.ForestStandRepository;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
 import lombok.RequiredArgsConstructor;

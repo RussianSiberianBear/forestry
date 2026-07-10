@@ -1,12 +1,14 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.CuttingAreaDto;
 import com.alhrb.forestry.dto.CuttingAreaMapDto;
+import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.IntersectionResponseDto;
 import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestryUnit;
-import com.alhrb.forestry.service.*;
+import com.alhrb.forestry.service.CuttingAreaService;
+import com.alhrb.forestry.service.ForestryUnitService;
+import com.alhrb.forestry.service.GeometryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,16 +16,12 @@ import org.locationtech.jts.geom.Polygon;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Controller
 @RequestMapping("/api/cutting-area")

@@ -1,6 +1,5 @@
 package com.alhrb.forestry.repository;
 
-import com.alhrb.forestry.model.CuttingArea;
 import com.alhrb.forestry.model.ForestStand;
 import org.locationtech.jts.geom.Polygon;
 import org.springframework.data.jpa.repository.JpaRepository;
