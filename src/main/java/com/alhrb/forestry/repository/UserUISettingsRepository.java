@@ -16,10 +16,12 @@ public interface UserUISettingsRepository extends JpaRepository<UserUISettings, 
 
     // ===== ОСНОВНЫЕ МЕТОДЫ =====
     Optional<UserUISettings> findByUser(User user);
+
     Optional<UserUISettings> findByUserId(Long userId);
 
     // ===== ПРОВЕРКА СУЩЕСТВОВАНИЯ =====
     boolean existsByUser(User user);
+
     boolean existsByUserId(Long userId);
 
     // ===== УДАЛЕНИЕ =====

@@ -18,7 +18,7 @@ public class UserUISettingsController {
     @PostMapping("/{key}/{value}")
     public ResponseEntity<String> saveSetting(@PathVariable String key,
                                               @PathVariable String value
-                                              ) {
+    ) {
         try {
             userUISettingsService.updateSetting(key, value);
             log.info("✅ Настройка сохранена: {}={}", key, value);

@@ -14,14 +14,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // ===== ОСНОВНЫЕ МЕТОДЫ =====
     Optional<User> findByUsername(String username);
+
     Optional<User> findByEmail(String email);
+
     boolean existsByUsername(String username);
+
     boolean existsByEmail(String email);
 
     // ===== ПОИСК ПО СТАТУСУ =====
     List<User> findByIsActiveTrue();
+
     List<User> findByIsActiveFalse();
+
     List<User> findByIsLockedTrue();
+
     List<User> findByIsLockedFalse();
 
     // ===== ПОИСК ПО РОЛИ =====

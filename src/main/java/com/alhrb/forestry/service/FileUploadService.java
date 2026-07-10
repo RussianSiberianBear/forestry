@@ -8,7 +8,10 @@ import java.util.List;
 
 public interface FileUploadService {
     FileUploadResponseDto uploadFile(Long userId, MultipartFile file) throws IOException;
+
     List<FileUploadResponseDto> getUserFiles(Long userId);
+
     byte[] getFileData(Long fileId);
+
     byte[] getFileData(Long fileId, Long userId);
 }

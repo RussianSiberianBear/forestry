@@ -15,48 +15,48 @@ public interface ForestStandRepository extends JpaRepository<ForestStand, Long> 
 
     // ===== ПОИСК ПО ЛЕСНОЙ ЕДИНИЦЕ (рекурсивно по дереву) =====
     @Query(value = """
-        WITH RECURSIVE forestry_tree AS (
-            SELECT id FROM forestry_units WHERE id = :unitId
-            UNION ALL
-            SELECT fu.id FROM forestry_units fu
-            INNER JOIN forestry_tree ft ON fu.parent_id = ft.id
-        )
-        SELECT fs.* FROM forest_stand fs
-        WHERE fs.forestry_unit_id IN (SELECT id FROM forestry_tree)
-    """, nativeQuery = true)
+                WITH RECURSIVE forestry_tree AS (
+                    SELECT id FROM forestry_units WHERE id = :unitId
+                    UNION ALL
+                    SELECT fu.id FROM forestry_units fu
+                    INNER JOIN forestry_tree ft ON fu.parent_id = ft.id
+                )
+                SELECT fs.* FROM forest_stand fs
+                WHERE fs.forestry_unit_id IN (SELECT id FROM forestry_tree)
+            """, nativeQuery = true)
     List<ForestStand> findByForestryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТЕРРИТОРИАЛЬНОЙ ЕДИНИЦЕ (рекурсивно по дереву территорий) =====
     @Query(value = """
-    WITH RECURSIVE territory_tree AS (
-        SELECT id FROM territory_units WHERE id = :unitId
-        UNION ALL
-        SELECT tu.id FROM territory_units tu
-        INNER JOIN territory_tree tt ON tu.parent_id = tt.id
-    )
-    SELECT fs.* FROM forest_stand fs
-    WHERE fs.forestry_unit_id IN (
-        SELECT fu.id FROM forestry_units fu
-        WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
-    )
-""", nativeQuery = true)
+                WITH RECURSIVE territory_tree AS (
+                    SELECT id FROM territory_units WHERE id = :unitId
+                    UNION ALL
+                    SELECT tu.id FROM territory_units tu
+                    INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+                )
+                SELECT fs.* FROM forest_stand fs
+                WHERE fs.forestry_unit_id IN (
+                    SELECT fu.id FROM forestry_units fu
+                    WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+                )
+            """, nativeQuery = true)
     List<ForestStand> findByTerritoryUnitRecursive(@Param("unitId") Long unitId);
 
     // ===== ПОИСК ПО ТИПУ ЛЕСНОЙ ЕДИНИЦЫ И ТЕРРИТОРИИ =====
     @Query(value = """
-        WITH RECURSIVE territory_tree AS (
-            SELECT id FROM territory_units WHERE id = :unitId
-            UNION ALL
-            SELECT tu.id FROM territory_units tu
-            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
-        )
-        SELECT fs.* FROM forest_stand fs
-        WHERE fs.forestry_unit_id IN (
-            SELECT fu.id FROM forestry_units fu
-            WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
-            AND fu.type = :type
-        )
-    """, nativeQuery = true)
+                WITH RECURSIVE territory_tree AS (
+                    SELECT id FROM territory_units WHERE id = :unitId
+                    UNION ALL
+                    SELECT tu.id FROM territory_units tu
+                    INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+                )
+                SELECT fs.* FROM forest_stand fs
+                WHERE fs.forestry_unit_id IN (
+                    SELECT fu.id FROM forestry_units fu
+                    WHERE fu.territory_units_id IN (SELECT id FROM territory_tree)
+                    AND fu.type = :type
+                )
+            """, nativeQuery = true)
     List<ForestStand> findByForestryTypeAndIdRecursive(
             @Param("type") String type,
             @Param("unitId") Long unitId
@@ -73,15 +73,15 @@ public interface ForestStandRepository extends JpaRepository<ForestStand, Long> 
 
     // ===== ПРОВЕРКА ПЕРЕСЕЧЕНИЙ =====
     @Query(value = """
-        SELECT 
-            b.id, 
-            b.full_number,
-            ST_Area(ST_Intersection(:geometry, b.geometry)) AS area
-        FROM forest_stand b
-        WHERE b.id != :standId
-            AND ST_Intersects(:geometry, b.geometry)
-            AND ST_Area(ST_Intersection(:geometry, b.geometry)) > :minArea
-    """, nativeQuery = true)
+                SELECT 
+                    b.id, 
+                    b.full_number,
+                    ST_Area(ST_Intersection(:geometry, b.geometry)) AS area
+                FROM forest_stand b
+                WHERE b.id != :standId
+                    AND ST_Intersects(:geometry, b.geometry)
+                    AND ST_Area(ST_Intersection(:geometry, b.geometry)) > :minArea
+            """, nativeQuery = true)
     List<Object[]> findIntersectionsWithForestStand(
             @Param("geometry") Polygon geometry,
             @Param("standId") Long standId,
@@ -89,23 +89,23 @@ public interface ForestStandRepository extends JpaRepository<ForestStand, Long> 
     );
 
     @Query(value = """
-        WITH candidates AS (
-            SELECT 
-                a.id AS stand1_id,
-                b.id AS stand2_id
-            FROM forest_stand a
-            JOIN forest_stand b ON a.id < b.id
-            WHERE ST_Intersects(ST_Envelope(a.geometry), ST_Envelope(b.geometry))
-        )
-        SELECT 
-            c.stand1_id,
-            c.stand2_id,
-            ST_Area(ST_Intersection(a.geometry, b.geometry)) AS area
-        FROM candidates c
-        JOIN forest_stand a ON a.id = c.plot1_id
-        JOIN forest_stand b ON b.id = c.plot2_id
-        WHERE ST_Intersects(a.geometry, b.geometry)
-            AND ST_Area(ST_Intersection(a.geometry, b.geometry)) > :minArea
-    """, nativeQuery = true)
+                WITH candidates AS (
+                    SELECT 
+                        a.id AS stand1_id,
+                        b.id AS stand2_id
+                    FROM forest_stand a
+                    JOIN forest_stand b ON a.id < b.id
+                    WHERE ST_Intersects(ST_Envelope(a.geometry), ST_Envelope(b.geometry))
+                )
+                SELECT 
+                    c.stand1_id,
+                    c.stand2_id,
+                    ST_Area(ST_Intersection(a.geometry, b.geometry)) AS area
+                FROM candidates c
+                JOIN forest_stand a ON a.id = c.plot1_id
+                JOIN forest_stand b ON b.id = c.plot2_id
+                WHERE ST_Intersects(a.geometry, b.geometry)
+                    AND ST_Area(ST_Intersection(a.geometry, b.geometry)) > :minArea
+            """, nativeQuery = true)
     List<Object[]> findAllIntersections(@Param("minArea") Double minArea);
 }

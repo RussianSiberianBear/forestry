@@ -25,7 +25,7 @@ import java.util.Optional;
 public class ExcelImportService {
 
     private final TerritoryUnitRepository territoryUnitRepository;
-    private final ForestryUnitRepository  forestryUnitRepository;
+    private final ForestryUnitRepository forestryUnitRepository;
     private final CuttingAreaRepository cuttingAreaRepository;
     private final GeometryService geometryService;
 
@@ -219,7 +219,7 @@ public class ExcelImportService {
     }
 
     private ForestryUnit findQuarterByHierarchy(String regionName, String districtName,
-                                                 String forestryName, Integer quarterNumber) {
+                                                String forestryName, Integer quarterNumber) {
         if (quarterNumber == null) return null;
 
         TerritoryUnit region = null;

@@ -14,8 +14,11 @@ public interface TerritoryUnitRepository extends JpaRepository<TerritoryUnit, Lo
 
     // ===== ОСНОВНЫЕ МЕТОДЫ =====
     List<TerritoryUnit> findByType(TerritoryType type);
+
     List<TerritoryUnit> findByTypeOrderByName(TerritoryType type);
+
     List<TerritoryUnit> findByParentId(Long parentId);
+
     List<TerritoryUnit> findByParentIdIsNull();
 
     // ===== ПОИСК ПО ТИПУ И ИМЕНИ =====
@@ -50,15 +53,15 @@ public interface TerritoryUnitRepository extends JpaRepository<TerritoryUnit, Lo
 
     // ===== ПОЛУЧИТЬ ВСЕХ ДЕТЕЙ (РЕКУРСИВНО) =====
     @Query(value = """
-        WITH RECURSIVE territory_tree AS (
-            SELECT id, name, type, parent_id, 0 as depth
-            FROM territory_units WHERE id = :rootId
-            UNION ALL
-            SELECT tu.id, tu.name, tu.type, tu.parent_id, tt.depth + 1
-            FROM territory_units tu
-            INNER JOIN territory_tree tt ON tu.parent_id = tt.id
-        )
-        SELECT * FROM territory_tree ORDER BY depth, name
-    """, nativeQuery = true)
+                WITH RECURSIVE territory_tree AS (
+                    SELECT id, name, type, parent_id, 0 as depth
+                    FROM territory_units WHERE id = :rootId
+                    UNION ALL
+                    SELECT tu.id, tu.name, tu.type, tu.parent_id, tt.depth + 1
+                    FROM territory_units tu
+                    INNER JOIN territory_tree tt ON tu.parent_id = tt.id
+                )
+                SELECT * FROM territory_tree ORDER BY depth, name
+            """, nativeQuery = true)
     List<Object[]> findAllDescendants(@Param("rootId") Long rootId);
 }

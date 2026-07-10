@@ -50,7 +50,7 @@ public class UserUISettingsService {
     @Transactional
     public UserUISettings updateSetting(String key, String value) {
         User user = securityHelper.getCurrentUser();
-        if (user == null){
+        if (user == null) {
             throw new NullPointerException("Пользователь не авторизован!");
         }
 

@@ -24,8 +24,8 @@ public class ForestryUnitController {
     // ===== Допустимые ЛЕСНИЧЕСТВА =====
     @GetMapping("/forestries/all")
     public ResponseEntity<List<ForestryUnitDto>> getAllowedForestries() {
-         List<ForestryUnit> forestries = forestryUnitService.findAllowedForestries(securityHelper.getCurrentUserId());
-         List<ForestryUnitDto> dtos = forestries.stream()
+        List<ForestryUnit> forestries = forestryUnitService.findAllowedForestries(securityHelper.getCurrentUserId());
+        List<ForestryUnitDto> dtos = forestries.stream()
                 .map(this::toForestryDto)
                 .collect(Collectors.toList());
 

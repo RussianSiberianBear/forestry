@@ -320,6 +320,7 @@ public class GeometryService {
 
     /**
      * Проверяет пересечение двух полигонов с учетом нормализации
+     *
      * @return true если полигоны пересекаются (включая касание границ)
      */
     public boolean intersects(Polygon p1, Polygon p2) {
@@ -333,6 +334,7 @@ public class GeometryService {
 
     /**
      * Проверяет пересечение двух полигонов по площади
+     *
      * @return true если площадь пересечения > minArea
      */
     public boolean intersectsByArea(Polygon p1, Polygon p2, double minArea) {
