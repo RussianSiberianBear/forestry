@@ -532,8 +532,8 @@ function resetForm() {
     document.getElementById('numberInQuarter').value = '';
     document.getElementById('forestStand').value = '';
     document.getElementById('description').value = '';
-    document.getElementById('yearOfCut').value = '';
-    document.getElementById('cutType').value = '';
+  //  document.getElementById('yearOfCut').value = '';
+  //  document.getElementById('cutType').value = '';
 
     // Пересоздаём блок координат с 3 пустыми строками
     initCoordinateFields();
