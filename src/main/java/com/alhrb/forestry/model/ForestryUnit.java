@@ -67,7 +67,6 @@ public class ForestryUnit {
     // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =====
 
     public String getFullPath() {
-        StringBuilder sb = new StringBuilder();
         ForestryUnit current = this;
         List<String> names = new ArrayList<>();
 
@@ -78,6 +77,8 @@ public class ForestryUnit {
 
         return String.join(" / ", names);
     }
+
+    public void setAccountNumber(String accountNumber) {}
 
     public ForestryUnit getRoot() {
         ForestryUnit current = this;
