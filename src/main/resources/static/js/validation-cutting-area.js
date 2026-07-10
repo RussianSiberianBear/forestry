@@ -7,6 +7,7 @@ let cachedPlots = null;
 let polygonLayer = null;
 let labelLayer = null;
 let mapElement = 'map';
+let mouseCoordsControl = null; // Контрол для отображения координат
 
 // ==========================================
 // ФИЛЬТРЫ ДЛЯ КАРТЫ
@@ -250,14 +251,6 @@ function updateLegend(plotsData) {
 function loadAllPlots() {
     refreshMap();
 }
-
-// ==========================================
-// КООРДИНАТЫ
-// ==========================================
-
-// ==========================================
-// КООРДИНАТЫ
-// ==========================================
 
 // ==========================================
 // КООРДИНАТЫ
@@ -532,14 +525,6 @@ function validateCoordInput(input) {
 
 // ==========================================
 // СБРОС ФОРМЫ
-// ==========================================
-
-// ==========================================
-// СБРОС ФОРМЫ (исправленная версия)
-// ==========================================
-
-// ==========================================
-// СБРОС ФОРМЫ (исправленная версия)
 // ==========================================
 
 function resetForm() {
@@ -897,8 +882,13 @@ function showConflicts(conflicts) {
 }
 
 // ==========================================
-// Отрисовка делян
+// ОТРИСОВКА ДЕЛЯН
 // ==========================================
+
+// ==========================================
+// ОТРИСОВКА ДЕЛЯН
+// ==========================================
+
 function renderPlots(plots) {
     if (!map) return;
 
@@ -914,11 +904,15 @@ function renderPlots(plots) {
     polygonLayer = L.layerGroup().addTo(map);
     labelLayer = L.layerGroup().addTo(map);
 
+    // Получаем DOM-элемент карты для управления курсором
+    const mapElementDom = map.getContainer();
+
     plots.forEach(plot => {
         if (plot.geometryGeoJson) {
             try {
                 const geojson = JSON.parse(plot.geometryGeoJson);
                 if (geojson.type === 'Polygon' && geojson.coordinates) {
+                    // GeoJSON: [lng, lat] -> Leaflet: [lat, lng]
                     const coords = geojson.coordinates[0].map(c => [c[1], c[0]]);
 
                     const polygon = L.polygon(coords, {
@@ -1014,8 +1008,18 @@ function renderPlots(plots) {
                             zIndexOffset: 1000
                         }).addTo(labelLayer);
 
+                        // ==========================================
+                        // УПРАВЛЕНИЕ КУРСОРОМ ПРИ НАВЕДЕНИИ НА ПОЛИГОН
+                        // ==========================================
+
                         polygon.on('mouseover', function (e) {
+                            // Меняем курсор на руку при наведении на полигон
+                            mapElementDom.style.cursor = 'pointer';
+
+                            // Увеличиваем подсветку полигона
                             this.setStyle({fillOpacity: 0.4, weight: 3});
+
+                            // Увеличиваем метку
                             const labelEl = label._icon;
                             if (labelEl) {
                                 const div = labelEl.querySelector('div');
@@ -1029,7 +1033,13 @@ function renderPlots(plots) {
                         });
 
                         polygon.on('mouseout', function (e) {
+                            // Возвращаем перекрестие при уходе с полигона
+                            mapElementDom.style.cursor = 'crosshair';
+
+                            // Возвращаем обычный стиль полигона
                             this.setStyle({fillOpacity: 0.2, weight: 2.5});
+
+                            // Возвращаем обычный стиль метки
                             const labelEl = label._icon;
                             if (labelEl) {
                                 const div = labelEl.querySelector('div');
@@ -1049,6 +1059,16 @@ function renderPlots(plots) {
     });
 
     updateLegend(plots);
+}
+
+function getPolygonCenter(coords) {
+    let lat = 0, lng = 0;
+    const n = coords.length;
+    for (let i = 0; i < n; i++) {
+        lat += coords[i][0];
+        lng += coords[i][1];
+    }
+    return { lat: lat / n, lng: lng / n };
 }
 
 function formatNumberInQuarter(value) {
@@ -1103,6 +1123,144 @@ function toggleLabels() {
         message: showLabels ? '✅ Метки включены' : '❌ Метки скрыты',
         status: showLabels ? 'success' : 'warning',
         timeout: 1500
+    });
+}
+
+// ==========================================
+// ОТОБРАЖЕНИЕ КООРДИНАТ КУРСОРА НА КАРТЕ (ЛЕСНОЕ ХОЗЯЙСТВО)
+// ==========================================
+// ==========================================
+// ОТОБРАЖЕНИЕ КООРДИНАТ КУРСОРА НА КАРТЕ (ЛЕСНОЕ ХОЗЯЙСТВО)
+// ==========================================
+
+function initMouseCoords() {
+    if (!map) return;
+
+    // Создаем контейнер для отображения координат
+    const coordContainer = document.createElement('div');
+    coordContainer.id = 'mouse-coords';
+    coordContainer.style.cssText = `
+        position: absolute;
+        bottom: 30px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        font-weight: bold;
+        z-index: 1000;
+        pointer-events: none;
+        border: 2px solid rgba(255, 215, 0, 0.3);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        min-width: 280px;
+        text-align: center;
+        letter-spacing: 0.5px;
+        backdrop-filter: blur(4px);
+    `;
+    coordContainer.innerHTML = 'Широта: --.------° | Долгота: --.------°';
+
+    const mapContainer = document.getElementById(mapElement);
+    if (mapContainer) {
+        mapContainer.style.position = 'relative';
+        mapContainer.appendChild(coordContainer);
+    }
+
+    // Получаем DOM-элемент карты для управления курсором
+    const mapElementDom = map.getContainer();
+
+    // Устанавливаем перекрестие по умолчанию для точного позиционирования
+    mapElementDom.style.cursor = 'crosshair';
+
+    // Обработчики для смены курсора при перетаскивании
+    map.on('dragstart', function() {
+        mapElementDom.style.cursor = 'grabbing';
+    });
+
+    map.on('drag', function() {
+        mapElementDom.style.cursor = 'grabbing';
+    });
+
+    map.on('dragend', function() {
+        mapElementDom.style.cursor = 'crosshair';
+    });
+
+    // При наведении на полигоны делян - показываем pointer (руку)
+    // Это добавляется в renderPlots при создании полигонов
+    // Но можно добавить глобальный обработчик для всех интерактивных элементов
+
+    // Обработчик движения мыши - показываем координаты
+    map.on('mousemove', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Форматируем координаты в десятичные градусы с 6 знаками
+        const latStr = lat.toFixed(6);
+        const lngStr = lng.toFixed(6);
+
+        // Определяем направление
+        const latDir = lat >= 0 ? 'N' : 'S';
+        const lngDir = lng >= 0 ? 'E' : 'W';
+
+        // Обновляем контейнер с координатами
+        coordContainer.innerHTML = `
+            <span style="color: #4fc3f7;">Ш:</span> 
+            <span style="color: #fff; font-size: 18px;">${Math.abs(lat).toFixed(6)}°</span>
+            <span style="color: #ffb74d; font-size: 14px;">${latDir}</span>
+            <span style="color: #4fc3f7; margin-left: 16px;">Д:</span>
+            <span style="color: #fff; font-size: 18px;">${Math.abs(lng).toFixed(6)}°</span>
+            <span style="color: #ffb74d; font-size: 14px;">${lngDir}</span>
+        `;
+    });
+
+    // Скрываем координаты при выходе с карты
+    map.on('mouseout', function(e) {
+        coordContainer.innerHTML = 'Широта: --.------° | Долгота: --.------°';
+    });
+
+    // Обновляем координаты при клике (копирование в буфер)
+    map.on('click', function(e) {
+        const lat = e.latlng.lat.toFixed(6);
+        const lng = e.latlng.lng.toFixed(6);
+        const coordStr = `${lat}, ${lng}`;
+
+        // Копируем в буфер обмена
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(coordStr).then(() => {
+                UIkit.notification({
+                    message: `📋 Координаты скопированы: ${coordStr}`,
+                    status: 'success',
+                    timeout: 2000
+                });
+            }).catch(() => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = coordStr;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                UIkit.notification({
+                    message: `📋 Координаты скопированы: ${coordStr}`,
+                    status: 'success',
+                    timeout: 2000
+                });
+            });
+        } else {
+            // Fallback для старых браузеров
+            const textArea = document.createElement('textarea');
+            textArea.value = coordStr;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            UIkit.notification({
+                message: `📋 Координаты скопированы: ${coordStr}`,
+                status: 'success',
+                timeout: 2000
+            });
+        }
     });
 }
 
@@ -1177,6 +1335,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (map) {
                 map.invalidateSize();
                 console.log('🔄 Размер карты принудительно обновлён');
+
+                // Инициализация отображения координат курсора после создания карты
+                initMouseCoords();
             }
         }, 500);
     }, 300);
@@ -1338,6 +1499,7 @@ function showNotification(message, status = 'info') {
 // ==========================================
 // ИНИЦИАЛИЗАЦИЯ КООРДИНАТ ПРИ ЗАГРУЗКЕ
 // ==========================================
+
 function initCoordinateFields() {
     const container = document.getElementById('coordinates-container');
     container.innerHTML = '';
