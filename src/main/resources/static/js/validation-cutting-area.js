@@ -839,8 +839,8 @@ function showConflicts(conflicts) {
                     <tr>
                         <th>Деляна 1</th>
                         <th>Деляна 2</th>
-                        <th>Площадь (м²)</th>
-                        <th>Серьёзность</th>
+                        <th style="width:110px;text-align: right;">Площадь (м²)</th>
+                        <th style="width:110px;">Серьёзность</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -856,7 +856,7 @@ function showConflicts(conflicts) {
             <tr>
                 <td><strong>${conflict.plot1Number || 'ID:' + conflict.plot1Id}</strong></td>
                 <td><strong>${conflict.plot2Number || 'ID:' + conflict.plot2Id}</strong></td>
-                <td>${(conflict.overlapArea || 0).toFixed(2)}</td>
+                <td style="text-align: right;">${(conflict.overlapArea || 0).toFixed(2)}</td>
                 <td>
                     <span class="${severityClass}">
                         <span uk-icon="icon: ${severityIcon}"></span>
