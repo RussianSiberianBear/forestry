@@ -65,7 +65,7 @@ public class UserController {
 
     // ===== ВСЕ ПОЛЬЗОВАТЕЛИ =====
     @GetMapping
-    public ResponseEntity <Map<String, Object>> getAllUsers(GridP p) {
+    public ResponseEntity<Map<String, Object>> getAllUsers(GridP p) {
         return ResponseEntity.ok(userService.findAll(p));
     }
 

@@ -78,7 +78,8 @@ public class ForestryUnit {
         return String.join(" / ", names);
     }
 
-    public void setAccountNumber(String accountNumber) {}
+    public void setAccountNumber(String accountNumber) {
+    }
 
     public ForestryUnit getRoot() {
         ForestryUnit current = this;

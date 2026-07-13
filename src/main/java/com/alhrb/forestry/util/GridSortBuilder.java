@@ -73,10 +73,11 @@ public final class GridSortBuilder {
     }
 
     public static Sort build(List<SortItem> sortOrder) {
-        return  innerBuild(sortOrder, ALIAS_TO_PROP);
+        return innerBuild(sortOrder, ALIAS_TO_PROP);
     }
-    public static Sort build(List<SortItem> sortOrder,Map<String, String> whiteList) {
-        return  innerBuild(sortOrder, whiteList);
+
+    public static Sort build(List<SortItem> sortOrder, Map<String, String> whiteList) {
+        return innerBuild(sortOrder, whiteList);
     }
 
 }

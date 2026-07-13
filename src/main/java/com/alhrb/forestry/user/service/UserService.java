@@ -2,7 +2,6 @@ package com.alhrb.forestry.user.service;
 
 import com.alhrb.forestry.common.specification.DynamicSpecificationBuilder;
 import com.alhrb.forestry.common.specification.GridPageableBuilder;
-import com.alhrb.forestry.dto.UserDto;
 import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.user.User;
 import com.alhrb.forestry.user.UserMapper;
@@ -94,10 +93,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object>findAll(GridP params) {
-
-
-        List<UserDto> rows = new ArrayList<>();
+    public Map<String, Object> findAll(GridP params) {
 
         Specification<User> specification =
                 DynamicSpecificationBuilder.build(
@@ -237,7 +233,7 @@ public class UserService implements UserDetailsService {
         }
         List<Long> ids = p.getRowIds();
         List<Long> longIds = ids.stream()
-                 .collect(toList());
+                .collect(toList());
         if (longIds.contains(me.getId())) {
             res.put("success", false);
             res.put("message", "Нельзя удалять самого себя!");

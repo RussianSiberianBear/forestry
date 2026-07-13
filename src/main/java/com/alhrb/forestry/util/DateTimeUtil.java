@@ -39,7 +39,7 @@ public class DateTimeUtil {
         return true;
     }
 
-    public static String toRusFormat (LocalDateTime dt) {
+    public static String toRusFormat(LocalDateTime dt) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
         String result = dt.format(formatter);
         return result;

@@ -21,6 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
             Specification<User> specification,
             Pageable pageable
     );
+
     Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);
