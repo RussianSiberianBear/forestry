@@ -1,5 +1,10 @@
 package com.alhrb.forestry.controller;
 
+import com.alhrb.forestry.dto.GridP;
+import com.alhrb.forestry.dto.GridRequest;
+import com.alhrb.forestry.user.UserMapper;
+import com.alhrb.forestry.user.repository.UserRepository;
+import com.alhrb.forestry.user.service.UserService;
 import com.alhrb.forestry.util.DateTimeUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -9,12 +14,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 @Controller
 @PreAuthorize("hasAnyRole('SUPERADMIN',ADMIN')")
 public class ApanelController {
+
+    private final UserService userService;
+    private final UserMapper mapper;
+
+    public ApanelController(UserService userService, UserMapper mapper) {
+        this.userService = userService;
+        this.mapper = mapper;
+    }
 
     @GetMapping("/apanel")
     public String apanel(Model model) {
@@ -46,21 +62,21 @@ public class ApanelController {
                     return ResponseEntity.ok(Map.of("success", false, "message", "Дата начала периода обновления превышает дату окончания!"));
                 }
 
-                return ResponseEntity.ok(userdataService.findUserWithFilters(p));
+                return ResponseEntity.ok(userService.findUserWithDynamicFilters(p));
             }
 
             if (p.getOper().equalsIgnoreCase("create")) {
                 Map<String, Object> data = new HashMap<>();
                 List<Map<String, Object>> rows = new ArrayList<>();
                 Map<String, Object> res;
-                res = userdataService.createUser(p);
+                res = userService.createUser(p);
                 if (Boolean.TRUE.equals(res.get("success"))) {
                     var dataRows = (Map<Long, Object>) res.get("rows");
                     for (var dataRow : dataRows.entrySet()) {
-                        var user = userViews.findById(dataRow.getKey()).orElseThrow(null);
+                        var user = userService.findById(dataRow.getKey()).orElseThrow(null);
                         var clientId = dataRow.getValue();
                         user.set__clientId(clientId != null ? clientId.toString() : null);
-                        rows.add(user.toRow(user));
+                        rows.add(mapper.toDto(user));
                     }
 
                     data.put("rows", rows); // ВАЖНО: просто rows, НЕ List.of(rows)
@@ -76,12 +92,12 @@ public class ApanelController {
                 Map<String, Object> data = new HashMap<>();
                 List<Map<String, Object>> rows = new ArrayList<>();
                 Map<String, Object> res;
-                res = userdataService.updateUser(p);
+                res = userService.updateUser(p);
                 if (Boolean.TRUE.equals(res.get("success"))) {
                     var dataRows = (Map<Long, Object>) res.get("rows");
                     for (var dataRow : dataRows.entrySet()) {
-                        var user = userViews.findById(dataRow.getKey()).orElseThrow(null);
-                        rows.add(user.toRow(user));
+                        var user = userService.findById(dataRow.getKey()).orElseThrow(null);
+                        rows.add(mapper.toDto(user));
                     }
                 }
                 res.remove("rows");
@@ -92,7 +108,7 @@ public class ApanelController {
             }
 
             if (p.getOper().equalsIgnoreCase("delete")) {
-                return ResponseEntity.ok(userdataService.deleteUser(p));
+                return ResponseEntity.ok(userService.deleteUser(p));
             }
 
         } catch (Exception e) {

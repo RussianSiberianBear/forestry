@@ -23,6 +23,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Transient
+    private String __clientId; // Будет работать, не сохранится в БД
+
     // ===== ОСНОВНЫЕ ПОЛЯ =====
     @Column(nullable = false, unique = true, length = 50)
     private String username;

@@ -1,20 +1,29 @@
 package com.alhrb.forestry.dto;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
-@Data
-public class UserDto {
-    private Long id;
-    private String username;
-    private String email;
-    private String fullName;
-    private String phone;
-    private Boolean isActive;
-    private Boolean isLocked;
-    private String lockReason;
-    private LocalDateTime lockedUntil;
-    private LocalDateTime lastLoginAt;
-    private LocalDateTime createdAt;
+public record UserDto(
+        Long id,
+        @JsonProperty("__clientId")  // ← сохраняем имя поля для JSON
+        String clientId,
+        String username,
+        String email,
+        String fullName,
+        String phone,
+        Boolean isActive,
+        Boolean isLocked,
+        String lockReason,
+        LocalDateTime lockedUntil,
+        LocalDateTime lastLoginAt,
+        LocalDateTime createdAt
+) {
+
+    // Кастомный метод для обратной совместимости
+    @JsonIgnore
+    public String __clientId() {
+        return clientId;
+    }
 }
