@@ -1,6 +1,6 @@
 package com.alhrb.forestry.config;
 
-import com.alhrb.forestry.service.UserService;
+import com.alhrb.forestry.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +26,13 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authz -> authz
+                .authorizeHttpRequests(auth -> auth
+                        // 1) Закрытое — первым!
+                        .requestMatchers("/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/abgrid-engine/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
+
                         .requestMatchers("/css/**", "/js/**", "/webjars/**").permitAll()
                         .requestMatchers("/login", "/register", "/api/users/register").permitAll()
                         .requestMatchers("/api/territory/**").permitAll()

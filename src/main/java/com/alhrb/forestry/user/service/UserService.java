@@ -1,7 +1,8 @@
-package com.alhrb.forestry.service;
+package com.alhrb.forestry.user.service;
 
-import com.alhrb.forestry.model.User;
-import com.alhrb.forestry.repository.UserRepository;
+import com.alhrb.forestry.user.Role;
+import com.alhrb.forestry.user.User;
+import com.alhrb.forestry.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,8 +25,9 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
+        return user;
     }
 
     public Optional<User> findById(Long id) {
@@ -62,7 +64,7 @@ public class UserService implements UserDetailsService {
         user.setIsActive(true);
         user.setIsLocked(false);
         user.setLoginAttempts(0);
-        user.setRole("ROLE_USER");
+        user.setRole(Role.USER);
 
         return userRepository.save(user);
     }

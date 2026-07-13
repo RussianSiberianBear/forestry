@@ -1,6 +1,6 @@
-package com.alhrb.forestry.repository;
+package com.alhrb.forestry.user.repository;
 
-import com.alhrb.forestry.model.User;
+import com.alhrb.forestry.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

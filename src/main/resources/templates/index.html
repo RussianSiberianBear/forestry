@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,6 +19,7 @@
     <div class="uk-navbar-left uk-margin-left">
         <ul class="uk-navbar-nav">
             <li class="uk-active"><a href="/"><span uk-icon="icon: home"></span> Главная</a></li>
+            <li sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')"><a href="/apanel"><span uk-icon="icon: thumbnails"></span>Администрирование</a></li>
             <li><a href="/patrolling"><span uk-icon="icon: thumbnails"></span>Патрулирование</a></li>
             <li><a href="/cutting_area"><span uk-icon="icon: grid"></span>Деляны</a></li>
             <li><a href="/forest-fires"><span uk-icon="icon: thumbnails"></span>Пожары</a></li>
@@ -36,6 +37,12 @@
 
 <div class="uk-container uk-container-large uk-margin-top">
     <div class="uk-grid">
+        <div sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
+            <a href="/apanel">
+            <div class="uk-card uk-card-default uk-card-body uk-margin" style="background: #f8f9fa;"><span
+                    uk-icon="icon: thumbnails"></span>Администрирование
+            </div>
+        </a></div>
         <div><a href="/patrolling">
             <div class="uk-card uk-card-default uk-card-body uk-margin" style="background: #f8f9fa;"><span
                     uk-icon="icon: thumbnails"></span>Патрулирование

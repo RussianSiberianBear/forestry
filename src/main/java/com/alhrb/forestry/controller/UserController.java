@@ -2,8 +2,8 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.UserCreateDto;
 import com.alhrb.forestry.dto.UserLockDto;
-import com.alhrb.forestry.model.User;
-import com.alhrb.forestry.service.UserService;
+import com.alhrb.forestry.user.User;
+import com.alhrb.forestry.user.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

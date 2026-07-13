@@ -1,4 +1,4 @@
-package com.alhrb.forestry.model;
+package com.alhrb.forestry.user;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -40,8 +40,9 @@ public class User implements UserDetails {
     private String phone;
 
     // ===== РОЛИ =====
-    @Column(name = "role")
-    private String role = "ROLE_USER";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private Role role = Role.USER;
 
     // ===== СТАТУС =====
     @Column(name = "is_active")
@@ -97,7 +98,7 @@ public class User implements UserDetails {
             loginAttempts = 0;
         }
         if (role == null) {
-            role = "ROLE_USER";
+            role = Role.USER;
         }
     }
 
@@ -110,7 +111,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + getRole().name()));
     }
 
     @Override

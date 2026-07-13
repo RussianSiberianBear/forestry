@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(content)">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<head>
+    <!-- ===== UIKIT ===== -->
+    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
+    <script src="/webjars/uikit/js/uikit.min.js"></script>
+    <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
+
+    <link rel="stylesheet" th:href="@{/abgrid-engine/page-skin-blue-pro.css}">
+
+    <script type="text/javascript" th:src="@{/abgrid-engine/apanel/abgrid.min.js}"
+            sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')"></script>
+
+</head>
+<body>
+<main class="wrap">
+    <!-- сюда вставится контент конкретной страницы -->
+    <div th:replace="${content}"></div>
+</main>
+<footer class="footer">
+    <div class="uk-text-center uk-margin-top uk-text-small">
+    <div class="wrap__footer">© <span th:text="${#dates.year(#dates.createNow())}"></span></div>
+</footer>
+</body>
+</html>

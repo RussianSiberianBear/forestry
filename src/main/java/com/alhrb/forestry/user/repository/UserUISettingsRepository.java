@@ -1,7 +1,7 @@
-package com.alhrb.forestry.repository;
+package com.alhrb.forestry.user.repository;
 
-import com.alhrb.forestry.model.User;
-import com.alhrb.forestry.model.UserUISettings;
+import com.alhrb.forestry.user.User;
+import com.alhrb.forestry.user.UserUISettings;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

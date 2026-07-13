@@ -1,4 +1,4 @@
-package com.alhrb.forestry.model;
+package com.alhrb.forestry.user;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
