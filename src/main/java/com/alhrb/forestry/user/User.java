@@ -45,7 +45,7 @@ public class User implements UserDetails {
     // ===== РОЛИ =====
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
-    private Role role = Role.USER;
+    private UserRole role = UserRole.USER;
 
     // ===== СТАТУС =====
     @Column(name = "is_active")
@@ -91,17 +91,21 @@ public class User implements UserDetails {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+
         if (isActive == null) {
             isActive = true;
         }
+
         if (isLocked == null) {
             isLocked = false;
         }
+
         if (loginAttempts == null) {
             loginAttempts = 0;
         }
+
         if (role == null) {
-            role = Role.USER;
+            role = UserRole.USER;
         }
     }
 

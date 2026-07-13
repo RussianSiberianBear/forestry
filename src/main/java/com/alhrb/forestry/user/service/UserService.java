@@ -1,12 +1,18 @@
 package com.alhrb.forestry.user.service;
 
-import com.alhrb.forestry.dto.GridP;
-import com.alhrb.forestry.user.Role;
+import com.alhrb.forestry.common.specification.DynamicSpecificationBuilder;
+import com.alhrb.forestry.common.specification.GridPageableBuilder;
+import com.alhrb.forestry.dto.UserDto;
+import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.user.User;
 import com.alhrb.forestry.user.UserMapper;
+import com.alhrb.forestry.user.UserRole;
 import com.alhrb.forestry.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,10 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.stream.Collectors.toList;
 
@@ -28,6 +31,45 @@ import static java.util.stream.Collectors.toList;
 @Slf4j
 public class UserService implements UserDetailsService {
 
+    private static final Set<String> FILTER_FIELDS = Set.of(
+            "id",
+            "username",
+            "email",
+            "fullName",
+            "phone",
+            "role",
+            "isActive",
+            "isLocked",
+            "lockedAt",
+            "lockedUntil",
+            "lockReason",
+            "lockedBy",
+            "lastLoginAt",
+            "loginAttempts",
+            "createdAt",
+            "updatedAt",
+            "createdBy",
+            "updatedBy"
+    );
+
+    private static final Set<String> SORT_FIELDS = Set.of(
+            "id",
+            "username",
+            "email",
+            "fullName",
+            "phone",
+            "role",
+            "isActive",
+            "isLocked",
+            "lockedAt",
+            "lockedUntil",
+            "lastLoginAt",
+            "loginAttempts",
+            "createdAt",
+            "updatedAt",
+            "createdBy",
+            "updatedBy"
+    );
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper mapper;
@@ -51,8 +93,33 @@ public class UserService implements UserDetailsService {
         return userRepository.findByEmail(email);
     }
 
-    public List<User> findAll() {
-        return userRepository.findAll();
+    @Transactional(readOnly = true)
+    public Map<String, Object>findAll(GridP params) {
+
+
+        List<UserDto> rows = new ArrayList<>();
+
+        Specification<User> specification =
+                DynamicSpecificationBuilder.build(
+                        params.getFilter(),
+                        FILTER_FIELDS
+                );
+
+        Pageable pageable =
+                GridPageableBuilder.build(
+                        params,
+                        SORT_FIELDS
+                );
+
+        Page page = userRepository
+                .findAll(specification, pageable)
+                .map(mapper::toDto);
+
+        Map<String, Object> data = Map.of(
+                "rows", page.getContent(),
+                "totalRecords", page.getTotalElements()
+        );
+        return Map.of("success", true, "message", "OK", "data", data);
     }
 
     @Transactional
@@ -73,7 +140,7 @@ public class UserService implements UserDetailsService {
         user.setIsActive(true);
         user.setIsLocked(false);
         user.setLoginAttempts(0);
-        user.setRole(Role.USER);
+        user.setRole(UserRole.USER);
 
         return userRepository.save(user);
     }
@@ -112,14 +179,6 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
-    List<User> findUserWithDynamicFilters(GridP p){
-        Map<String, Object> data = Map.of(
-                "rows", rows,
-                "totalRecords", page.getTotalElements()
-        );
-        return Map.of("success", true, "message", "OK", "data", data);
-    }
-
     @Transactional
     public Map<String, Object> createUser(GridP p) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -127,16 +186,15 @@ public class UserService implements UserDetailsService {
 
         User me = userRepository.findByEmail(auth.getName()).orElseThrow();
         // На всякий случай. Никто кроме Суперадмина и админа не может создавать и редактировать пользователей
-        if (me.getRole().ordinal() > Role.ADMIN.ordinal()) {
+        if (me.getRole().ordinal() > UserRole.ADMIN.ordinal()) {
             res.put("success", false);
             res.put("message", "Нет прав на создание данной роли!");
             return res;
         }
 
-
         res.put("success", true);
         res.put("message", "Выполнено");
-        res.put("rows", rows);
+        //      res.put("rows", rows);
         return res;
     }
 
@@ -148,7 +206,7 @@ public class UserService implements UserDetailsService {
 
         User me = userRepository.findByEmail(auth.getName()).orElseThrow();
         // На всякий случай. Никто кроме Суперадмина и админа не может создавать и редактировать пользователей
-        if (me.getRole().ordinal() > Role.ADMIN.ordinal()) {
+        if (me.getRole().ordinal() > UserRole.ADMIN.ordinal()) {
             res.put("success", false);
             res.put("message", "Нет прав на создание данной роли!");
             return res;
@@ -156,7 +214,7 @@ public class UserService implements UserDetailsService {
 
         res.put("success", true);
         res.put("message", "Выполнено");
-        res.put("rows", rows);
+        //       res.put("rows", rows);
         return res;
     }
 
@@ -172,16 +230,14 @@ public class UserService implements UserDetailsService {
         res.put("data", data);
 
         // Никто кроме Суперадмина не может удалять пользователей
-        if (me.getRole().ordinal() > Role.SUPERADMIN.ordinal()) {
+        if (me.getRole().ordinal() > UserRole.SUPERADMIN.ordinal()) {
             res.put("success", false);
             res.put("message", "Нет прав для удаления пользователей!");
             return res;
         }
-        List<Integer> ids = p.getRowIds();
+        List<Long> ids = p.getRowIds();
         List<Long> longIds = ids.stream()
-                .map(Integer::longValue)
-                //             .filter(id -> id != me.getId()) // Не даем удалить самого себя.
-                .collect(toList());
+                 .collect(toList());
         if (longIds.contains(me.getId())) {
             res.put("success", false);
             res.put("message", "Нельзя удалять самого себя!");

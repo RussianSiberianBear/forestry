@@ -213,9 +213,9 @@
                         }
                     },
                     fullName: {
-                        type: 'text', ui: {label: 'Email', grid: {visible: true, width: '16%'}},
+                        type: 'text', ui: {label: 'Полное имя', grid: {visible: true, width: '16%'}},
                         editor: {
-                            type: 'email',
+                            type: 'text',
                             edit: {readOnly: false, required: true},
                             create: {readOnly: false, required: true}
                         }
@@ -262,11 +262,9 @@
                     },
                     role: {
                         type: 'text', values: {
-                            enum: [{value: 0, text: 'SUPERADMIN'}, {value: 1, text: 'ADMIN'}, {
-                                value: 2,
-                                text: 'MODERATOR'
-                            },
-                                {value: 3, text: 'ACCOUNTANT'}, {value: 4, text: 'USER'}]
+                            enum: [{value: 0, text: 'SUPERADMIN'},
+                                {value: 1, text: 'ADMIN'},
+                                {value: 2, text: 'USER' }]
                         }, ui: {label: 'Роль', grid: {visible: true, width: '10%'}},
                         editor: {
                             type: 'select',
@@ -281,7 +279,7 @@
                     },
                     isActive: {
                         type: 'bool', values: {enum: [{value: true, text: 'Активирован'}, {value: false, text: 'Не активирован'}]},
-                        ui: {label: 'Блок.', grid: {visible: true, width: '8%', colType: 'boolean'}},
+                        ui: {label: 'Активация', grid: {visible: true, width: '8%', colType: 'boolean'}},
                         editor: {type: 'select', edit: {readOnly: false, required: true}, create: {visible: false}}
                     },
                     isLocked: {
@@ -308,7 +306,27 @@
                     },
                 }
             },
-
+            view: {
+                checkbox: true,
+                columnsResizable: true,
+                height: 415,
+                tableTitle: {
+                    enabled: true,
+                    caption: 'Пользователи',
+                    hint: 'Пользователи',
+                    toggle: false
+                },
+                toolBar: {
+                    add: {caption: 'Добавить', hint: 'Новый пользователь'},
+                    edit: {caption: 'Изменить', hint: 'Редактирование пользователя'},
+                    del: {caption: 'Удалить', hint: 'Удалить пользователя(пользователей)'}
+                },
+                pager: {
+                    enabled: true,
+                    rpp: [10,20,50]
+                },
+                sortOrder: [{field: 'statDate', dir: 'asc'}],
+            }
         }
         const gridUsers = new ABGrid("#gridUsers", cfgGridUsers);
     </script>

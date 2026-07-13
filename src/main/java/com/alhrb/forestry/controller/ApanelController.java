@@ -1,9 +1,9 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.dto.GridP;
-import com.alhrb.forestry.dto.GridRequest;
+import com.alhrb.forestry.dto.UserDto;
+import com.alhrb.forestry.dto.abgrid.GridP;
+import com.alhrb.forestry.dto.abgrid.GridRequest;
 import com.alhrb.forestry.user.UserMapper;
-import com.alhrb.forestry.user.repository.UserRepository;
 import com.alhrb.forestry.user.service.UserService;
 import com.alhrb.forestry.util.DateTimeUtil;
 import org.springframework.http.ResponseEntity;
@@ -62,12 +62,12 @@ public class ApanelController {
                     return ResponseEntity.ok(Map.of("success", false, "message", "Дата начала периода обновления превышает дату окончания!"));
                 }
 
-                return ResponseEntity.ok(userService.findUserWithDynamicFilters(p));
+                return ResponseEntity.ok(userService.findAll(p));
             }
 
             if (p.getOper().equalsIgnoreCase("create")) {
                 Map<String, Object> data = new HashMap<>();
-                List<Map<String, Object>> rows = new ArrayList<>();
+                List<UserDto> rows = new ArrayList<>();
                 Map<String, Object> res;
                 res = userService.createUser(p);
                 if (Boolean.TRUE.equals(res.get("success"))) {
@@ -90,7 +90,7 @@ public class ApanelController {
 
             if (p.getOper().equalsIgnoreCase("update")) {
                 Map<String, Object> data = new HashMap<>();
-                List<Map<String, Object>> rows = new ArrayList<>();
+                List<UserDto> rows = new ArrayList<>();
                 Map<String, Object> res;
                 res = userService.updateUser(p);
                 if (Boolean.TRUE.equals(res.get("success"))) {

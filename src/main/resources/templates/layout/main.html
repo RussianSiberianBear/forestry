@@ -8,6 +8,7 @@
 <head>
     <!-- ===== UIKIT ===== -->
     <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
+    <link rel="stylesheet" th:href="@{/css/uikit.fix.css}">
     <script src="/webjars/uikit/js/uikit.min.js"></script>
     <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
 
@@ -15,6 +16,12 @@
 
     <script type="text/javascript" th:src="@{/abgrid-engine/apanel/abgrid.min.js}"
             sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')"></script>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/fontawesome/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-structure.css}"/>
+    <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-icons.css}"/>
+    <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-theme-blue-pro.css}"/>
+    <link rel="stylesheet" th:href="@{/css/abgrid-dark.css}"/>
 
 </head>
 <body>
