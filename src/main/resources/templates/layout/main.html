@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <head>
     <!-- ===== UIKIT ===== -->
-    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
+    <link rel="stylesheet" th:href="@{/webjars/uikit/css/uikit.min.css}" />
     <link rel="stylesheet" th:href="@{/css/uikit.fix.css}">
-    <script src="/webjars/uikit/js/uikit.min.js"></script>
-    <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
+    <script th:src="@{/webjars/uikit/js/uikit.min.js}"></script>
+    <script th:src="@{/webjars/uikit/js/uikit-icons.min.js}"></script>
 
     <link rel="stylesheet" th:href="@{/abgrid-engine/page-skin-blue-pro.css}">
 
@@ -22,6 +22,8 @@
     <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-icons.css}"/>
     <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-theme-blue-pro.css}"/>
     <link rel="stylesheet" th:href="@{/css/abgrid-dark.css}"/>
+
+    <script type="text/javascript" th:src="@{/js/common.js}"></script>
 
 </head>
 <body>

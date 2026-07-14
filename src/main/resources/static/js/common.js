@@ -398,7 +398,7 @@ async function reportDownload(grid, payload, downloadUrl, filename) {
 ABGrid.setDefaults({
     auth: {
         redirectOn401: true,
-        loginUrl: '/auth/login',
+        loginUrl: '/login',
         redirectDelayMs: 3000,
         redirectOnlyOnce: true,
         showToast: true
