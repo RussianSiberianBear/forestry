@@ -35,6 +35,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/css/**", "/js/**", "/webjars/**").permitAll()
                         .requestMatchers("/login", "/register", "/api/users/register").permitAll()
+                        .requestMatchers("/api/common/**").permitAll()
                         .requestMatchers("/api/territory/**").permitAll()
                         .requestMatchers("/api/ui-settings/**").permitAll()
                         .requestMatchers("/api/cutting-area/map-data").permitAll()

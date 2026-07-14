@@ -1325,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('🔄 Запускаем initMap с задержкой 300мс...');
         const forestry = getCurrentForestry();
         if (forestry) {
-            initMap(mapElement, [forestry.lat, forestry.lng], forestry.zoom);
+            initMap(mapElement, [forestry.centerLat, forestry.centerLng], forestry.zoom);
         } else {
             console.log('Лесничество не определено!');
             initMap(mapElement, getDefaultCoordinateCenterMap(), 8);

@@ -54,6 +54,7 @@ public class ViewController {
 
     @GetMapping("/forest-stand")
     public String forestStand(Model model) {
+/*
         UserUISettings uiSettings = userUISettingsService.getOrCreateSettings();
         List<ForestStand> forestStands = forestStandService.findAll();
 
@@ -69,7 +70,7 @@ public class ViewController {
                 .toList();
 
         model.addAttribute("latestStands", latestForestStands);
-
+*/
         return "forest-stand";
     }
 }
