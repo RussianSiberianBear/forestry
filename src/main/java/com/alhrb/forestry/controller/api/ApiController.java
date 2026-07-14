@@ -29,6 +29,14 @@ public class ApiController {
 
         try {
             GridP p = (req != null) ? req.first() : null;
+            if (p == null || p.getOper() == null) {
+                return ResponseEntity.badRequest().body(
+                        Map.of(
+                                "success", false,
+                                "message", "Некорректный запрос"
+                        )
+                );
+            }
             Long userId = securityHelper.getCurrentUserId();
 
             if (p.getOper().equalsIgnoreCase("read")) {
