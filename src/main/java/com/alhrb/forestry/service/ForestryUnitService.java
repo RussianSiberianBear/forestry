@@ -4,6 +4,7 @@ import com.alhrb.forestry.common.specification.DynamicSpecificationBuilder;
 import com.alhrb.forestry.common.specification.GridPageableBuilder;
 import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.mapper.BaseMapper;
+import com.alhrb.forestry.mapper.ForestryUnitMapper;
 import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.model.ForestryUnitType;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
@@ -32,7 +33,7 @@ public class ForestryUnitService {
             "geometry", "createdAt", "coordinateSystemId", "centerLat", "centerLng", "zoom", "accountNumber");
 
     private final ForestryUnitRepository forestryUnitRepository;
-    private final BaseMapper mapper;
+    private final ForestryUnitMapper mapper;
 
     public List<ForestryUnit> findAllowedForestries(Long userId) {
         return forestryUnitRepository.findAllowedForestryByType(ForestryUnitType.FORESTRY, userId);
