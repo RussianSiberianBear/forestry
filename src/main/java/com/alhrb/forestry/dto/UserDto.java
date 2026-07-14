@@ -1,6 +1,7 @@
 package com.alhrb.forestry.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 public record UserDto(
         Long id,
         @JsonProperty("__clientId")  // ← сохраняем имя поля для JSON
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         String clientId,
         String username,
         String email,
