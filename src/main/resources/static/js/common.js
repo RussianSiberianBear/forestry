@@ -1,6 +1,6 @@
-function getDefaultCoordinateCenterMap(){
+function getDefaultCoordinateCenterMap() {
     // пока возвращаем по умолчанию координаты с.Бичура
-    return [50.592834,107.598389];
+    return [50.592834, 107.598389];
 }
 
 // ==========================================
@@ -10,7 +10,8 @@ function getDefaultCoordinateCenterMap(){
 let map = null;
 let osmLayer = null;
 let googleSatLayer = null;
-function initMap(element,centerCoordinates, zoom) {
+
+function initMap(element, centerCoordinates, zoom) {
     try {
         if (document.getElementById(element)) {
             map = L.map(element).setView(centerCoordinates, zoom);
@@ -41,7 +42,7 @@ function initMap(element,centerCoordinates, zoom) {
 
             console.log('✅ Карта инициализирована');
         } else {
-            console.warn('⚠️ Элемент #'+element+' не найден на странице');
+            console.warn('⚠️ Элемент #' + element + ' не найден на странице');
         }
     } catch (e) {
         console.error('❌ Ошибка инициализации карты:', e);
@@ -76,11 +77,11 @@ function findById(arr, id) {
     return found || null; // или undefined
 }
 
-function getCurrentForestry(){
+function getCurrentForestry() {
     const forestrySelect = document.getElementById('forestrySelect');
     const forestryId = forestrySelect.value;
-    if (forestryId && forestries){
-        return findById(forestries,forestryId);
+    if (forestryId && forestries) {
+        return findById(forestries, forestryId);
     }
     return null;
 }
@@ -209,14 +210,14 @@ async function deleteWithConfirmEx(grid, options = {}) {
     try {
         const res = await grid.http.request({url: options.url, method: 'POST', strict: false, unwrapData: false});
         const cnt = Number(res?.data?.count);
-        let msg =  res?.message ?? '';
+        let msg = res?.message ?? '';
 
         if (cnt === 0) msg = options.noData;
         if (Number.isFinite(cnt) && cnt > 0) {
             msg += ` Удалено: ${cnt} ${pluralRu(cnt, 'запись', 'записи', 'записей')}.`;
         }
         grid.toast(msg, 'success');
-        if (res?.success === true && cnt > 0 ) await grid.load();
+        if (res?.success === true && cnt > 0) await grid.load();
 
     } catch (e) {
         grid.toast('Ошибка при удалении!', 'error');
@@ -291,7 +292,7 @@ function setMonthPeriod(from, to) {
     document.getElementById(to).value = formatDate(toDate);
 }
 
-function setQuarterPeriod(from,to) {
+function setQuarterPeriod(from, to) {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
@@ -309,7 +310,7 @@ function setQuarterPeriod(from,to) {
     document.getElementById(to).value = formatDate(toDate);
 }
 
-function setYearPeriod(from,to) {
+function setYearPeriod(from, to) {
     const now = new Date();
     const year = now.getFullYear();
 

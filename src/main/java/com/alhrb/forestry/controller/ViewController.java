@@ -1,9 +1,7 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.CuttingAreaDto;
-import com.alhrb.forestry.dto.ForestStandDto;
 import com.alhrb.forestry.model.CuttingArea;
-import com.alhrb.forestry.model.ForestStand;
 import com.alhrb.forestry.service.CuttingAreaService;
 import com.alhrb.forestry.service.ForestStandService;
 import com.alhrb.forestry.user.UserUISettings;

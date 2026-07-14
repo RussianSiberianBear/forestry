@@ -24,7 +24,7 @@ public class ForestryUnit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
- //   @JsonIgnore
+    //   @JsonIgnore
     private ForestryUnit parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -22,142 +22,142 @@
                         Фильтр<span class="filter-arrow">▲</span>
                     </div>
                     <div id="gridUsersFilterBody" class="uk-form-stacked uk-hidden">
-                         <div id="usersFilterData" style="padding: 8px !important;">
-                                <div class="card">
-                                    <div class="uk-grid uk-grid-small">
-                                        <div>
-                                            <label class="uk-form-label" id="lblUserLogin" for="userLogin">
-                                                Логин
-                                            </label>
-                                            <input type="text" data-filter
-                                                   class="uk-form-controls uk-width-small"
-                                                   id="userLogin"/>
-                                        </div>
-                                        <div>
-                                            <label class="uk-form-label" id="lblUserEmail" for="userEmail">
-                                                Email
-                                            </label>
-                                            <input type="text" data-filter
-                                                   class="uk-form-controls uk-width-small"
-                                                   id="userEmail"/>
-                                        </div>
-                                        <div>
-                                            <label class="uk-form-label" id="lbluserFullName"
-                                                   for="userFullName">
-                                                Полное имя
-                                            </label>
-                                            <input type="text" data-filter
-                                                   class="uk-form-controls uk-width-medium"
-                                                   id="userFullName"/>
-                                        </div>
-                                        <div>
-                                            <label class="uk-form-label" id="lblUserPhone"
-                                                   for="userPhone">
-                                                Телефон
-                                            </label>
-                                            <input type="text" data-filter
-                                                   class="uk-form-controls uk-width-small"
-                                                   id="userPhone"/>
-                                        </div>
-
-                                        <div>
-                                            <label class="uk-form-label" id="lblUserRole"
-                                                   for="userRole">
-                                                Роль
-                                            </label>
-                                            <select id="userRole" data-filter name="userRole"
-                                                    class="uk-form-controls uk-width-small" size="1">
-                                                <option value=""></option>
-                                                <option value="0">SUPERADMIN</option>
-                                                <option value="1">ADMIN</option>
-                                                <option value="2">USER</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="uk-form-label" id="lblDateUserRegFrom"
-                                                   for="dateUserRegFrom">
-                                                Дата регистрации с
-                                            </label>
-                                            <input type="date" data-filter
-                                                   class="user-filter-date uk-form-controls uk-width-small"
-                                                   id="dateUserRegFrom"/>
-                                        </div>
-                                        <div>
-                                            <label class="uk-form-label" id="lblDateUserRegTo"
-                                                   for="dateUserRegTo">
-                                                Дата регистрации по
-                                            </label>
-                                            <input type="date" data-filter
-                                                   class="user-filter-date uk-form-controls uk-width-small"
-                                                   id="dateUserRegTo"/>
-                                        </div>
-                                        <div>
-                                            <label class="uk-form-label" id="lblUserActiveStatus"
-                                                   for="userLockStatus">
-                                                Статус активации
-                                            </label>
-                                            <select id="userActiveStatus" data-filter name="userActiveStatus"
-                                                    class="uk-form-controls uk-width-small" size="1">
-                                                <option value=""></option>
-                                                <option value="1">Активирован</option>
-                                                <option value="2">Не активирован</option>
-                                            </select>
-                                        </div>
+                        <div id="usersFilterData" style="padding: 8px !important;">
+                            <div class="card">
+                                <div class="uk-grid uk-grid-small">
+                                    <div>
+                                        <label class="uk-form-label" id="lblUserLogin" for="userLogin">
+                                            Логин
+                                        </label>
+                                        <input type="text" data-filter
+                                               class="uk-form-controls uk-width-small"
+                                               id="userLogin"/>
                                     </div>
-                                    <div class="uk-grid uk-grid-small">
-                                        <div>
-                                            <label class="uk-form-label" id="lblUserLockStatus"
-                                                   for="userLockStatus">
-                                                Статус блокировки
-                                            </label>
-                                            <select id="userLockStatus" data-filter name="userLockStatus"
-                                                    class="uk-form-controls uk-width-small" size="1">
-                                                <option value=""></option>
-                                                <option value="1">Заблокированные</option>
-                                                <option value="2">Незаблокированные</option>
-                                            </select>
-                                        </div>
-                                        <div class="date-user-block" style="display:none">
-                                            <label class="uk-form-label" id="lblDateUserBlockedFrom"
-                                                   for="dateUserBlockedFrom">
-                                                Дата блокировки с
-                                            </label>
-                                            <input type="date" data-filter
-                                                   class="user-filter-date uk-form-controls uk-width-small"
-                                                   id="dateUserBlockedFrom"/>
-                                        </div>
-                                        <div class="date-user-block" style="display:none">
-                                            <label class="uk-form-label" id="lblDateUserBlockedTo"
-                                                   for="dateUserBlockedTo">
-                                                Дата блокировки по
-                                            </label>
-                                            <input type="date" data-filter
-                                                   class="user-filter-date uk-form-controls uk-width-small"
-                                                   id="dateUserBlockedTo"/>
-                                        </div>
-                                        <div class="date-user-block" style="display:none">
-                                            <label class="uk-form-label" id="lblDateUserUntilBlockedFrom"
-                                                   for="dateUserUntilBlockedFrom">
-                                                Конец блокировки с
-                                            </label>
-                                            <input type="date" data-filter
-                                                   class="user-filter-date uk-form-controls uk-width-small"
-                                                   id="dateUserUntilBlockedFrom"/>
-                                        </div>
-                                        <div class="date-user-block" style="display:none">
-                                            <label class="uk-form-label" id="lblDateUserUntilBlockedTo"
-                                                   for="dateUserUntilBlockedTo">
-                                                Конец блокировки по
-                                            </label>
-                                            <input type="date" data-filter
-                                                   class="user-filter-date uk-form-controls uk-width-small"
-                                                   id="dateUserUntilBlockedTo"/>
-                                        </div>
+                                    <div>
+                                        <label class="uk-form-label" id="lblUserEmail" for="userEmail">
+                                            Email
+                                        </label>
+                                        <input type="text" data-filter
+                                               class="uk-form-controls uk-width-small"
+                                               id="userEmail"/>
+                                    </div>
+                                    <div>
+                                        <label class="uk-form-label" id="lbluserFullName"
+                                               for="userFullName">
+                                            Полное имя
+                                        </label>
+                                        <input type="text" data-filter
+                                               class="uk-form-controls uk-width-medium"
+                                               id="userFullName"/>
+                                    </div>
+                                    <div>
+                                        <label class="uk-form-label" id="lblUserPhone"
+                                               for="userPhone">
+                                            Телефон
+                                        </label>
+                                        <input type="text" data-filter
+                                               class="uk-form-controls uk-width-small"
+                                               id="userPhone"/>
+                                    </div>
 
+                                    <div>
+                                        <label class="uk-form-label" id="lblUserRole"
+                                               for="userRole">
+                                            Роль
+                                        </label>
+                                        <select id="userRole" data-filter name="userRole"
+                                                class="uk-form-controls uk-width-small" size="1">
+                                            <option value=""></option>
+                                            <option value="0">SUPERADMIN</option>
+                                            <option value="1">ADMIN</option>
+                                            <option value="2">USER</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="uk-form-label" id="lblDateUserRegFrom"
+                                               for="dateUserRegFrom">
+                                            Дата регистрации с
+                                        </label>
+                                        <input type="date" data-filter
+                                               class="user-filter-date uk-form-controls uk-width-small"
+                                               id="dateUserRegFrom"/>
+                                    </div>
+                                    <div>
+                                        <label class="uk-form-label" id="lblDateUserRegTo"
+                                               for="dateUserRegTo">
+                                            Дата регистрации по
+                                        </label>
+                                        <input type="date" data-filter
+                                               class="user-filter-date uk-form-controls uk-width-small"
+                                               id="dateUserRegTo"/>
+                                    </div>
+                                    <div>
+                                        <label class="uk-form-label" id="lblUserActiveStatus"
+                                               for="userLockStatus">
+                                            Статус активации
+                                        </label>
+                                        <select id="userActiveStatus" data-filter name="userActiveStatus"
+                                                class="uk-form-controls uk-width-small" size="1">
+                                            <option value=""></option>
+                                            <option value="1">Активирован</option>
+                                            <option value="2">Не активирован</option>
+                                        </select>
                                     </div>
                                 </div>
+                                <div class="uk-grid uk-grid-small">
+                                    <div>
+                                        <label class="uk-form-label" id="lblUserLockStatus"
+                                               for="userLockStatus">
+                                            Статус блокировки
+                                        </label>
+                                        <select id="userLockStatus" data-filter name="userLockStatus"
+                                                class="uk-form-controls uk-width-small" size="1">
+                                            <option value=""></option>
+                                            <option value="1">Заблокированные</option>
+                                            <option value="2">Незаблокированные</option>
+                                        </select>
+                                    </div>
+                                    <div class="date-user-block" style="display:none">
+                                        <label class="uk-form-label" id="lblDateUserBlockedFrom"
+                                               for="dateUserBlockedFrom">
+                                            Дата блокировки с
+                                        </label>
+                                        <input type="date" data-filter
+                                               class="user-filter-date uk-form-controls uk-width-small"
+                                               id="dateUserBlockedFrom"/>
+                                    </div>
+                                    <div class="date-user-block" style="display:none">
+                                        <label class="uk-form-label" id="lblDateUserBlockedTo"
+                                               for="dateUserBlockedTo">
+                                            Дата блокировки по
+                                        </label>
+                                        <input type="date" data-filter
+                                               class="user-filter-date uk-form-controls uk-width-small"
+                                               id="dateUserBlockedTo"/>
+                                    </div>
+                                    <div class="date-user-block" style="display:none">
+                                        <label class="uk-form-label" id="lblDateUserUntilBlockedFrom"
+                                               for="dateUserUntilBlockedFrom">
+                                            Конец блокировки с
+                                        </label>
+                                        <input type="date" data-filter
+                                               class="user-filter-date uk-form-controls uk-width-small"
+                                               id="dateUserUntilBlockedFrom"/>
+                                    </div>
+                                    <div class="date-user-block" style="display:none">
+                                        <label class="uk-form-label" id="lblDateUserUntilBlockedTo"
+                                               for="dateUserUntilBlockedTo">
+                                            Конец блокировки по
+                                        </label>
+                                        <input type="date" data-filter
+                                               class="user-filter-date uk-form-controls uk-width-small"
+                                               id="dateUserUntilBlockedTo"/>
+                                    </div>
+
+                                </div>
                             </div>
-                         <div class="uk-align-center">
+                        </div>
+                        <div class="uk-align-center">
                             <div class="uk-flex uk-flex-middle uk-flex-center">
                                 <button type="button" id="btnUsersFilterSearch"
                                         class="uk-button-small uk-button-primary uk-margin-right">
@@ -264,7 +264,7 @@
                         type: 'text', values: {
                             enum: [{value: 0, text: 'SUPERADMIN'},
                                 {value: 1, text: 'ADMIN'},
-                                {value: 2, text: 'USER' }]
+                                {value: 2, text: 'USER'}]
                         }, ui: {label: 'Роль', grid: {visible: true, width: '10%'}},
                         editor: {
                             type: 'select',
@@ -278,7 +278,8 @@
                         editor: {type: 'date', edit: {visible: false}, create: {visible: false}}
                     },
                     isActive: {
-                        type: 'bool', values: {enum: [{value: true, text: 'Активирован'}, {value: false, text: 'Не активирован'}]},
+                        type: 'bool',
+                        values: {enum: [{value: true, text: 'Активирован'}, {value: false, text: 'Не активирован'}]},
                         ui: {label: 'Активация', grid: {visible: true, width: '8%', colType: 'boolean'}},
                         editor: {type: 'select', edit: {readOnly: false, required: true}, create: {visible: false}}
                     },
@@ -301,7 +302,8 @@
                         editor: {edit: {readOnly: true, visible: true}, create: {visible: false}}
                     },
                     lastLoginAt: {
-                        type: 'date', ui: {label: 'Последнее посещение', grid: {visible: true, width: '11%', colType: 'date'}},
+                        type: 'date',
+                        ui: {label: 'Последнее посещение', grid: {visible: true, width: '11%', colType: 'date'}},
                         editor: {type: 'date', edit: {visible: false}, create: {visible: false}}
                     },
                 }
@@ -323,7 +325,7 @@
                 },
                 pager: {
                     enabled: true,
-                    rpp: [10,20,50]
+                    rpp: [10, 20, 50]
                 },
                 sortOrder: [{field: 'statDate', dir: 'asc'}],
             }

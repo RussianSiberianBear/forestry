@@ -1,6 +1,5 @@
 package com.alhrb.forestry.dto;
 
-import com.alhrb.forestry.model.ForestryUnitType;
 import org.locationtech.jts.geom.Geometry;
 
 public record ForestryUnitRequestDto(
@@ -15,4 +14,5 @@ public record ForestryUnitRequestDto(
         Double centerLng,
         Integer zoom,
         String accountNumber
-) {}
+) {
+}

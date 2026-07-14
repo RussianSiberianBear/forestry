@@ -3,6 +3,7 @@
 // ==========================================
 let forestries = null;
 let subForestries = null;
+
 function loadForestries(callback) {
     const forestrySelect = document.getElementById('forestrySelect');
     if (!forestrySelect) return;
@@ -611,7 +612,7 @@ function resetAllDependentSelects() {
     updateTerritoryInfo();
 }
 
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
     const container = document.getElementById('quarterInput')?.closest('.autocomplete-wrapper');
     if (container && !container.contains(e.target)) {
         const suggestions = document.getElementById('quarterSuggestions');

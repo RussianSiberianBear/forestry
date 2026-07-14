@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ru" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/main :: layout(~{::content})}" xmlns="http://www.w3.org/1999/html"
-      xmlns:sec="http://www.w3.org/1999/xhtml">
-<div th:fragment="content" xmlns:sec="http://www.w3.org/1999/xhtml">
+>
+<div th:fragment="content">
     <h5>Выделы</h5>
     <div id="gridAppointedForestry"></div>
 
@@ -10,7 +10,7 @@
 
         const cfgGridAppointedForestry = {
             autoLoad: true,
-            readOnly:true,
+            readOnly: true,
             data: {
                 dataKey: 'gridForestry',
                 url: '/api/common/appointedForesty'
@@ -35,7 +35,7 @@
                         type: 'text', ui: {label: 'Учетный код', grid: {visible: true, width: '16%'}},
                         editor: {
                             type: 'text',
-                            edit: {readOnly:true, required: true},
+                            edit: {readOnly: true, required: true},
                             create: {readOnly: true, required: true}
                         }
                     },
@@ -53,7 +53,7 @@
                 },
                 pager: {
                     enabled: true,
-                    rpp: [10,20,50]
+                    rpp: [10, 20, 50]
                 },
                 sortOrder: [{field: 'name', dir: 'asc'}],
             }

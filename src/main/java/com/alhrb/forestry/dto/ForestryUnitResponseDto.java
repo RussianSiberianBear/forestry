@@ -1,10 +1,8 @@
 package com.alhrb.forestry.dto;
 
-import com.alhrb.forestry.model.ForestryUnitType;
 import org.locationtech.jts.geom.Geometry;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public record ForestryUnitResponseDto(
         Long id,
@@ -23,4 +21,5 @@ public record ForestryUnitResponseDto(
         Integer zoom,
         String accountNumber,
         String fullPath             // полный путь из getFullPath()
-) {}
+) {
+}
