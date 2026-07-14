@@ -21,7 +21,7 @@ import java.util.Map;
 
 
 @Controller
-@PreAuthorize("hasAnyRole('SUPERADMIN',ADMIN')")
+@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
 public class ApanelController {
 
     private final UserService userService;
