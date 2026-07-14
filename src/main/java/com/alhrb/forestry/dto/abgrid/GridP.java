@@ -41,6 +41,6 @@ public class GridP {
             return null;
         }
 
-        return params.getRows().get(0);
+        return params.getRows().getFirst();
     }
 }

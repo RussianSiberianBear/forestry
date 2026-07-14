@@ -392,7 +392,6 @@ async function reportDownload(grid, payload, downloadUrl, filename) {
     return false;
 }
 
-
 // Глобальная политика
 // ВАЖНО: вызвать ДО new ABGrid(...)
 ABGrid.setDefaults({
