@@ -40,7 +40,6 @@ public class FileUploadServiceImpl implements FileUploadService {
                 .userId(userId)
                 .originalFilename(originalName)
                 .fileType(extension.toUpperCase())
-                .fileData(new byte[0]) // compatibility with old NOT NULL schema; content is not stored in DB
                 .fileSize(file.getSize())
                 .sha256(checksum)
                 .status("SAVING")
