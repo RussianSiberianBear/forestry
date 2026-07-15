@@ -11,10 +11,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class FileUploadResponseDto {
     private Long id;
-    private String originalFilename;
-    private String fileType;
-    private Long fileSize;
-    private LocalDateTime uploadDate;
+    private Long userId;
+    private String type;
+    private String originalName;
+    private String storedName;
+    private String relativePath;
+    private String sha256;
+    private String contentType;
+    private String extension;
+    private Long size;
     private String status;
     private Boolean processed;
+    private LocalDateTime createdAt;
+    private LocalDateTime processedAt;
+    private String errorMessage;
 }

@@ -20,6 +20,7 @@
     align-items: center;
     gap: 8px;
 }
+
 .coordinate-row input {
     width: 100px;
     display: inline-block;
@@ -30,7 +31,6 @@
 .coord-input {
     font-family: 'Courier New', monospace;
 }
-
 
 
 /* ==========================================
@@ -53,6 +53,7 @@
     border-radius: 4px;
     background: white;
 }
+
 .form-select:focus {
     border-color: #1e87f0;
     outline: none;

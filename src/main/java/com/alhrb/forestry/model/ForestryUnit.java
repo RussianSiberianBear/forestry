@@ -24,7 +24,7 @@ public class ForestryUnit {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    @JsonIgnore
+    //   @JsonIgnore
     private ForestryUnit parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -67,7 +67,6 @@ public class ForestryUnit {
     // ===== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =====
 
     public String getFullPath() {
-        StringBuilder sb = new StringBuilder();
         ForestryUnit current = this;
         List<String> names = new ArrayList<>();
 
@@ -77,6 +76,9 @@ public class ForestryUnit {
         }
 
         return String.join(" / ", names);
+    }
+
+    public void setAccountNumber(String accountNumber) {
     }
 
     public ForestryUnit getRoot() {

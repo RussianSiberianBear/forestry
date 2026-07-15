@@ -1,0 +1,37 @@
+/******************************** Переопределяем из UIKit ***********************************/
+[class*="uk-align"] {
+    display: block;
+    margin-bottom: 0px;
+}
+
+* + [class*="uk-align"] {
+    margin-top: 0px;
+}
+
+.uk-form-stacked .uk-form-label {
+    margin-bottom: -2px !important;
+}
+
+.uk-table td {
+    padding: 0px 0px !important;
+}
+
+.uk-card-body {
+    padding: 10px !important;
+    border-radius: 5px;
+    /*
+        margin-top: 16px;
+     */
+}
+
+* + .uk-grid-margin-small, .uk-grid + .uk-grid-small, .uk-grid-small > .uk-grid-margin {
+    margin-top: 4px !important;
+}
+
+.uk-form-label {
+    color: inherit !important;
+    font-size: .875rem;
+    font-weight: normal !important;
+}
+
+/**************************************************************************************************/

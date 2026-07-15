@@ -1,8 +1,8 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.*;
-import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.CuttingAreaRepository;
+import com.alhrb.forestry.repository.ForestryUnitRepository;
 import com.alhrb.forestry.repository.TerritoryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.util.Optional;
 public class ExcelImportService {
 
     private final TerritoryUnitRepository territoryUnitRepository;
-    private final ForestryUnitRepository  forestryUnitRepository;
+    private final ForestryUnitRepository forestryUnitRepository;
     private final CuttingAreaRepository cuttingAreaRepository;
     private final GeometryService geometryService;
 
@@ -219,7 +219,7 @@ public class ExcelImportService {
     }
 
     private ForestryUnit findQuarterByHierarchy(String regionName, String districtName,
-                                                 String forestryName, Integer quarterNumber) {
+                                                String forestryName, Integer quarterNumber) {
         if (quarterNumber == null) return null;
 
         TerritoryUnit region = null;

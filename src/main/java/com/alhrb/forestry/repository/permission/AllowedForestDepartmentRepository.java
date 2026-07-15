@@ -11,5 +11,6 @@ public interface AllowedForestDepartmentRepository
 
     // Можно добавить дополнительные методы запросов
     void deleteByUserId(Long userId);
+
     void deleteByForestryUnitId(Long forestryUnitId);
 }

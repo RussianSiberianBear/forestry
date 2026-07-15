@@ -1,8 +1,7 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.model.UserUISettings;
-import com.alhrb.forestry.service.UserUISettingsService;
-import jakarta.servlet.http.HttpSession;
+import com.alhrb.forestry.user.UserUISettings;
+import com.alhrb.forestry.user.UserUISettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +18,7 @@ public class UserUISettingsController {
     @PostMapping("/{key}/{value}")
     public ResponseEntity<String> saveSetting(@PathVariable String key,
                                               @PathVariable String value
-                                              ) {
+    ) {
         try {
             userUISettingsService.updateSetting(key, value);
             log.info("✅ Настройка сохранена: {}={}", key, value);

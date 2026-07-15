@@ -25,15 +25,15 @@ public interface ForestTargetClassificationRepository extends JpaRepository<Fore
     boolean existsByParentIdAndName(Long parentId, String name);
 
     @Query(value = """
-        WITH RECURSIVE cte AS (
-            SELECT * FROM forest_target_classification 
-            WHERE parent_id = :parentId
-            UNION ALL
-            SELECT ftc.* FROM forest_target_classification ftc
-            INNER JOIN cte ON cte.id = ftc.parent_id
-        )
-        SELECT * FROM cte
-        """, nativeQuery = true)
+            WITH RECURSIVE cte AS (
+                SELECT * FROM forest_target_classification 
+                WHERE parent_id = :parentId
+                UNION ALL
+                SELECT ftc.* FROM forest_target_classification ftc
+                INNER JOIN cte ON cte.id = ftc.parent_id
+            )
+            SELECT * FROM cte
+            """, nativeQuery = true)
     List<ForestTargetClassification> findAllDescendants(@Param("parentId") Long parentId);
 
     List<ForestTargetClassification> findByLevelOrderByNameAsc(Short level);

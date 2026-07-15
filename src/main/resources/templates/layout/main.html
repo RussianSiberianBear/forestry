@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(content)">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<head>
+    <!-- ===== UIKIT ===== -->
+    <link rel="stylesheet" th:href="@{/webjars/uikit/css/uikit.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/uikit.fix.css}">
+    <script th:src="@{/webjars/uikit/js/uikit.min.js}"></script>
+    <script th:src="@{/webjars/uikit/js/uikit-icons.min.js}"></script>
+
+    <link rel="stylesheet" th:href="@{/abgrid-engine/page-skin-blue-pro.css}">
+
+    <script type="text/javascript" th:src="@{/abgrid-engine/apanel/abgrid.min.js}"
+            sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')"></script>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/css/fontawesome/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-structure.css}"/>
+    <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-icons.css}"/>
+    <link rel="stylesheet" th:href="@{/abgrid-engine/abgrid-theme-blue-pro.css}"/>
+    <link rel="stylesheet" th:href="@{/css/abgrid-dark.css}"/>
+
+    <script type="text/javascript" th:src="@{/js/common.js}"></script>
+
+</head>
+<body>
+<main class="wrap">
+    <!-- сюда вставится контент конкретной страницы -->
+    <div th:replace="${content}"></div>
+</main>
+<footer class="footer">
+    <div class="uk-text-center uk-margin-top uk-text-small">
+        <div class="wrap__footer">© <span th:text="${#dates.year(#dates.createNow())}"></span></div>
+</footer>
+</body>
+</html>

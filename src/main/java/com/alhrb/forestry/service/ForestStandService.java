@@ -1,8 +1,6 @@
 package com.alhrb.forestry.service;
 
 import com.alhrb.forestry.model.ForestStand;
-import com.alhrb.forestry.model.ForestStand;
-import com.alhrb.forestry.model.ForestStand;
 import com.alhrb.forestry.repository.ForestStandRepository;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +58,5 @@ public class ForestStandService {
     public List<ForestStand> findByForestryTypeAndIdRecursive(String type, Long id) {
         return forestStandRepository.findByForestryTypeAndIdRecursive(type, id);
     }
-
 
 }

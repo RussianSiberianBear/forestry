@@ -1,0 +1,20 @@
+<div th:fragment="upload-zone">
+    <!-- Drop zone -->
+    <div class="js-upload uk-placeholder uk-text-center">
+        <span uk-icon="icon: cloud-upload"></span>
+        <span class="uk-text-middle">Переместите сюда или</span>
+        <div uk-form-custom>
+            <input type="file" multiple>
+            <span class="uk-link">выберете файл</span>
+        </div>
+    </div>
+
+    <progress id="js-progressbar" class="uk-progress" value="0" max="100" hidden></progress>
+
+    <script>
+        var bar = document.getElementById('js-progressbar');
+
+
+
+    </script>
+</div>

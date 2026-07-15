@@ -2,8 +2,9 @@ package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.UserCreateDto;
 import com.alhrb.forestry.dto.UserLockDto;
-import com.alhrb.forestry.model.User;
-import com.alhrb.forestry.service.UserService;
+import com.alhrb.forestry.dto.abgrid.GridP;
+import com.alhrb.forestry.user.User;
+import com.alhrb.forestry.user.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -64,8 +65,8 @@ public class UserController {
 
     // ===== ВСЕ ПОЛЬЗОВАТЕЛИ =====
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<Map<String, Object>> getAllUsers(GridP p) {
+        return ResponseEntity.ok(userService.findAll(p));
     }
 
     // ===== БЛОКИРОВКА =====

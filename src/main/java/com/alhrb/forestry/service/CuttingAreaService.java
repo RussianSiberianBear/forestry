@@ -1,10 +1,11 @@
 package com.alhrb.forestry.service;
 
-import com.alhrb.forestry.dto.IntersectionReport;
 import com.alhrb.forestry.dto.CuttingAreaMapDto;
-import com.alhrb.forestry.model.*;
-import com.alhrb.forestry.repository.ForestryUnitRepository;
+import com.alhrb.forestry.dto.IntersectionReport;
+import com.alhrb.forestry.model.CuttingArea;
+import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.repository.CuttingAreaRepository;
+import com.alhrb.forestry.repository.ForestryUnitRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Polygon;

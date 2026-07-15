@@ -4,7 +4,8 @@ import java.util.List;
 
 /**
  * Базовый интерфейс маппера с универсальными методами
- * @param <E> Entity класс
+ *
+ * @param <E>  Entity класс
  * @param <RQ> Request DTO класс
  * @param <RS> Response DTO класс
  */

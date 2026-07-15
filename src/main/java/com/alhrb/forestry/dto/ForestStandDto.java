@@ -1,9 +1,6 @@
 package com.alhrb.forestry.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.locationtech.jts.geom.Polygon;
 
 import java.math.BigDecimal;
@@ -28,7 +25,8 @@ public class ForestStandDto {
     /**
      * Номер выдела в пределах квартала
      */
-    private String numberInQuarter;;
+    private String numberInQuarter;
+    ;
 
     /**
      * Полный номер выдела: лесничество_квартал_выдел

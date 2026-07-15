@@ -73,10 +73,24 @@ public class CuttingArea {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-
         if (fullNumber == null && forestryUnit != null) {
             fullNumber = forestryUnit.getFullPath() + " / Дел." + numberInQuarter;
         }
+        accountNumber = getFullAccountNumber() + ":" + forestryUnit.getNumber() + ":ЛС" + numberInQuarter;
+    }
+
+    public String getFullAccountNumber() {
+        ForestryUnit forestryUnitTmp = forestryUnit;
+
+        while (forestryUnitTmp != null
+                && !(forestryUnitTmp.isForestry() || forestryUnitTmp.isSubForestry())) {
+            forestryUnitTmp = forestryUnitTmp.getParent();
+        }
+
+        if (forestryUnitTmp == null || forestryUnitTmp.getAccountNumber() == null) {
+            return "";
+        }
+        return forestryUnitTmp.getAccountNumber();
     }
 
     public String getForestryPath() {

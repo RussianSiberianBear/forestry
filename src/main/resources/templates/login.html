@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему</title>
 
-    <link rel="stylesheet" href="/webjars/uikit/css/uikit.min.css"/>
-    <script src="/webjars/uikit/js/uikit.min.js"></script>
-    <script src="/webjars/uikit/js/uikit-icons.min.js"></script>
+    <link rel="stylesheet" th:href="@{/webjars/uikit/css/uikit.min.css}"/>
+    <script th:src="@{/webjars/uikit/js/uikit.min.js}"></script>
 
     <style>
         body {
@@ -19,26 +18,31 @@
             margin: 0;
             padding: 20px;
         }
+
         .login-card {
             max-width: 400px;
             width: 100%;
             padding: 40px;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+
         .login-card .uk-card-title {
             text-align: center;
             margin-bottom: 30px;
         }
+
         .login-card .uk-card-title span {
             color: #1e87f0;
         }
+
         .login-card .uk-button-primary {
             width: 100%;
             padding: 12px;
             font-size: 16px;
         }
+
         .login-card .uk-alert {
             margin-top: 20px;
         }

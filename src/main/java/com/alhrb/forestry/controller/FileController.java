@@ -1,7 +1,7 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.FileUploadResponseDto;
-import com.alhrb.forestry.service.FileUploadService;
+import com.alhrb.forestry.files.FileUploadService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

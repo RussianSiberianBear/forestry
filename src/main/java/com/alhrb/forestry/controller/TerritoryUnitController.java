@@ -1,16 +1,16 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.dto.ForestryUnitDto;
 import com.alhrb.forestry.dto.TerritoryUnitDto;
-import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.model.TerritoryType;
 import com.alhrb.forestry.model.TerritoryUnit;
-import com.alhrb.forestry.service.ForestryUnitService;
 import com.alhrb.forestry.service.TerritoryUnitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -532,8 +532,8 @@ function resetForm() {
     document.getElementById('numberInQuarter').value = '';
     document.getElementById('forestStand').value = '';
     document.getElementById('description').value = '';
-  //  document.getElementById('yearOfCut').value = '';
-  //  document.getElementById('cutType').value = '';
+    //  document.getElementById('yearOfCut').value = '';
+    //  document.getElementById('cutType').value = '';
 
     // Пересоздаём блок координат с 3 пустыми строками
     initCoordinateFields();
@@ -839,8 +839,8 @@ function showConflicts(conflicts) {
                     <tr>
                         <th>Деляна 1</th>
                         <th>Деляна 2</th>
-                        <th>Площадь (м²)</th>
-                        <th>Серьёзность</th>
+                        <th style="width:110px;text-align: right;">Площадь (м²)</th>
+                        <th style="width:110px;">Серьёзность</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -856,7 +856,7 @@ function showConflicts(conflicts) {
             <tr>
                 <td><strong>${conflict.plot1Number || 'ID:' + conflict.plot1Id}</strong></td>
                 <td><strong>${conflict.plot2Number || 'ID:' + conflict.plot2Id}</strong></td>
-                <td>${(conflict.overlapArea || 0).toFixed(2)}</td>
+                <td style="text-align: right;">${(conflict.overlapArea || 0).toFixed(2)}</td>
                 <td>
                     <span class="${severityClass}">
                         <span uk-icon="icon: ${severityIcon}"></span>
@@ -1068,7 +1068,7 @@ function getPolygonCenter(coords) {
         lat += coords[i][0];
         lng += coords[i][1];
     }
-    return { lat: lat / n, lng: lng / n };
+    return {lat: lat / n, lng: lng / n};
 }
 
 function formatNumberInQuarter(value) {
@@ -1174,15 +1174,15 @@ function initMouseCoords() {
     mapElementDom.style.cursor = 'crosshair';
 
     // Обработчики для смены курсора при перетаскивании
-    map.on('dragstart', function() {
+    map.on('dragstart', function () {
         mapElementDom.style.cursor = 'grabbing';
     });
 
-    map.on('drag', function() {
+    map.on('drag', function () {
         mapElementDom.style.cursor = 'grabbing';
     });
 
-    map.on('dragend', function() {
+    map.on('dragend', function () {
         mapElementDom.style.cursor = 'crosshair';
     });
 
@@ -1191,7 +1191,7 @@ function initMouseCoords() {
     // Но можно добавить глобальный обработчик для всех интерактивных элементов
 
     // Обработчик движения мыши - показываем координаты
-    map.on('mousemove', function(e) {
+    map.on('mousemove', function (e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
 
@@ -1215,12 +1215,12 @@ function initMouseCoords() {
     });
 
     // Скрываем координаты при выходе с карты
-    map.on('mouseout', function(e) {
+    map.on('mouseout', function (e) {
         coordContainer.innerHTML = 'Широта: --.------° | Долгота: --.------°';
     });
 
     // Обновляем координаты при клике (копирование в буфер)
-    map.on('click', function(e) {
+    map.on('click', function (e) {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
         const coordStr = `${lat}, ${lng}`;
@@ -1325,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('🔄 Запускаем initMap с задержкой 300мс...');
         const forestry = getCurrentForestry();
         if (forestry) {
-            initMap(mapElement, [forestry.lat, forestry.lng], forestry.zoom);
+            initMap(mapElement, [forestry.centerLat, forestry.centerLng], forestry.zoom);
         } else {
             console.log('Лесничество не определено!');
             initMap(mapElement, getDefaultCoordinateCenterMap(), 8);
@@ -1420,7 +1420,7 @@ function collectFormData() {
             const lng = parseFloat(lngInput.value.replace(',', '.').trim());
 
             if (!isNaN(lat) && !isNaN(lng)) {
-                data.coordinates.push({ lat, lng });
+                data.coordinates.push({lat, lng});
             }
         }
     });

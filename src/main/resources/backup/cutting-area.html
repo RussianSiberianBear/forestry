@@ -126,7 +126,8 @@
                             Добавление новой деляны
                         </h3>
 
-                        <form th:action="@{/api/cuttingAreas/create}" th:object="${cuttingAreaDto}" method="post" id="plotForm">
+                        <form th:action="@{/api/cuttingAreas/create}" th:object="${cuttingAreaDto}" method="post"
+                              id="plotForm">
 
                             <!-- ===== 3. ЛЕСНИЧЕСТВО ===== -->
                             <div class="uk-margin-small">
@@ -364,7 +365,8 @@
                             <div class="uk-alert-primary uk-margin-small" uk-alert>
                                 <p>
                                     <span uk-icon="icon: info"></span>
-                                    <strong>Карта обновляется по кнопке "Обновить карту"</strong> при выборе региона, района, лесничества,
+                                    <strong>Карта обновляется по кнопке "Обновить карту"</strong> при выборе региона,
+                                    района, лесничества,
                                     квартала, номеров делян, года рубки и типа рубки в левой панели.
                                 </p>
                             </div>
@@ -375,7 +377,8 @@
                                             onclick="checkSelected()">
                                         <span uk-icon="icon: search"></span> Проверить выбранное
                                     </button>
-                                    <button class="uk-button uk-button-secondary uk-button-small" onclick="checkIntersectAll()">
+                                    <button class="uk-button uk-button-secondary uk-button-small"
+                                            onclick="checkIntersectAll()">
                                         <span uk-icon="icon: search"></span> Проверить все
                                     </button>
                                     <button class="uk-button uk-button-default uk-button-small"
@@ -390,7 +393,8 @@
                                 </div>
                                 <span class="uk-text-meta uk-text-small" id="checkInfo">
                                     <span uk-icon="icon: info"></span>
-                                    Выбрано: <span id="selectedTerritoryName" style="font-weight: bold; color: #1e87f0;">не выбрано</span>
+                                    Выбрано: <span id="selectedTerritoryName"
+                                                   style="font-weight: bold; color: #1e87f0;">не выбрано</span>
                                 </span>
                             </div>
                         </div>
@@ -682,7 +686,8 @@
                                     <div class="uk-flex uk-flex-between">
                                         <span th:text="${cuttingArea.fullNumber}"></span>
                                         <span th:if="${cuttingArea.verified}" class="uk-badge uk-badge-success">✓</span>
-                                        <span th:unless="${cuttingArea.verified}" class="uk-badge uk-badge-warning">⏳</span>
+                                        <span th:unless="${cuttingArea.verified}"
+                                              class="uk-badge uk-badge-warning">⏳</span>
                                     </div>
                                     <div class="uk-text-meta uk-text-small" th:text="${cuttingArea.name}"></div>
                                 </li>

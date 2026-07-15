@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const numberInQuarterInput = document.getElementById('numberInQuarter');
     if (numberInQuarterInput) {
-        numberInQuarterInput.addEventListener('input', function() {
+        numberInQuarterInput.addEventListener('input', function () {
             updateTerritoryInfo();
         });
     }
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     selectors.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            el.addEventListener('change', function() {
+            el.addEventListener('change', function () {
                 updateTerritoryInfo();
             });
         }

@@ -1,8 +1,7 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.dto.UserCreateDto;
-import com.alhrb.forestry.model.User;
-import com.alhrb.forestry.service.UserService;
+import com.alhrb.forestry.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;

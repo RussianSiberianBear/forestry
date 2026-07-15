@@ -1,0 +1,1390 @@
+/* ============================================================
+   ABGrid STRUCTURE — SINGLE SCROLL + STICKY THEAD (FINAL)
+   Ключ: вертикальный scroll ТОЛЬКО на .abgrid-scroll-container
+   ============================================================ */
+
+/* ================= ROOT ================= */
+:root {
+    /* ---------- Toast notifications (ABGrid) ---------- */
+    --abgrid-toast-top: 16px;
+    --abgrid-toast-right: 16px;
+    --abgrid-toast-gap: 10px;
+    --abgrid-toast-z: 99999;
+
+    --abgrid-toast-minw: 320px;
+    --abgrid-toast-maxw: 460px;
+    --abgrid-toast-pad-y: 14px;
+    --abgrid-toast-pad-x: 18px;
+    --abgrid-toast-radius: 10px;
+    --abgrid-toast-font: 14px;
+
+    --abgrid-toast-shadow: 0 10px 28px rgba(0, 0, 0, .16);
+    --abgrid-toast-border: rgba(0, 0, 0, .10);
+    --abgrid-toast-leftbar: 4px;
+
+    /* success is intentionally neutral */
+    --abgrid-toast-success-bg: var(--page-card);
+    --abgrid-toast-success-fg: var(--page-text);
+    --abgrid-toast-success-accent: var(--page-accent);
+
+    --abgrid-toast-error-bg: #fdecea;
+    --abgrid-toast-error-fg: #7a1f1a;
+    --abgrid-toast-error-accent: #d93025;
+
+    --abgrid-toast-close-size: 26px;
+    --abgrid-toast-close-font: 18px;
+    --abgrid-toast-close-bg-hover: rgba(0, 0, 0, .10);
+    --abgrid-toast-close-fg: rgba(0, 0, 0, .60);
+    --abgrid-toast-close-fg-hover: rgba(0, 0, 0, .92);
+
+    --abgrid-toast-error-close-bg-hover: rgba(217, 48, 37, .12);
+    --abgrid-toast-error-close-fg: rgba(217, 48, 37, .80);
+    --abgrid-toast-error-close-fg-hover: rgba(217, 48, 37, .98);
+}
+
+.abgrid {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    box-shadow: 0 1px 3px var(--abgrid-shadow);
+    border: 1px solid var(--abgrid-border);
+    background: var(--abgrid-bg-primary);
+    color: var(--abgrid-text-primary);
+
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+}
+
+.abgrid * {
+    box-sizing: border-box;
+}
+
+/* ================= LOADING OVERLAY ================= */
+
+.abgrid-loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    z-index: 50;
+}
+
+.abgrid-loading-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--abgrid-border);
+    background: var(--abgrid-bg-primary);
+    color: var(--abgrid-text-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.10);
+}
+
+.abgrid-loading-spinner {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-top-color: rgba(0, 0, 0, 0.55);
+    animation: abgrid-spin 0.8s linear infinite;
+}
+
+.abgrid-loading-text {
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+}
+
+@keyframes abgrid-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.abgrid-hidden {
+    display: none !important;
+}
+
+
+/* дефолты на случай, если icon-pack не подключен */
+.abgrid {
+    --abgrid-folder-closed-mask: none;
+    --abgrid-folder-open-mask: none;
+
+    --abgrid-pager-first-mask: none;
+    --abgrid-pager-prev-mask: none;
+    --abgrid-pager-next-mask: none;
+    --abgrid-pager-last-mask: none;
+    --abgrid-pager-refresh-mask: none;
+
+    --abgrid-toggle-open-mask: none;
+    --abgrid-toggle-closed-mask: none;
+
+    --abgrid-sort-asc-mask: none;
+    --abgrid-sort-desc-mask: none;
+}
+
+/* ================= TITLE ================= */
+
+.abgrid-title {
+    background: linear-gradient(to bottom, var(--abgrid-bg-secondary), var(--abgrid-bg-tertiary));
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--abgrid-border);
+    display: flex;
+    align-items: center;
+    user-select: none;
+    min-height: 28px;
+    flex: 0 0 auto;
+    position: relative;
+}
+
+.abgrid-title:hover {
+    background: linear-gradient(to bottom, var(--abgrid-bg-tertiary), var(--abgrid-bg-secondary));
+}
+
+/* toggle collapse */
+.abgrid-title .abgrid-grid-open,
+.abgrid-title .abgrid-grid-closed {
+    width: 24px;
+    height: 24px;
+    background: var(--abgrid-bg-tertiary);
+    border: 1px solid var(--abgrid-border);
+    border-radius: 4px;
+    cursor: pointer;
+    position: absolute;
+    right: 10px;
+    transition: all 0.2s ease;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.abgrid-title .abgrid-grid-open:hover,
+.abgrid-title .abgrid-grid-closed:hover {
+    background: var(--abgrid-bg-secondary);
+    border-color: var(--abgrid-accent);
+}
+
+.abgrid-title .abgrid-grid-open::before,
+.abgrid-title .abgrid-grid-closed::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border-left: 2px solid var(--abgrid-text-primary);
+    border-bottom: 2px solid var(--abgrid-text-primary);
+    transform: translate(-50%, -50%) rotate(-45deg);
+    margin-top: -3px;
+}
+
+.abgrid-title .abgrid-grid-closed::before {
+    transform: translate(-50%, -50%) rotate(-135deg);
+    margin-top: 0;
+    margin-left: -3px;
+}
+
+
+/* ================= TOOLBAR ================= */
+
+.abgrid-toolbar {
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--abgrid-border);
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    min-height: 34px;
+    align-items: center;
+    background: var(--abgrid-bg-secondary);
+}
+
+.abgrid-toolbar .abgrid-button {
+    border: 1px solid var(--abgrid-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    padding: 4px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    user-select: none;
+    background: var(--abgrid-bg-tertiary);
+    color: var(--abgrid-text-primary);
+}
+
+.abgrid-toolbar .abgrid-button:hover {
+    background: var(--abgrid-hover);
+    border-color: var(--abgrid-accent);
+    color: var(--abgrid-accent);
+}
+
+.abgrid-toolbar .abgrid-button:active {
+    background: var(--abgrid-active);
+    transform: translateY(1px);
+}
+
+.abgrid-toolbar .abgrid-button.abgrid-state-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--abgrid-bg-tertiary);
+    border-color: var(--abgrid-border);
+    color: var(--abgrid-text-disabled);
+}
+
+/* старые символные иконки тулбара */
+.abgrid-toolbar .tb-add-button::before {
+    content: '+';
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.abgrid-toolbar .tb-edit-button::before {
+    content: '✎';
+}
+
+.abgrid-toolbar .tb-del-button::before {
+    content: '🗑';
+}
+
+.abgrid-toolbar .tb-excel-button::before {
+    content: '📊';
+}
+
+.abgrid-toolbar .tb-word-button::before {
+    content: '📝';
+}
+
+.abgrid-toolbar .tb-pdf-button::before {
+    content: '📄';
+}
+
+.abgrid-toolbar .abgrid-tb-button {
+    padding: 4px 10px 4px 6px;
+    gap: 4px;
+}
+
+.abgrid-toolbar .abgrid-tb-button::before {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* ================= SCROLL CONTAINER (ТОЛЬКО ОДИН!) ================= */
+
+.abgrid-scroll-container {
+    flex: 1 1 auto;
+    min-height: 0; /* критично для flex */
+    overflow-y: auto; /* ЕДИНСТВЕННЫЙ vertical scroll */
+    overflow-x: auto; /* безопасно для узких экранов */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    position: relative;
+    isolation: isolate;
+}
+
+/* ================= TABLE ================= */
+
+.abgrid-table {
+    width: 100%;
+    min-width: 100%;
+    table-layout: fixed !important;
+    border-collapse: separate;
+    border-spacing: 0;
+
+    /* ВАЖНО: НИКАКИХ overflow тут! */
+}
+
+/* ================= HEADER (sticky th) ================= */
+.abgrid-table thead {
+    position: static !important; /* sticky only on th */
+    background: none;
+}
+
+.abgrid-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 200; /* above tbody */
+
+    padding: 6px 6px !important;
+    text-align: center;
+    /*
+      white-space: nowrap;
+
+     */
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    border-right: 1px solid var(--abgrid-border-light);
+    border-bottom: 2px solid var(--abgrid-border);
+
+    /* IMPORTANT: solid background on the th itself (no bleed-through) */
+    background-color: var(--abgrid-bg-tertiary) !important;
+    background-image: none !important;
+    background-clip: padding-box;
+
+    color: var(--abgrid-text-secondary);
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 600;
+
+    user-select: none;
+    vertical-align: middle;
+
+    /* prevent scroll-compositing artifacts in Chromium */
+    transform: translateZ(0);
+    will-change: transform;
+
+    /* create stable stacking context */
+    isolation: isolate;
+
+    /* bottom edge so rows don't shine through on subpixels */
+    box-shadow: 0 1px 0 var(--abgrid-border);
+}
+
+.abgrid-table thead th:last-child {
+    border-right: none;
+}
+
+.abgrid-table thead th:hover {
+    background: var(--abgrid-hover);
+    color: var(--abgrid-text-primary);
+}
+
+/* ===== FIX: ensure body never overlays sticky header ===== */
+.abgrid-table tbody,
+.abgrid-table tbody tr,
+.abgrid-table tbody td {
+    position: relative;
+    z-index: auto;
+}
+
+/* ==========================================================*/
+.abgrid-table tbody tr {
+    height: 30px;
+}
+
+.abgrid-table thead tr {
+    height: 40px;
+}
+
+
+/* ================= SORT (NO WIDTH JUMP) ================= */
+
+.abgrid-table thead th[data-alias] {
+    padding-right: 30px !important;
+}
+
+/* индикатор из JS выносим из потока */
+.abgrid-table thead th .abgrid-sort-indicator {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    overflow: visible;
+    color: transparent; /* скрываем текст ▲▼ */
+}
+
+/* маска-стрелка */
+.abgrid-table thead th.abgrid-sorted-asc::before,
+.abgrid-table thead th.abgrid-sorted-desc::before {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translateY(-50%);
+
+    background-color: var(--abgrid-text-secondary);
+
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+.abgrid-table thead th.abgrid-sorted-asc::before {
+    -webkit-mask-image: var(--abgrid-sort-asc-mask);
+    mask-image: var(--abgrid-sort-asc-mask);
+}
+
+.abgrid-table thead th.abgrid-sorted-desc::before {
+    -webkit-mask-image: var(--abgrid-sort-desc-mask);
+    mask-image: var(--abgrid-sort-desc-mask);
+}
+
+/* мультисорт — порядок (цифра) */
+.abgrid-table thead th .abgrid-sort-indicator .abgrid-sort-priority {
+    position: absolute;
+    right: -8px;
+    top: -10px;
+
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+
+    background: #666;
+    color: #fff;
+    font-size: 10px;
+    line-height: 16px;
+    text-align: center;
+    font-weight: 600;
+
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.abgrid-table tbody td .abgrid-actions-wrapper {
+    text-align: center;
+}
+
+.abgrid-table tbody td[data-col-type="boolean"], .abgrid-table tbody td[data-col-type="image"] {
+    text-align: center;
+}
+
+/* ================= SUB / CHECK COLUMNS ================= */
+
+.abgrid-sub,
+.abgrid-check {
+    width: 36px !important;
+    min-width: 36px;
+    max-width: 36px;
+    text-align: center !important;
+    padding-top: 4px !important;
+    border-bottom: 1px solid var(--abgrid-border-light);
+    border-right: 1px solid var(--abgrid-border-light);
+    box-sizing: border-box;
+}
+
+.abgrid input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: var(--abgrid-accent);
+    margin: 0;
+}
+
+/* ================= BODY CELLS ================= */
+
+.abgrid-table tbody:empty {
+    display: block;
+    height: 0;
+}
+
+
+.abgrid-table td:not(.abgrid-sub) {
+    padding: 2px 8px !important;
+    border-bottom: 1px solid var(--abgrid-border-light);
+    border-right: 1px solid var(--abgrid-border-light);
+
+    transition: background-color 0.15s ease;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    vertical-align: middle;
+
+    background: var(--abgrid-bg-primary);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.abgrid-table td:last-child {
+    border-right: none;
+}
+
+.abgrid-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* zebra + hover */
+.abgrid-table tr:nth-child(even) td {
+    background: var(--abgrid-bg-secondary);
+}
+
+.abgrid-table tr:nth-child(even):hover td {
+    background: var(--abgrid-hover);
+}
+
+.abgrid-table tr:hover td {
+    background: var(--abgrid-hover);
+}
+
+/* current row */
+.abgrid-table tr.abgrid-row-current td {
+    background: var(--abgrid-active) !important;
+    position: relative;
+}
+
+.abgrid-table tr.abgrid-row-current td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--abgrid-accent);
+}
+
+/* selected */
+.abgrid-table tr.row-selected td {
+    background: var(--abgrid-selected-bg) !important;
+}
+
+.abgrid-table tr.row-selected:hover td {
+    background: var(--abgrid-selected-hover) !important;
+}
+
+/* status rows */
+.abgrid-table tr.success td {
+    background: var(--abgrid-success-bg) !important;
+    border-left: 3px solid var(--abgrid-success);
+}
+
+.abgrid-table tr.warning td {
+    background: var(--abgrid-warning-bg) !important;
+    border-left: 3px solid var(--abgrid-warning);
+}
+
+.abgrid-table tr.error td {
+    background: var(--abgrid-error-bg) !important;
+    border-left: 3px solid var(--abgrid-error);
+}
+
+.abgrid-table tr.info td {
+    background: var(--abgrid-info-bg) !important;
+    border-left: 3px solid var(--abgrid-info);
+}
+
+/* ================= FOLDERS (subgrid + tree) ================= */
+
+.abgrid-subgrid-button,
+.abgrid-branch-button {
+    width: 24px;
+    height: 22px;
+    background: var(--abgrid-bg-tertiary);
+    border: 1px solid var(--abgrid-border);
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    margin: 0 auto;
+}
+
+.abgrid-subgrid-button::before,
+.abgrid-branch-button::before {
+    content: '';
+    width: 20px;
+    height: 18px;
+    background-color: var(--abgrid-text-secondary);
+
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+
+    -webkit-mask-image: var(--abgrid-folder-closed-mask);
+    mask-image: var(--abgrid-folder-closed-mask);
+
+    transition: all 0.2s ease;
+}
+
+.abgrid-table tr.abgrid-row-opened .abgrid-subgrid-button::before,
+.abgrid-table tr.abgrid-branch-opened .abgrid-branch-button::before {
+    background-color: var(--abgrid-accent);
+    -webkit-mask-image: var(--abgrid-folder-open-mask);
+    mask-image: var(--abgrid-folder-open-mask);
+    transform: scale(1.1);
+}
+
+.abgrid-subgrid-button:hover::before,
+.abgrid-branch-button:hover::before {
+    mask-image: var(--abgrid-folder-hover-mask);
+    -webkit-mask-image: var(--abgrid-folder-hover-mask);
+    background-color: var(--abgrid-accent);
+    transform: scale(1.1);
+}
+
+/* ================= SUBGRID CONTAINER ================= */
+
+.subgrid-row td {
+    padding: 0;
+    vertical-align: middle;
+}
+
+.abgrid-subgrid-container {
+    isolation: isolate;
+    max-height: 300px;
+    overflow-y: auto;
+    max-width: 100%;
+    width: 800px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    height: auto !important;
+    min-height: 0 !important;
+    background: linear-gradient(to right, var(--abgrid-bg-secondary), var(--abgrid-bg-tertiary));
+    border-radius: 0 0 4px 4px;
+}
+
+/* ================= PAGER ================= */
+
+.abgrid-pager {
+    padding: 6px 16px;
+    border-top: 1px solid var(--abgrid-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-height: 20px;
+    font-size: 14px !important;
+    background: var(--abgrid-bg-secondary);
+    flex-shrink: 0;
+}
+
+.abgrid-pager .pg-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.abgrid-pager .pg-button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--abgrid-border);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    background: var(--abgrid-bg-tertiary);
+    color: var(--abgrid-text-primary);
+}
+
+.abgrid-pager .pg-button > div {
+    width: 24px;
+    height: 24px;
+    background-color: var(--abgrid-text-secondary);
+
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+
+    transition: all 0.2s ease;
+}
+
+.abgrid-pager .pg-button-first > div {
+    -webkit-mask-image: var(--abgrid-pager-first-mask);
+    mask-image: var(--abgrid-pager-first-mask);
+}
+
+.abgrid-pager .pg-button-prev > div {
+    -webkit-mask-image: var(--abgrid-pager-prev-mask);
+    mask-image: var(--abgrid-pager-prev-mask);
+}
+
+.abgrid-pager .pg-button-next > div {
+    -webkit-mask-image: var(--abgrid-pager-next-mask);
+    mask-image: var(--abgrid-pager-next-mask);
+}
+
+.abgrid-pager .pg-button-last > div {
+    -webkit-mask-image: var(--abgrid-pager-last-mask);
+    mask-image: var(--abgrid-pager-last-mask);
+}
+
+.abgrid-pager .pg-button-refresh > div {
+    -webkit-mask-image: var(--abgrid-pager-refresh-mask);
+    mask-image: var(--abgrid-pager-refresh-mask);
+}
+
+.abgrid-pager .pg-button:hover:not(.abgrid-state-disabled) {
+    background: var(--abgrid-hover);
+    border-color: var(--abgrid-accent);
+}
+
+.abgrid-pager .pg-button:hover:not(.abgrid-state-disabled) > div {
+    background-color: var(--abgrid-accent);
+}
+
+.abgrid-pager .pg-button.abgrid-state-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.abgrid-pager .pg-selpage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--abgrid-text-secondary);
+}
+
+.abgrid-pager .pg-selpage input {
+    width: 45px;
+    height: 28px !important;
+    background: var(--abgrid-bg-tertiary);
+    border: 1px solid var(--abgrid-border);
+    border-radius: 4px;
+    color: var(--abgrid-text-primary);
+    padding: 0 8px;
+    text-align: center;
+    box-sizing: border-box;
+    line-height: 20px;
+}
+
+.abgrid-pager .pg-selpage input:focus {
+    outline: none;
+    border-color: var(--abgrid-accent);
+    box-shadow: 0 0 0 2px var(--abgrid-accent-shadow);
+}
+
+.abgrid-pager .rpp {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--abgrid-text-secondary);
+}
+
+.abgrid-pager .abgrid-select {
+    height: 28px !important;
+    background: var(--abgrid-bg-tertiary);
+    border: 1px solid var(--abgrid-border);
+    border-radius: 4px;
+    color: var(--abgrid-text-primary);
+    padding: 0 8px;
+    cursor: pointer;
+    box-sizing: border-box;
+    line-height: 26px;
+    min-width: 60px;
+}
+
+.abgrid-pager .abgrid-select:focus {
+    outline: none;
+    border-color: var(--abgrid-accent);
+}
+
+.abgrid-pager .pg-info {
+    color: var(--abgrid-text-secondary);
+}
+
+.abgrid-pager .pg-separator {
+    width: 1px;
+    height: 20px;
+    background: var(--abgrid-border);
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 768px) {
+    .abgrid-pager {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 12px;
+        flex-wrap: wrap;
+    }
+
+    .abgrid-pager button {
+        padding: 3px 8px;
+    }
+
+    .abgrid-pager .abgrid-select {
+        font-size: 12px;
+        padding: 0 6px;
+    }
+
+    .abgrid-toolbar {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .abgrid-toolbar .abgrid-button {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+
+    .abgrid-toolbar select,
+    .abgrid-toolbar input {
+        font-size: 12px;
+        padding: 3px 6px;
+    }
+
+    .abgrid-table th,
+    .abgrid-table td {
+        padding: 4px 6px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+}
+
+/* actions */
+.abgrid .abgrid-action-button {
+    margin-left: 2px !important;
+    margin-right: 2px !important;
+    cursor: pointer;
+    background-color: initial;
+    border: none;
+    color: inherit;
+}
+
+.abgrid .abgrid-action-button i {
+    padding: 2px !important;
+    font-size: 20px !important;
+}
+
+
+/* ================= EDIT FORM DIALOG ================= */
+
+.abgrid-edit-dialog {
+    width: min(760px, calc(100vw - 24px));
+}
+
+.abgrid-edit-body {
+    padding: 8px 14px;
+    max-height: min(70vh, 640px);
+    overflow: auto;
+}
+
+.abgrid-edit-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+@media (min-width: 720px) {
+    .abgrid-edit-form {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.abgrid-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.abgrid-edit-label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.abgrid-edit-input {
+    padding: 2px 8px;
+    border: 1px solid var(--abgrid-border, rgba(0, 0, 0, 0.2));
+    border-radius: 4px;
+    background: var(--abgrid-bg-secondary);
+    height: 32px;
+    width: 100%;
+    color: var(--abgrid-text-primary);
+    box-sizing: border-box;
+}
+
+.abgrid-edit-input--readonly {
+    opacity: 0.75;
+}
+
+.abgrid-edit-checkbox {
+    width: 24px;
+    height: 24px;
+    margin-top: 4px;
+}
+
+.abgrid-edit-input--invalid {
+    border: 2px solid var(--abgrid-error, rgba(0, 0, 0, 0.2));
+}
+
+/* ================= PASSWORD TOGGLE (EDIT FORM) ================= */
+
+/* Wrapper around password input to place the eye icon without breaking layout */
+.abgrid-pass-wrap {
+    position: relative;
+    width: 100%;
+}
+
+/* Give space for the toggle icon on the right */
+.abgrid-pass-wrap .abgrid-edit-input {
+    padding-right: 30px;
+}
+
+/* Toggle icon (mask image is defined in abgrid-icons.css) */
+.abgrid-pass-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--abgrid-text-secondary);
+}
+
+/* Disabled / readonly: no interactions */
+.abgrid-pass-wrap .abgrid-edit-input:disabled + .abgrid-pass-toggle,
+.abgrid-pass-wrap .abgrid-edit-input--readonly + .abgrid-pass-toggle {
+    pointer-events: none;
+    opacity: 0.35;
+}
+
+.abgrid-edit-error {
+    color: var(--abgrid-error);
+    height: 14px;
+    font-size: 14px;
+}
+
+/* ================= SHARED DIALOG ================= */
+
+.abgrid-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.abgrid-dialog {
+    width: min(520px, 100%);
+    background: var(--abgrid-bg-primary, #fff);
+    color: var(--abgrid-text-primary, #111);
+    border: 1px solid var(--abgrid-border, rgba(0, 0, 0, 0.15));
+    border-radius: 4px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+
+}
+
+
+.abgrid-dialog-title {
+    position: relative;
+    padding-left: 32px; /* место для иконки + отступ */
+    min-height: 24px; /* высота иконки */
+}
+
+.abgrid-title-text {
+    padding-left: 30px;
+}
+
+.abgrid-dialog-title::before, .abgrid-title::before {
+    content: "";
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: url('/abgrid-engine/abgrid-small-short-logo.png') center/contain no-repeat;
+}
+
+.abgrid-dialog--info {
+}
+
+.abgrid-dialog--success {
+}
+
+.abgrid-dialog--error {
+    border-color: rgba(200, 0, 0, 0.35);
+}
+
+.abgrid-dialog-title {
+    font-weight: 700;
+    padding: 12px 36px;
+    border-bottom: 1px solid var(--abgrid-border, rgba(0, 0, 0, 0.15));
+    background: var(--abgrid-bg-secondary, rgba(0, 0, 0, 0.03));
+}
+
+.abgrid-dialog--error .abgrid-dialog-title {
+    background: rgba(200, 0, 0, 0.08);
+
+    border-bottom-color: rgba(200, 0, 0, 0.25);
+}
+
+.abgrid-dialog-message {
+    padding: 14px;
+    line-height: 1.35;
+    white-space: pre-line;
+}
+
+.abgrid-dialog-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--abgrid-border, rgba(0, 0, 0, 0.15));
+    background: var(--abgrid-bg-secondary, rgba(0, 0, 0, 0.03));
+}
+
+.abgrid-dialog-buttons-right, .abgrid-dialog-checkbox {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    align-items: center;
+}
+
+.abgrid-dialog-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--abgrid-border, rgba(0, 0, 0, 0.2));
+    background: var(--abgrid-bg-primary, #fff);
+    cursor: pointer;
+    font-weight: 600;
+    min-width: 80px;
+    height: 32px;
+    color: var(--abgrid-text-primary, #111);
+}
+
+.abgrid-dialog-btn.abgrid-btn-primary {
+    background: var(--abgrid-accent, #2b6cb0);
+    color: var(--page-text-light, #fff);
+    border-color: var(--abgrid-accent, #2b6cb0);
+    border: 2px solid var(--abgrid-border, rgba(0, 0, 0, 0.2));
+}
+
+.abgrid-dialog-btn.abgrid-btn-danger {
+    background: var(--abgrid-warning);
+    color: var(--page-text-light, #fff);
+}
+
+
+.abgrid-dialog--error .abgrid-dialog-btn.primary {
+    background: rgba(200, 0, 0, 0.85);
+    border-color: rgba(200, 0, 0, 0.85);
+}
+
+.abgrid-dialog-btn:hover {
+    filter: brightness(0.98);
+}
+
+.abgrid-dialog-btn:active {
+    transform: translateY(1px);
+}
+
+
+/* ============================================================
+   ABGrid Toast Notifications (used by ui/ToastService.js)
+   Host is appended to <body>, so colors are driven by :root variables
+   from page-skin-*.css (see --abgrid-toast-* variables there).
+   ============================================================ */
+
+.abgrid-toast-host {
+    position: fixed;
+    top: var(--abgrid-toast-top, 16px);
+    right: var(--abgrid-toast-right, 16px);
+    z-index: var(--abgrid-toast-z, 99999);
+    display: flex;
+    flex-direction: column;
+    gap: var(--abgrid-toast-gap, 10px);
+    pointer-events: none;
+}
+
+.abgrid-toast {
+    pointer-events: auto;
+    min-width: var(--abgrid-toast-minw, 200px);
+    max-width: var(--abgrid-toast-maxw, 300px);
+    padding: var(--abgrid-toast-pad-y, 14px) var(--abgrid-toast-pad-x, 18px);
+    border-radius: var(--abgrid-toast-radius, 8px);
+    font-size: var(--abgrid-toast-font, 14px);
+    line-height: 1.35;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1px solid var(--abgrid-toast-border, rgba(0, 0, 0, .10));
+    box-shadow: var(--abgrid-toast-shadow, 0 10px 28px rgba(0, 0, 0, .16));
+    backdrop-filter: blur(2px);
+}
+
+.abgrid-toast-text {
+    white-space: pre-line;
+}
+
+.abgrid-toast-message {
+    flex: 1;
+    word-break: break-word;
+    padding-top: 1px;
+}
+
+.abgrid-toast-close {
+    width: var(--abgrid-toast-close-size, 26px);
+    height: var(--abgrid-toast-close-size, 26px);
+    display: inline-flex;
+    /*
+      align-items:center;
+    */
+    justify-content: center;
+    border-radius: 50%;
+    user-select: none;
+    cursor: pointer;
+    font-size: var(--abgrid-toast-close-font, 14px);
+    line-height: 1;
+    color: var(--abgrid-toast-close-fg, rgba(0, 0, 0, .60));
+    transition: background .12s ease, color .12s ease, transform .08s ease;
+    position: absolute;
+    top: -10px;
+    right: -2px;
+
+}
+
+.abgrid-toast-closeall {
+    right: 26px;
+}
+
+/*
+.abgrid-toast-close:hover{
+  background:var(--abgrid-toast-close-bg-hover, rgba(0,0,0,.10));
+  color:var(--abgrid-toast-close-fg-hover, rgba(0,0,0,.92));
+}
+*/
+.abgrid-toast-close:active {
+    transform: scale(.96);
+}
+
+.abgrid-toast.abgrid-toast-info, .abgrid-toast-success {
+    background: var(--abgrid-bg-secondary);
+    border-color: rgba(16, 185, 129, .35);
+    color: var(--abgrid-text-primary);
+}
+
+.abgrid-toast-error {
+    background: var(--abgrid-toast-error-bg, #fdecea);
+    color: var(--abgrid-toast-error-fg, #7a1f1a);
+    /*
+      border-left:var(--abgrid-toast-leftbar,4px) solid var(--abgrid-toast-error-accent, #d93025);
+    */
+}
+
+/* Make close a bit more "alert" on error */
+.abgrid-toast-error .abgrid-toast-close {
+    color: var(--abgrid-toast-error-close-fg, rgba(217, 48, 37, .80));
+}
+
+.abgrid-toast-error .abgrid-toast-close:hover {
+    color: var(--abgrid-toast-error-close-fg-hover, rgba(217, 48, 37, .98));
+    background: var(--abgrid-toast-error-close-bg-hover, rgba(217, 48, 37, .12));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .abgrid-toast-close {
+        transition: none;
+    }
+}
+
+/* === ABGrid Autocomplete (layout only, no colors) === */
+
+.abgrid-ac {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* видимый input */
+.abgrid-ac-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* выпадающий список */
+.abgrid-ac-list {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 2px);
+
+    /* чтобы список был поверх формы/грида */
+    z-index: 9999;
+
+    /* “рамка/фон/тени” — в теме */
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--abgrid-accent);
+    border-radius: 4px;
+
+    /* размеры/прокрутка */
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    /* чтобы элементы не липли */
+    padding: 4px 0;
+    margin: 0;
+    background: var(--abgrid-bg-secondary);
+}
+
+/* элемент списка */
+.abgrid-ac-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 6px 10px;
+    cursor: pointer;
+    user-select: none;
+
+    /* отключаем “ломание” строк */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--abgrid-border);
+    background: var(--abgrid-bg-primary, #fff);
+}
+
+/* активный элемент (стрелки вверх/вниз) */
+.abgrid-ac-item--active {
+    /* цвет/фон активного — в теме */
+    background: var(--abgrid-bg-tertiary);
+    color: var(--abgrid-text-secondary);
+}
+
+/* строка-сообщение (loading / notFound / error) */
+.abgrid-ac-msg {
+    padding: 6px 10px;
+    user-select: none;
+    cursor: default;
+
+    /* можно сделать чуть меньше шрифт в теме */
+}
+
+/* модификаторы под разные статусы (только для селекторов темы) */
+.abgrid-ac-msg--loading {
+}
+
+.abgrid-ac-msg--empty {
+}
+
+.abgrid-ac-msg--error {
+}
+
+/* если нужно показать вторую строку/доп. инфо (на будущее) */
+.abgrid-ac-item .abgrid-ac-item__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.abgrid-ac-item .abgrid-ac-item__hint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* цвет/размер hint — в теме */
+}
+
+/* небольшая страховка для мобильных/узких форм */
+@media (max-width: 600px) {
+    .abgrid-ac-list {
+        max-height: 200px;
+    }
+}
+
+/* Контейнер тулбара */
+.abgrid-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Группа */
+.abgrid-tb-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap; /* ← ключевое */
+    flex: 0 0 auto; /* Чтобы при узком экране группа переносилась целиком */
+    border: 1px solid var(--abgrid-border, #ddd);
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: var(--abgrid-bg-secondary, #f9f9f9);
+}
+
+/* Кнопки */
+.abgrid-tb-btn {
+    white-space: nowrap;
+}
+
+/* Select */
+.abgrid-tb-select {
+    min-width: 180px;
+    max-width: 280px;
+    width: auto;
+    margin-left: 4px;
+}
+
+.abgrid-tb-group .abgrid-tb-btn {
+    margin-left: 4px;
+}
+
+.abgrid-summary-row {
+    font-weight: 600;
+}
+
+.abgrid-footer table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.abgrid-footer .abgrid-summary-table td {
+    border-top: 1px solid var(--abgrid-border);
+    background: var(--abgrid-bg-secondary);
+}
+
+.abgrid-summary-sum .abgrid-summary-value {
+    font-weight: 600;
+}
+
+.abgrid-summary-avg {
+    opacity: 0.7;
+}
+
+.abgrid-summary-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.abgrid-summary-row {
+    border-bottom: 1px solid var(--abgrid-border);
+}
+
+.abgrid-summary-row td div {
+    padding-bottom: 2px;
+}
+
+.abgrid-table td.abgrid-ta-left,
+.abgrid-table th.abgrid-ta-left {
+    text-align: left;
+}
+
+.abgrid-table td.abgrid-ta-center,
+.abgrid-table th.abgrid-ta-center {
+    text-align: center;
+}
+
+.abgrid-table td.abgrid-ta-right,
+.abgrid-table th.abgrid-ta-right {
+    text-align: right;
+}
