@@ -59,5 +59,4 @@ public class ForestStandService {
         return forestStandRepository.findByForestryTypeAndIdRecursive(type, id);
     }
 
-
 }
