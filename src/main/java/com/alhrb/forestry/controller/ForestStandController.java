@@ -36,7 +36,7 @@ public class ForestStandController {
 
     @PostMapping("/uploadForestStand")
     public ResponseEntity<?> uploadForestStand(
-            @RequestParam("file") MultipartFile file,
+            @RequestParam MultipartFile file,
             @RequestParam(value = "extractZip", defaultValue = "true") boolean extractZip) {
 
         Long userId = securityHelper.getCurrentUserId();
