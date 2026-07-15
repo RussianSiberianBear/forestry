@@ -11,11 +11,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "kml_import", schema = "staging")
+@Table(name = "forest_stand_kml_import", schema = "staging")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class KmlImport {
+public class ForestStandKmlImport {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
