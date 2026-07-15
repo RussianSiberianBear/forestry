@@ -56,28 +56,34 @@ public class ForestStandController {
         }
 
         try {
-            // 1. Если это ZIP и нужно распаковать
+            // 1. Сохраняем файл в БД
+            FileUploadResponseDto savedFile = fileUploadService.uploadFile(userId, file);
+
+            // 2. Сохраняем физический файл
+            Path physicalPath = fileUploadService.savePhysicalFile(file, savedFile.getId(), userId);
+
+            // 3. Если это ZIP и нужно распаковать
             ZipExtractResultDto extractResult = null;
+
             if (fileUploadService.isZipFile(file) && extractZip) {
                 // Сохраняем архив
                 extractResult = fileUploadService.uploadAndExtractZip(userId, file);
-
+                Map<String, Object> data = Map.of(
+                        "fileInfo", savedFile,
+                        "physicalPath", physicalPath.toString(),
+                        "data", extractResult
+                );
                 return ResponseEntity.ok(Map.of(
                         "success", true,
                         "message", "ZIP-архив успешно загружен и распакован",
-                        "data", extractResult
+                        "data", data
                 ));
             } else {
-                // 2. Сохраняем файл в БД
-                FileUploadResponseDto savedFile = fileUploadService.uploadFile(userId, file);
-
-                // 3. Сохраняем физический файл
-                Path physicalPath = fileUploadService.savePhysicalFile(file, savedFile.getId(), userId);
 
                 Map<String, Object> data = Map.of(
                         "fileInfo", savedFile,
                         "physicalPath", physicalPath.toString()
-                        );
+                );
 
                 return ResponseEntity.ok(Map.of(
                         "success", true,
