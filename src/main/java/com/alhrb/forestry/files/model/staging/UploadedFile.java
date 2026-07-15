@@ -29,11 +29,6 @@ public class UploadedFile {
     @Column(name = "file_type", nullable = false, length = 50)
     private String fileType;
 
-    /** Legacy column. New uploads are stored on disk; only an empty value is kept for DB compatibility. */
-    @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "file_data", columnDefinition = "BYTEA")
-    private byte[] fileData;
-
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
