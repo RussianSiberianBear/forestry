@@ -12,20 +12,56 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "forest_stand_kml_import", schema = "staging")
+@Table(
+        name = "forest_stand_kml_import",
+        schema = "staging",
+        indexes = {
+                @Index(
+                        name = "idx_kml_import_file_id",
+                        columnList = "upload_file_id"
+                ),
+                @Index(
+                        name = "idx_kml_import_status",
+                        columnList = "import_status"
+                ),
+                @Index(
+                        name = "idx_kml_import_mk",
+                        columnList = "mk"
+                ),
+                @Index(
+                        name = "idx_kml_import_zk",
+                        columnList = "zk"
+                ),
+                @Index(
+                        name = "idx_kml_import_kvart",
+                        columnList = "kvart"
+                ),
+                @Index(
+                        name = "idx_kml_import_vydel",
+                        columnList = "vydel"
+                )
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ForestStandKmlImport {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "forest_stand_kml_import_seq"
+    )
+    @SequenceGenerator(
+            name = "forest_stand_kml_import_seq",
+            sequenceName = "staging.kml_import_id_seq",
+            allocationSize = 500
+    )
     private Long id;
 
     @Column(name = "upload_file_id", nullable = false)
     private Long uploadFileId;
 
-    // Поля из KML
     @Column(name = "mk")
     private Integer mk;
 
@@ -71,6 +107,11 @@ public class ForestStandKmlImport {
     @Column(name = "vydel", length = 50)
     private String vydel;
 
+    /*
+     * В KML поле "площа" объявлено как string и может содержать
+     * локализованный десятичный разделитель, поэтому в staging
+     * сохраняем исходное значение строкой.
+     */
     @Column(name = "plosha", length = 50)
     private String plosha;
 
@@ -104,6 +145,10 @@ public class ForestStandKmlImport {
     @Column(name = "tlu", length = 50)
     private String tlu;
 
+    /*
+     * В исходном KML это строка и значение может быть "0,7".
+     * В staging лучше сохранить исходный текст без потери формата.
+     */
     @Column(name = "polno", length = 50)
     private String polno;
 
@@ -122,31 +167,49 @@ public class ForestStandKmlImport {
     @Column(name = "ugir", length = 255)
     private String ugir;
 
+    /*
+     * X и Y в исходном KML имеют запятую в качестве
+     * десятичного разделителя, поэтому храним исходное значение.
+     */
     @Column(name = "y", length = 50)
     private String y;
 
     @Column(name = "x", length = 50)
     private String x;
 
-    // Координаты из KML
-    @Column(name = "coordinates", nullable = false, columnDefinition = "TEXT")
+    @Column(
+            name = "coordinates",
+            nullable = false,
+            columnDefinition = "text"
+    )
     private String coordinates;
 
-    @Column(name = "geometry", columnDefinition = "geometry(Geometry,4326)")
+    /*
+     * Используем общий Geometry, поскольку KML теоретически может
+     * содержать как Polygon, так и MultiPolygon.
+     */
+    @Column(
+            name = "geometry",
+            columnDefinition = "geometry(Geometry,4326)"
+    )
     private Geometry geometry;
 
-    // Метаданные импорта
-    @Column(name = "import_status", length = 20)
-    private String importStatus = "PENDING";
+    @Enumerated(EnumType.STRING)
+    @Column(name = "import_status", nullable = false, length = 20)
+    private ImportStatus importStatus = ImportStatus.PENDING;
 
-    @Column(name = "error_message", columnDefinition = "TEXT")
+    @Column(name = "error_message", columnDefinition = "text")
     private String errorMessage;
 
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(
+            name = "created_at",
+            nullable = false,
+            updatable = false
+    )
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }
