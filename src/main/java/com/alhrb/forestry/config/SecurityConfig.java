@@ -61,12 +61,11 @@ public class SecurityConfig {
                         // 1) Закрытые endpoints
                         .requestMatchers("/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/api/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
-                    //    .requestMatchers("/api/uploadForestStand").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/abgrid-engine/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // 2) Публичные endpoints
-                        .requestMatchers("/api/uploadForestStand").permitAll()
+                        .requestMatchers("/api/uploadForestStand").authenticated()
                         .requestMatchers("/css/**", "/js/**", "/webjars/**").permitAll()
                         .requestMatchers("/login", "/register", "/api/users/register").permitAll()
                         .requestMatchers("/api/territory/**").permitAll()

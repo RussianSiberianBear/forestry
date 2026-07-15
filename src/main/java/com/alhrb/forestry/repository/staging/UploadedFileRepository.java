@@ -11,15 +11,11 @@ import java.util.Optional;
 
 @Repository
 public interface UploadedFileRepository extends JpaRepository<UploadedFile, Long> {
-
     List<UploadedFile> findByUserIdOrderByUploadDateDesc(Long userId);
-
     List<UploadedFile> findByUserIdAndProcessedFalseOrderByUploadDateDesc(Long userId);
-
     Optional<UploadedFile> findByIdAndUserId(Long id, Long userId);
-
+    Optional<UploadedFile> findFirstByUserIdAndSha256(Long userId, String sha256);
     List<UploadedFile> findByStatus(String status);
-
     List<UploadedFile> findByProcessedFalse();
 
     @Query("SELECT f FROM UploadedFile f WHERE f.userId = :userId AND f.processed = false")

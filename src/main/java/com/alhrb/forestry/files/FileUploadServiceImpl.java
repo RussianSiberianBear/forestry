@@ -11,231 +11,131 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.io.InputStream;
+import java.nio.file.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class FileUploadServiceImpl implements FileUploadService {
-
-    private final UploadedFileRepository uploadedFileRepository;
+    private final UploadedFileRepository repository;
     private final ZipExtractorService zipExtractorService;
 
     @Override
     @Transactional
     public FileUploadResponseDto uploadFile(Long userId, MultipartFile file) throws IOException {
-        log.info("Загрузка файла для пользователя ID: {}", userId);
+        validate(userId, file);
+        String checksum = sha256(file);
+        repository.findFirstByUserIdAndSha256(userId, checksum).ifPresent(existing -> {
+            throw new IllegalArgumentException("Этот файл уже загружен (ID " + existing.getId() + ", имя: " + existing.getOriginalFilename() + ")");
+        });
 
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("Файл не может быть пустым");
+        String originalName = safeOriginalName(file.getOriginalFilename());
+        String extension = getFileExtension(originalName).toLowerCase();
+        UploadedFile entity = UploadedFile.builder()
+                .userId(userId)
+                .originalFilename(originalName)
+                .fileType(extension.toUpperCase())
+                .fileData(new byte[0]) // compatibility with old NOT NULL schema; content is not stored in DB
+                .fileSize(file.getSize())
+                .sha256(checksum)
+                .status("SAVING")
+                .processed(false)
+                .build();
+        entity = repository.saveAndFlush(entity);
+
+        Path target = null;
+        try {
+            target = savePhysicalFile(file, entity.getId(), userId);
+            entity.setRelativePath(toRelativePath(target));
+            entity.setStatus("UPLOADED");
+            return mapToDto(repository.save(entity));
+        } catch (Exception e) {
+            if (target != null) Files.deleteIfExists(target);
+            repository.delete(entity);
+            if (e instanceof IOException io) throw io;
+            throw e;
         }
-
-        String originalFilename = file.getOriginalFilename();
-        String fileType = getFileExtension(originalFilename).toUpperCase();
-
-        UploadedFile uploadedFile = new UploadedFile();
-        uploadedFile.setUserId(userId);
-        uploadedFile.setOriginalFilename(originalFilename);
-        uploadedFile.setFileType(fileType);
-        uploadedFile.setFileData(file.getBytes());
-        uploadedFile.setFileSize(file.getSize());
-        uploadedFile.setStatus("UPLOADED");
-        uploadedFile.setProcessed(false);
-
-        UploadedFile savedFile = uploadedFileRepository.save(uploadedFile);
-        log.info("Файл сохранен с ID: {}", savedFile.getId());
-
-        return mapToDto(savedFile);
     }
 
     @Override
     @Transactional
     public ZipExtractResultDto uploadAndExtractZip(Long userId, MultipartFile file) throws IOException {
-        log.info("Загрузка и распаковка ZIP для пользователя ID: {}", userId);
-
-        // 1. Проверка что это ZIP
-        if (!isZipFile(file)) {
-            throw new IllegalArgumentException("Файл должен быть ZIP-архивом");
+        if (!isZipFile(file)) throw new IllegalArgumentException("Файл должен быть ZIP-архивом");
+        FileUploadResponseDto saved = uploadFile(userId, file);
+        try {
+            ZipExtractResultDto result = zipExtractorService.extractZip(getPhysicalFilePath(saved.getId(), userId), userId, saved.getId());
+            updateFileStatus(saved.getId(), "EXTRACTED");
+            return result;
+        } catch (Exception e) {
+            deleteFile(saved.getId(), userId);
+            if (e instanceof IOException io) throw io;
+            throw e;
         }
+    }
 
-        // 2. Сохраняем архив
-        FileUploadResponseDto archiveInfo = uploadFile(userId, file);
-
-        // 3. Получаем путь к физическому файлу
-        Path zipPath = getPhysicalFilePath(archiveInfo.getId(), userId);
-
-        // 4. Распаковываем
-        ZipExtractResultDto extractResult = zipExtractorService.extractZip(
-                zipPath,
-                userId,
-                archiveInfo.getId()
-        );
-
-        // 5. Обновляем статус архива
-        updateFileStatus(archiveInfo.getId(), "EXTRACTED");
-
-        log.info("ZIP распакован. Файлов: {}", extractResult.getTotalFiles());
-        return extractResult;
+    @Override
+    public Path savePhysicalFile(MultipartFile file, Long fileId, Long userId) throws IOException {
+        String ext = getFileExtension(file.getOriginalFilename()).toLowerCase();
+        Path dir = uploadRoot().resolve("users").resolve(String.valueOf(userId)).resolve("imports").resolve(String.valueOf(fileId));
+        Files.createDirectories(dir);
+        Path target = dir.resolve(ext.isBlank() || "UNKNOWN".equalsIgnoreCase(ext) ? "source" : "source." + ext);
+        try (InputStream in = file.getInputStream()) {
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return target;
     }
 
     @Override
     public Path getPhysicalFilePath(Long fileId, Long userId) throws IOException {
-        Path uploadPath = DirectoryConfig.getAbsoluteFileUploadPath();
-
-        if (userId != null) {
-            Path userDir = uploadPath.resolve("user_" + userId);
-            // Создаем директорию, если её нет
-            if (!Files.exists(userDir)) {
-                Files.createDirectories(userDir); // createDirectories создает все необходимые папки
-                log.info("Created directory: {}", userDir);
-            }
-
-            // Проверяем, что директория существует и доступна для записи
-            if (!Files.isDirectory(userDir)) {
-                throw new IOException("Path is not a directory: " + userDir);
-            }
-            if (!Files.isWritable(userDir)) {
-                throw new IOException("Directory is not writable: " + userDir);
-            }
-
-            try (var stream = Files.list(userDir)) {
-                return stream
-                        .filter(path -> path.getFileName().toString().startsWith(fileId + "_"))
-                        .findFirst()
-                        .orElseThrow(() -> new RuntimeException("Физический файл не найден"));
-            } catch (IOException e) {
-                throw new RuntimeException("Ошибка поиска физического файла", e);
-            }
-        }
-
-        // Если userId не указан, ищем во всех папках
-        try (var stream = Files.walk(uploadPath, 2)) {
-            return stream
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().startsWith(fileId + "_"))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Физический файл не найден"));
-        } catch (IOException e) {
-            throw new RuntimeException("Ошибка поиска физического файла", e);
-        }
+        UploadedFile file = userId == null ? repository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("Файл не найден"))
+                : repository.findByIdAndUserId(fileId, userId).orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
+        if (file.getRelativePath() == null || file.getRelativePath().isBlank()) throw new IOException("Для файла не сохранён путь на диске");
+        Path path = uploadRoot().resolve(file.getRelativePath()).normalize();
+        if (!path.startsWith(uploadRoot()) || !Files.isRegularFile(path)) throw new IOException("Физический файл не найден: " + path);
+        return path;
     }
 
-    @Override
-    public List<FileUploadResponseDto> getUserFiles(Long userId) {
-        return uploadedFileRepository.findByUserIdOrderByUploadDateDesc(userId)
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public byte[] getFileData(Long fileId) {
-        return uploadedFileRepository.findById(fileId)
-                .map(UploadedFile::getFileData)
-                .orElseThrow(() -> new RuntimeException("Файл не найден"));
-    }
-
-    @Override
-    public byte[] getFileData(Long fileId, Long userId) {
-        return uploadedFileRepository.findByIdAndUserId(fileId, userId)
-                .map(UploadedFile::getFileData)
-                .orElseThrow(() -> new RuntimeException("Файл не найден или недоступен"));
-    }
+    @Override public List<FileUploadResponseDto> getUserFiles(Long userId) { return repository.findByUserIdOrderByUploadDateDesc(userId).stream().map(this::mapToDto).toList(); }
+    @Override public byte[] getFileData(Long fileId) { try { return Files.readAllBytes(getPhysicalFilePath(fileId, null)); } catch (IOException e) { throw new IllegalStateException(e.getMessage(), e); } }
+    @Override public byte[] getFileData(Long fileId, Long userId) { try { return Files.readAllBytes(getPhysicalFilePath(fileId, userId)); } catch (IOException e) { throw new IllegalStateException(e.getMessage(), e); } }
 
     @Override
     @Transactional
     public void deleteFile(Long fileId, Long userId) {
-        UploadedFile file = uploadedFileRepository.findByIdAndUserId(fileId, userId)
-                .orElseThrow(() -> new RuntimeException("Файл не найден или недоступен"));
-
-        uploadedFileRepository.delete(file);
-        log.info("Файл удален из БД: {}", fileId);
+        UploadedFile file = repository.findByIdAndUserId(fileId, userId).orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
+        Path importDir = uploadRoot().resolve("users").resolve(String.valueOf(userId)).resolve("imports").resolve(String.valueOf(fileId));
+        deleteRecursively(importDir);
+        repository.delete(file);
     }
 
-    @Override
-    @Transactional
-    public FileUploadResponseDto updateFileStatus(Long fileId, String status) {
-        UploadedFile file = uploadedFileRepository.findById(fileId)
-                .orElseThrow(() -> new RuntimeException("Файл не найден"));
+    @Override @Transactional public FileUploadResponseDto updateFileStatus(Long fileId, String status) { UploadedFile f = repository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("Файл не найден")); f.setStatus(status); return mapToDto(repository.save(f)); }
+    @Override public List<FileUploadResponseDto> getFilesByStatus(String status) { return repository.findByStatus(status).stream().map(this::mapToDto).toList(); }
+    @Override public boolean isZipFile(MultipartFile file) { return file != null && "zip".equalsIgnoreCase(getFileExtension(file.getOriginalFilename())); }
+    @Override public boolean isZipFile(Path path) { return path != null && "zip".equalsIgnoreCase(getFileExtension(path.getFileName().toString())); }
+    @Override public String getFileExtension(String name) { if (name == null) return ""; int i = name.lastIndexOf('.'); return i > -1 && i < name.length()-1 ? name.substring(i+1) : ""; }
 
-        file.setStatus(status);
-        UploadedFile updated = uploadedFileRepository.save(file);
+    private FileUploadResponseDto mapToDto(UploadedFile f) { return new FileUploadResponseDto(f.getId(), f.getOriginalFilename(), f.getFileType(), f.getFileSize(), f.getUploadDate(), f.getStatus(), f.getProcessed(), f.getSha256(), f.getRelativePath()); }
+    private Path uploadRoot() { return DirectoryConfig.getAbsoluteFileUploadPath().toAbsolutePath().normalize(); }
+    private String toRelativePath(Path path) { return uploadRoot().relativize(path.toAbsolutePath().normalize()).toString().replace('\\', '/'); }
+    private void validate(Long userId, MultipartFile file) { if (userId == null) throw new IllegalArgumentException("Не найден ID пользователя"); if (file == null || file.isEmpty()) throw new IllegalArgumentException("Файл не выбран или пуст"); }
+    private String safeOriginalName(String name) { if (name == null || name.isBlank()) return "unnamed"; String clean = Paths.get(name).getFileName().toString().replaceAll("[\\p{Cntrl}]", "_"); return clean.length() <= 255 ? clean : clean.substring(clean.length()-255); }
 
-        return mapToDto(updated);
+    private String sha256(MultipartFile file) throws IOException {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            try (InputStream in = file.getInputStream()) { byte[] b = new byte[8192]; int n; while ((n = in.read(b)) != -1) md.update(b, 0, n); }
+            return HexFormat.of().formatHex(md.digest());
+        } catch (NoSuchAlgorithmException e) { throw new IllegalStateException("SHA-256 недоступен", e); }
     }
 
-    @Override
-    public List<FileUploadResponseDto> getFilesByStatus(String status) {
-        // Добавьте метод в репозиторий
-        return uploadedFileRepository.findByStatus(status)
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean isZipFile(MultipartFile file) {
-        String filename = file.getOriginalFilename();
-        if (filename == null) return false;
-        return "zip".equalsIgnoreCase(getFileExtension(filename));
-    }
-
-    @Override
-    public boolean isZipFile(Path path) {
-        String filename = path.getFileName().toString();
-        return filename.toLowerCase().endsWith(".zip");
-    }
-
-    @Override
-    public String getFileExtension(String filename) {
-        if (filename == null) return "";
-        if (filename.lastIndexOf(".") == -1) {
-            return "UNKNOWN";
-        }
-        return filename.substring(filename.lastIndexOf(".") + 1);
-    }
-
-    private FileUploadResponseDto mapToDto(UploadedFile file) {
-        return new FileUploadResponseDto(
-                file.getId(),
-                file.getOriginalFilename(),
-                file.getFileType(),
-                file.getFileSize(),
-                file.getUploadDate(),
-                file.getStatus(),
-                file.getProcessed()
-        );
-    }
-
-    @Override
-    public Path savePhysicalFile(MultipartFile file, Long fileId, Long userId)
-            throws IOException {
-
-        Path uploadPath = DirectoryConfig.getAbsoluteFileUploadPath();
-        Path userDir = uploadPath.resolve("user_" + userId);
-        Files.createDirectories(userDir);
-
-        String timestamp = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String safeFilename = sanitizeFilename(file.getOriginalFilename());
-        String physicalFilename = String.format("%d_%s_%s", fileId, timestamp, safeFilename);
-
-        Path targetPath = userDir.resolve(physicalFilename);
-        Files.copy(file.getInputStream(), targetPath,
-                StandardCopyOption.REPLACE_EXISTING);
-
-        log.info("Физический файл сохранен: {}", targetPath);
-        return targetPath;
-    }
-
-    private String sanitizeFilename(String filename) {
-        if (filename == null) return "unnamed";
-        return filename.replaceAll("[^a-zA-Z0-9.\\-]", "_");
+    private void deleteRecursively(Path root) {
+        if (!Files.exists(root)) return;
+        try (var walk = Files.walk(root)) { walk.sorted((a,b) -> b.getNameCount()-a.getNameCount()).forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ex) { log.warn("Не удалось удалить {}", p, ex); } }); }
+        catch (IOException e) { log.warn("Не удалось очистить {}", root, e); }
     }
 }
