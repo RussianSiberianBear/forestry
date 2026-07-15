@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.locationtech.jts.geom.Geometry;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -131,8 +132,8 @@ public class ForestStandKmlImport {
     @Column(name = "coordinates", nullable = false, columnDefinition = "TEXT")
     private String coordinates;
 
-    @Column(name = "geometry", columnDefinition = "GEOMETRY")
-    private String geometry;
+    @Column(name = "geometry", columnDefinition = "geometry(Geometry,4326)")
+    private Geometry geometry;
 
     // Метаданные импорта
     @Column(name = "import_status", length = 20)
