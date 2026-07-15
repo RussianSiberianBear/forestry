@@ -50,4 +50,6 @@ public class ApiController {
 
         return ResponseEntity.ok(Map.of("success", false, "message", "Неподдерживаемая операция!"));
     }
+
+
 }

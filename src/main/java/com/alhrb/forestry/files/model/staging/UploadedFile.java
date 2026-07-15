@@ -1,4 +1,4 @@
-package com.alhrb.forestry.model.staging;
+package com.alhrb.forestry.files.model.staging;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -44,4 +44,7 @@ public class UploadedFile {
 
     @Column(name = "processed")
     private Boolean processed = false;
+
+    @Column(name = "arhicve_id", nullable = false)
+    private Long archiveId;
 }

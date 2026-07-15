@@ -1,10 +1,26 @@
 <!doctype html>
 <html lang="ru" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/main :: layout(~{::content})}" xmlns="http://www.w3.org/1999/html"
->
+      xmlns:sec="http://www.w3.org/1999/xhtml">
 <div th:fragment="content">
     <h5>Выделы</h5>
+    <div sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
+        <h3 class="uk-heading-divider">
+            <span uk-icon="icon: upload; ratio: 1.5"></span>
+            Массовая загрузка выделов
+        </h3>
+        <div th:replace="~{upload}"></div>
+    </div>
     <div id="gridAppointedForestry"></div>
+
+    <script  sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
+
+        UIkit.upload('.js-upload', {
+            url: '/api/uploadForestStand',
+            multiple: false,
+        });
+
+    </script>
 
     <script>
 
