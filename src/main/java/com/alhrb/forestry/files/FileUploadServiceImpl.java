@@ -55,6 +55,65 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
+    @Transactional
+    public ZipExtractResultDto uploadAndExtractZip(Long userId, MultipartFile file) throws IOException {
+        log.info("Загрузка и распаковка ZIP для пользователя ID: {}", userId);
+
+        // 1. Проверка что это ZIP
+        if (!isZipFile(file)) {
+            throw new IllegalArgumentException("Файл должен быть ZIP-архивом");
+        }
+
+        // 2. Сохраняем архив
+        FileUploadResponseDto archiveInfo = uploadFile(userId, file);
+
+        // 3. Получаем путь к физическому файлу
+        Path zipPath = getPhysicalFilePath(archiveInfo.getId(), userId);
+
+        // 4. Распаковываем
+        ZipExtractResultDto extractResult = zipExtractorService.extractZip(
+                zipPath,
+                userId,
+                archiveInfo.getId()
+        );
+
+        // 5. Обновляем статус архива
+        updateFileStatus(archiveInfo.getId(), "EXTRACTED");
+
+        log.info("ZIP распакован. Файлов: {}", extractResult.getTotalFiles());
+        return extractResult;
+    }
+
+    @Override
+    public Path getPhysicalFilePath(Long fileId, Long userId) {
+        Path uploadPath = DirectoryConfig.getAbsoluteFileUploadPath();
+
+        if (userId != null) {
+            Path userDir = uploadPath.resolve("user_" + userId);
+
+            try (var stream = Files.list(userDir)) {
+                return stream
+                        .filter(path -> path.getFileName().toString().startsWith(fileId + "_"))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("Физический файл не найден"));
+            } catch (IOException e) {
+                throw new RuntimeException("Ошибка поиска физического файла", e);
+            }
+        }
+
+        // Если userId не указан, ищем во всех папках
+        try (var stream = Files.walk(uploadPath, 2)) {
+            return stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().startsWith(fileId + "_"))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Физический файл не найден"));
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка поиска физического файла", e);
+        }
+    }
+
+    @Override
     public List<FileUploadResponseDto> getUserFiles(Long userId) {
         return uploadedFileRepository.findByUserIdOrderByUploadDateDesc(userId)
                 .stream()

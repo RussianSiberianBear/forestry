@@ -8,7 +8,11 @@ import java.nio.file.Path;
 import java.util.List;
 
 public interface FileUploadService {
+
     FileUploadResponseDto uploadFile(Long userId, MultipartFile file) throws IOException;
+
+    // Загрузка ZIP с распаковкой
+    ZipExtractResultDto uploadAndExtractZip(Long userId, MultipartFile file) throws IOException;
 
     List<FileUploadResponseDto> getUserFiles(Long userId);
 
@@ -27,6 +31,9 @@ public interface FileUploadService {
     boolean isZipFile(MultipartFile file);
 
     boolean isZipFile(Path path);
+
+    // Получение информации о физическом файле
+    Path getPhysicalFilePath(Long fileId, Long userId);
 
     Path savePhysicalFile(MultipartFile file, Long fileId, Long userId) throws IOException;
 }

@@ -113,24 +113,12 @@ public class ForestStandController {
 
         try {
             // Сохраняем архив
-            FileUploadResponseDto savedFile = fileUploadService.uploadFile(userId, file);
-            Path physicalPath = fileUploadService.savePhysicalFile(file, savedFile.getId(), userId);
+            ZipExtractResultDto extractResult = fileUploadService.uploadAndExtractZip(userId, file);
 
-            // Распаковываем
-            ZipExtractResultDto extractResult = zipExtractorService.extractZip(
-                    physicalPath,
-                    userId,
-                    savedFile.getId()
-            );
-
-            Map<String, Object> data = Map.of(
-                    "archiveInfo", savedFile,
-                    "extractResult", extractResult
-            );
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "ZIP-архив успешно загружен и распакован",
-                    "data", data
+                    "data", extractResult
             ));
 
         } catch (Exception e) {
