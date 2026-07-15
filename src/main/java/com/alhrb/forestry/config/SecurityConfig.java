@@ -59,6 +59,7 @@ public class SecurityConfig {
                         // 1) Закрытое — первым!
                         .requestMatchers("/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/api/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/api/uploadForestStand").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/abgrid-engine/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
