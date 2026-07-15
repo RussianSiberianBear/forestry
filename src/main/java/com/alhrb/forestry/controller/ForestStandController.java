@@ -7,6 +7,7 @@ import com.alhrb.forestry.files.ZipExtractorService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,9 +35,9 @@ public class ForestStandController {
     );
     private static final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB для ZIP
 
-    @PostMapping("/uploadForestStand")
+    @PostMapping(value = "/uploadForestStand", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadForestStand(
-            @RequestParam MultipartFile file,
+            @RequestParam("file") MultipartFile file,
             @RequestParam(value = "extractZip", defaultValue = "true") boolean extractZip) {
 
         Long userId = securityHelper.getCurrentUserId();
@@ -55,34 +56,36 @@ public class ForestStandController {
         }
 
         try {
-            // 3. Сохраняем файл в БД
-            FileUploadResponseDto savedFile = fileUploadService.uploadFile(userId, file);
-
-            // 4. Сохраняем физический файл
-            Path physicalPath = fileUploadService.savePhysicalFile(file, savedFile.getId(), userId);
-
-            // 5. Если это ZIP и нужно распаковать
+            // 1. Если это ZIP и нужно распаковать
             ZipExtractResultDto extractResult = null;
             if (fileUploadService.isZipFile(file) && extractZip) {
-                extractResult = zipExtractorService.extractZip(
-                        physicalPath,
-                        userId,
-                        savedFile.getId()
-                );
+                // Сохраняем архив
+                extractResult = fileUploadService.uploadAndExtractZip(userId, file);
+
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "ZIP-архив успешно загружен и распакован",
+                        "data", extractResult
+                ));
+            } else {
+                // 2. Сохраняем файл в БД
+                FileUploadResponseDto savedFile = fileUploadService.uploadFile(userId, file);
+
+                // 3. Сохраняем физический файл
+                Path physicalPath = fileUploadService.savePhysicalFile(file, savedFile.getId(), userId);
+
+                Map<String, Object> data = Map.of(
+                        "fileInfo", savedFile,
+                        "physicalPath", physicalPath.toString()
+                        );
+
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Файл успешно загружен",
+                        "data", data
+                ));
+
             }
-
-            Map<String, Object> data = Map.of(
-                    "fileInfo", savedFile,
-                    "physicalPath", physicalPath.toString(),
-                    "isZip", fileUploadService.isZipFile(file),
-                    "extractResult", extractResult
-            );
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Файл успешно загружен",
-                    "data", data
-            ));
 
         } catch (IllegalArgumentException e) {
             log.warn("Ошибка валидации: {}", e.getMessage());
@@ -100,7 +103,7 @@ public class ForestStandController {
         }
     }
 
-    @PostMapping("/uploadZipAndExtract")
+    @PostMapping(value = "/uploadZipAndExtract", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadZipAndExtract(
             @RequestParam("file") MultipartFile file) {
 

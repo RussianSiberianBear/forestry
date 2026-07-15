@@ -2,9 +2,12 @@ package com.alhrb.forestry.files.model.staging;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class UploadedFile {
 
     @Id
@@ -28,7 +32,7 @@ public class UploadedFile {
     @Column(name = "file_type", nullable = false, length = 50)
     private String fileType;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.BINARY)
     @Column(name = "file_data", nullable = false, columnDefinition = "BYTEA")
     private byte[] fileData;
 
@@ -45,6 +49,6 @@ public class UploadedFile {
     @Column(name = "processed")
     private Boolean processed = false;
 
-    @Column(name = "arhicve_id", nullable = false)
+    @Column(name = "archive_id", nullable = true)
     private Long archiveId;
 }

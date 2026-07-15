@@ -85,11 +85,24 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
-    public Path getPhysicalFilePath(Long fileId, Long userId) {
+    public Path getPhysicalFilePath(Long fileId, Long userId) throws IOException {
         Path uploadPath = DirectoryConfig.getAbsoluteFileUploadPath();
 
         if (userId != null) {
             Path userDir = uploadPath.resolve("user_" + userId);
+            // Создаем директорию, если её нет
+            if (!Files.exists(userDir)) {
+                Files.createDirectories(userDir); // createDirectories создает все необходимые папки
+                log.info("Created directory: {}", userDir);
+            }
+
+            // Проверяем, что директория существует и доступна для записи
+            if (!Files.isDirectory(userDir)) {
+                throw new IOException("Path is not a directory: " + userDir);
+            }
+            if (!Files.isWritable(userDir)) {
+                throw new IOException("Directory is not writable: " + userDir);
+            }
 
             try (var stream = Files.list(userDir)) {
                 return stream

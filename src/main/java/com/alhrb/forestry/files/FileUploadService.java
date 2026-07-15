@@ -33,7 +33,7 @@ public interface FileUploadService {
     boolean isZipFile(Path path);
 
     // Получение информации о физическом файле
-    Path getPhysicalFilePath(Long fileId, Long userId);
+    Path getPhysicalFilePath(Long fileId, Long userId) throws IOException;
 
     Path savePhysicalFile(MultipartFile file, Long fileId, Long userId) throws IOException;
 }

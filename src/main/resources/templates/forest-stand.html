@@ -18,12 +18,16 @@
         UIkit.upload('.js-upload', {
             url: '/api/uploadForestStand',
             multiple: false,
+            name: 'file',
             params: {
                 extractZip: true // Явно передаем параметр
             },
             credentials: 'include',
-            beforeSend: function () {
+            beforeSend: function() {
                 console.log('beforeSend', arguments);
+//                env.xhr.withCredentials = true;
+//                env.xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+ //               env.xhr.setRequestHeader('Accept', 'application/json');
             },
             beforeAll: function () {
                 console.log('beforeAll', arguments);
