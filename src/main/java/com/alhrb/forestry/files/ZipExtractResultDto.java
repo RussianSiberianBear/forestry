@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @Builder
 public class ZipExtractResultDto {
+    private Long storageId;
     private boolean success;
     private Path extractPath;
     private int totalFiles;

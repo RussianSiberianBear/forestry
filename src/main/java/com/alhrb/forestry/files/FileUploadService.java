@@ -15,6 +15,8 @@ public interface FileUploadService {
     byte[] getFileData(Long fileId, Long userId);
     void deleteFile(Long fileId, Long userId);
     FileUploadResponseDto updateFileStatus(Long fileId, String status);
+    FileUploadResponseDto markProcessed(Long fileId, Long userId);
+    FileUploadResponseDto markProcessingError(Long fileId, Long userId, String errorMessage);
     List<FileUploadResponseDto> getFilesByStatus(String status);
     String getFileExtension(String filename);
     boolean isZipFile(MultipartFile file);

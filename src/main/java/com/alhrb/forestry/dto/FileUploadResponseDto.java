@@ -1,6 +1,9 @@
 package com.alhrb.forestry.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -8,12 +11,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class FileUploadResponseDto {
     private Long id;
-    private String originalFilename;
-    private String fileType;
-    private Long fileSize;
-    private LocalDateTime uploadDate;
+    private Long userId;
+    private String type;
+    private String originalName;
+    private String storedName;
+    private String relativePath;
+    private String sha256;
+    private String contentType;
+    private String extension;
+    private Long size;
     private String status;
     private Boolean processed;
-    private String sha256;
-    private String relativePath;
+    private LocalDateTime createdAt;
+    private LocalDateTime processedAt;
+    private String errorMessage;
 }
