@@ -119,6 +119,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         String filename = path.getFileName().toString();
         return filename.toLowerCase().endsWith(".zip");
     }
+
     @Override
     public String getFileExtension(String filename) {
         if (filename == null) return "";

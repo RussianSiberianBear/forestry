@@ -1,6 +1,5 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.config.DirectoryConfig;
 import com.alhrb.forestry.dto.FileUploadResponseDto;
 import com.alhrb.forestry.files.FileUploadService;
 import com.alhrb.forestry.files.ZipExtractResultDto;
@@ -8,7 +7,6 @@ import com.alhrb.forestry.files.ZipExtractorService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.map.HashedMap;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,11 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,14 +44,14 @@ public class ForestStandController {
         // 1. Проверка обязательных параметров
         if (userId == null) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,"message","Не найден ID пользователя"));
+                    .body(Map.of("success", false, "message", "Не найден ID пользователя"));
         }
 
         // 2. Валидация файла
         ValidationResult validation = validateFile(file);
         if (!validation.isValid()) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,"message", validation.getErrorMessage()));
+                    .body(Map.of("success", false, "message", validation.getErrorMessage()));
         }
 
         try {
@@ -93,16 +87,16 @@ public class ForestStandController {
         } catch (IllegalArgumentException e) {
             log.warn("Ошибка валидации: {}", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,"message", e.getMessage()));
+                    .body(Map.of("success", false, "message", e.getMessage()));
         } catch (IOException e) {
             log.error("Ошибка при загрузке файла", e);
             return ResponseEntity.status(500)
-                    .body(Map.of("success", false,"message", "Ошибка сервера при сохранении файла: " +
+                    .body(Map.of("success", false, "message", "Ошибка сервера при сохранении файла: " +
                             e.getMessage()));
         } catch (Exception e) {
             log.error("Неожиданная ошибка", e);
             return ResponseEntity.status(500)
-                    .body(Map.of("success", false,"message", "Внутренняя ошибка сервера"));
+                    .body(Map.of("success", false, "message", "Внутренняя ошибка сервера"));
         }
     }
 
@@ -114,7 +108,7 @@ public class ForestStandController {
 
         if (!fileUploadService.isZipFile(file)) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("success", false,"message", "Файл должен быть ZIP-архивом"));
+                    .body(Map.of("success", false, "message", "Файл должен быть ZIP-архивом"));
         }
 
         try {
