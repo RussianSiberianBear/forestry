@@ -117,11 +117,13 @@ public interface ForestryUnitRepository extends JpaRepository<ForestryUnit, Long
 
     @Query("SELECT fu FROM ForestryUnit fu " +
             "JOIN AllowedForestDepartment afd ON fu.id = afd.forestryUnitId " +
-            "WHERE fu.type = :type AND afd.userId = :userId")
+            "WHERE fu.type = :type AND afd.userId = :userId " +
+            "AND (:parent IS NULL OR fu.parent = :parent)")
     Page<ForestryUnit> findAll(
-            Specification<User> specification,
             Pageable pageable,
-            @Param("type") ForestryUnitType type, @Param("userId") Long userId
+            @Param("type") ForestryUnitType type,
+            @Param("userId") Long userId,
+            @Param("parent") ForestryUnit parent
     );
 
 }

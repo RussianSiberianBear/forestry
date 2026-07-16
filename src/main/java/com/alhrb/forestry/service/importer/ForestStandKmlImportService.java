@@ -371,21 +371,30 @@ public class ForestStandKmlImportService {
         entity.setKateg(attributes.get("катег"));
         entity.setOzu(attributes.get("ОЗУ"));
 
-        String[] parts = null;
-        if (attributes.get("Ind") != null && !attributes.get("Ind").isBlank() ) {
-            parts = attributes.get("Ind").split("_");
-        }
-        if (attributes.get("кварт") == null || toInteger(attributes.get("кварт")) == 0){
-            if (parts[1] != null) entity.setKvart(toInteger(parts[1]));
-        } else {
-            entity.setKvart(toInteger(attributes.get("кварт")));
-        }
+        entity.setKvart(toInteger(attributes.get("кварт")));
+        entity.setVydel(attributes.get("выдел"));
 
-        if (attributes.get("выдел") == null || attributes.get("выдел").isBlank()){
-            if (parts[2] != null) entity.setVydel(parts[2]);
+        if (attributes.get("кварт") != null && toInteger(attributes.get("кварт")) != 0 && attributes.get("выдел") != null) {
+            entity.setInd(attributes.get("лесни") + "_" + attributes.get("кварт") + "_" + attributes.get("выдел"));
         } else {
-            entity.setVydel(attributes.get("выдел"));
+            String[] parts = null;
+            if (attributes.get("Ind") != null && !attributes.get("Ind").isBlank()) {
+                parts = attributes.get("Ind").split("_");
+            }
+            if (attributes.get("кварт") == null || toInteger(attributes.get("кварт")) == 0) {
+                if (parts[1] != null) entity.setKvart(toInteger(parts[1]));
+            } else {
+                entity.setKvart(toInteger(attributes.get("кварт")));
+            }
+
+            if (attributes.get("выдел") == null || attributes.get("выдел").isBlank()) {
+                if (parts[2] != null) entity.setVydel(parts[2]);
+            } else {
+                entity.setVydel(attributes.get("выдел"));
+            }
         }
+  //      entity.setIndexField(attributes.get("Index"));
+        entity.setIndexField(entity.getInd());
 
         if (attributes.get("площа") != null)
             entity.setPlosha(attributes.get("площа").replace(',', '.'));
@@ -403,9 +412,6 @@ public class ForestStandKmlImportService {
         entity.setTlu(attributes.get("тлу"));
         entity.setPolno(attributes.get("полно"));
         entity.setZapas(toBigDecimal(attributes.get("запас")));
-
-        entity.setIndexField(attributes.get("Index"));
-//        entity.setIndexField(attributes.get("лесни") + "_" + attributes.get("кварт") + "_" + attributes.get("выдел"));
 
         entity.setMu(attributes.get("Mu"));
         entity.setGir(attributes.get("Gir"));

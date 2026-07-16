@@ -1,3 +1,47 @@
+
+SELECT  ind, upload_file_id, COUNT(*) AS total
+FROM staging.forest_stand_kml_import
+GROUP by upload_file_id, ind
+HAVING COUNT(*) > 1;
+
+SELECT ind, upload_file_id, kvart, vydel, COUNT(*) AS total
+FROM staging.forest_stand_kml_import
+GROUP BY upload_file_id, ind, kvart, vydel
+HAVING COUNT(*) > 1
+order by ind,  upload_file_id,  kvart, vydel ;
+
+select *  from staging.forest_stand_kml_import fski where ind='Киретское_1_22'
+
+select *  from staging.forest_stand_kml_import fski where ind='Киретское_1_6'
+
+SELECT id,ind, fski.index_field , kvart, vydel
+FROM staging.forest_stand_kml_import fski
+WHERE EXISTS (
+    SELECT 1
+    FROM staging.forest_stand_kml_import fski2
+    WHERE fski2.upload_file_id = fski.upload_file_id
+      AND fski2.ind = fski.ind
+    GROUP BY fski2.upload_file_id, fski2.ind
+    HAVING COUNT(*) > 1
+)
+order by ind;
+
+
+select *  from staging.forest_stand_kml_import fski where ind='Бичурское_170_33'
+
+select *  from staging.forest_stand_kml_import fski where ind is null
+
+select *  from staging.forest_stand_kml_import fski where ind='Окино-Ключевское_148_2'
+
+select id,ind,index_field,kvart,vydel from staging.forest_stand_kml_import where ind <> index_field;
+
+select id,ind,index_field,kvart,vydel from staging.forest_stand_kml_import where zapas =0 order by ind;
+
+select id,ind,index_field,kvart,vydel from staging.forest_stand_kml_import where kvart=0 and vydel is null order by ind ;
+
+
+
+
 select *  from staging.forest_stand_kml_import fski where ind='Окино-Ключевское_84_10'
 
 select distinct ind  from staging.forest_stand_kml_import fski order by ind

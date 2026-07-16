@@ -40,7 +40,7 @@ public class ForestryUnitService {
 
     public Map<String, Object> findAllowedForestries(Long userId, GridP params) {
 
-        Specification<User> specification =
+        Specification<ForestryUnit> specification =
                 DynamicSpecificationBuilder.build(
                         params.getFilter(),
                         FILTER_FIELDS
@@ -51,9 +51,15 @@ public class ForestryUnitService {
                         params,
                         SORT_FIELDS
                 );
-
+        Map<String, Object> filter = params.getFilter();
+        Long parent = null;
+        ForestryUnit fup = null;
+        if (filter.containsKey("parent")) {
+            parent = Integer.valueOf(filter.get("parent").toString()).longValue();
+            fup = forestryUnitRepository.findById(parent).orElse(null);
+        }
         Page page = forestryUnitRepository
-                .findAll(specification, pageable, ForestryUnitType.FORESTRY, userId)
+                .findAll(pageable, ForestryUnitType.FORESTRY, userId, fup)
                 .map(mapper::toResponse);
 
         Map<String, Object> data = Map.of(
