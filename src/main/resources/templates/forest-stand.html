@@ -113,10 +113,10 @@
                         editor: {edit: {visible: false}, create: {visible: false}},
                         ui: {label: 'id', grid: {visible: false}}
                     },
-                    parent: {
+                    parentId: {
                         type: 'int',
                         editor: {edit: {visible: false}, create: {visible: false}},
-                        ui: {label: 'parent', grid: {visible: false}}
+                        ui: {label: 'parentId', grid: {visible: false}}
                     },
                     name: {
                         type: 'text', ui: {label: 'Наименование', grid: {visible: true, width: '14%'}},
@@ -150,7 +150,7 @@
                     enabled: true,
                     model: 'adjacency',
                     column: 'name',
-                    pid: 'parent',
+                    pid: 'parentId',
                     isLeaf: 'isLeaf',
                     level: 'level'
                 },
