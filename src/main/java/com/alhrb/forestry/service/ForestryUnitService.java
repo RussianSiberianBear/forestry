@@ -52,14 +52,12 @@ public class ForestryUnitService {
                         SORT_FIELDS
                 );
         Map<String, Object> filter = params.getFilter();
-        Long parent = null;
-        ForestryUnit fup = null;
-        if (filter.containsKey("parent")) {
-            parent = Integer.valueOf(filter.get("parent").toString()).longValue();
-            fup = forestryUnitRepository.findById(parent).orElse(null);
+        Long parentId = null;
+        if (filter.containsKey("parentId")) {
+            parentId = Integer.valueOf(filter.get("parentId").toString()).longValue();
         }
         Page page = forestryUnitRepository
-                .findAll(pageable, ForestryUnitType.FORESTRY, userId, fup)
+                .findAll(pageable, parentId == null ? ForestryUnitType.FORESTRY : ForestryUnitType.SUB_FORESTRY, userId, parentId)
                 .map(mapper::toResponse);
 
         Map<String, Object> data = Map.of(
