@@ -20,6 +20,7 @@ public record ForestryUnitResponseDto(
         Double centerLng,
         Integer zoom,
         String accountNumber,
-        String fullPath             // полный путь из getFullPath()
+        String fullPath,             // полный путь из getFullPath()
+        Boolean isLeaf
 ) {
 }

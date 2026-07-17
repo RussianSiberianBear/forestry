@@ -35,6 +35,7 @@ public interface ForestryUnitMapper extends BaseMapper<ForestryUnit, ForestryUni
     @Mapping(target = "territoryUnitName", source = "territoryUnit.name")
     @Mapping(target = "type", source = "type", qualifiedByName = "typeToString")
     @Mapping(target = "fullPath", source = "entity", qualifiedByName = "mapFullPath")
+    @Mapping(target = "isLeaf", source = "entity", qualifiedByName = "mapIsLeaf")
     ForestryUnitResponseDto toResponse(ForestryUnit entity);
 
     @Override
@@ -110,5 +111,13 @@ public interface ForestryUnitMapper extends BaseMapper<ForestryUnit, ForestryUni
     @Named("mapFullPath")
     default String mapFullPath(ForestryUnit entity) {
         return entity == null ? null : entity.getFullPath();
+    }
+
+    @Named("mapIsLeaf")
+    default Boolean mapIsLEaf(ForestryUnit entity) {
+        Boolean isLeaf = (entity.getType()==ForestryUnitType.FORESTRY && entity.getChildren().size()== 0)
+                || (entity.getType()==ForestryUnitType.SUB_FORESTRY);
+
+          return entity == null ? null : isLeaf;
     }
 }
