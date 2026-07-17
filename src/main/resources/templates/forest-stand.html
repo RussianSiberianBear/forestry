@@ -130,6 +130,10 @@
                             create: {readOnly: true, required: true}
                         }
                     },
+                    isLeaf:{type:'boolean',
+                        editor: {edit: {visible: false}, create: {visible: false}},
+                        ui: {label: 'isLeaf', grid: {visible: false}}
+                    }
                 }
             },
             view: {
