@@ -49,8 +49,8 @@ public class ForestStand {
      * Из KML: выдел
      * Пример: 1, 2, 3, 12
      */
-    @Column(name = "number_in_quarter", nullable = false, length = 50)
-    private String numberInQuarter;
+    @Column(name = "number_in_quarter")
+    private Integer numberInQuarter;
 
     /**
      * Полный номер выдела (уникальный)

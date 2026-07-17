@@ -101,8 +101,8 @@ public class ForestStandKmlImport {
     @Column(name = "ozu", length = 255)
     private String ozu;
 
-    @Column(name = "kvart", precision = 10, scale = 2)
-    private BigDecimal kvart;
+    @Column(name = "kvart")
+    private Integer kvart;
 
     @Column(name = "vydel", length = 50)
     private String vydel;
@@ -124,8 +124,8 @@ public class ForestStandKmlImport {
     @Column(name = "preob", length = 50)
     private String preob;
 
-    @Column(name = "vozra", precision = 10, scale = 2)
-    private BigDecimal vozra;
+    @Column(name = "vozra")
+    private Integer vozra;
 
     @Column(name = "vysot", precision = 10, scale = 2)
     private BigDecimal vysot;

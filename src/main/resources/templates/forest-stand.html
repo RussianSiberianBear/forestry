@@ -13,7 +13,7 @@
     </div>
     <div id="gridAppointedForestry"></div>
 
-    <script  sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
+    <script sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
 
         UIkit.upload('.js-upload', {
             url: '/api/uploadForestStand',
@@ -23,14 +23,14 @@
                 extractZip: true // Явно передаем параметр
             },
             credentials: 'include',
-            beforeSend: function() {
+            beforeSend: function () {
                 console.log('beforeSend', arguments);
             },
             beforeAll: function () {
                 console.log('beforeAll', arguments);
             },
             load: function () {
-                console.log('load', arguments);
+
             },
             error: function (env) {
                 let response = JSON.parse(env.xhr.responseText);
@@ -74,7 +74,23 @@
                     bar.setAttribute('hidden', 'hidden');
                 }, 1000);
 
-                alert('Upload Completed');
+                var response = JSON.parse(arguments[0].response);
+                if (!response.success) {
+                    UIkit.notification({
+                        message: '❌ Ошибка загрузки: ' + response.message + '<br>' +
+                            'Всего объектов: ' + response.totalPlacemarkCount + '<br>' +
+                            'Загружено: ' + response.importedCount + '<br>' +
+                            'Ошибок: ' + response.errorCount,
+                        status: 'danger',
+                        timeout: 3000
+                    });
+                } else {
+                    UIkit.notification({
+                        message: response.message,
+                        status: 'success',
+                        timeout: 3000
+                    });
+                }
             }
 
         });
@@ -129,6 +145,14 @@
                 pager: {
                     enabled: true,
                     rpp: [10, 20, 50]
+                },
+                treeGrid: {
+                    enabled: true,
+                    model: 'adjacency',
+                    column: 'name',
+                    pid: 'parent',
+                    isLeaf: 'isLeaf',
+                    level: 'level'
                 },
                 sortOrder: [{field: 'name', dir: 'asc'}],
             }

@@ -6,13 +6,7 @@ import com.alhrb.forestry.repository.staging.ForestStandKmlImportRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LinearRing;
-import org.locationtech.jts.geom.MultiPolygon;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +21,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -294,14 +283,11 @@ public class ForestStandKmlImportService {
                         }
                     }
 
-                    case "Polygon" ->
-                            currentPolygon = new PolygonData();
+                    case "Polygon" -> currentPolygon = new PolygonData();
 
-                    case "outerBoundaryIs" ->
-                            inOuterBoundary = true;
+                    case "outerBoundaryIs" -> inOuterBoundary = true;
 
-                    case "innerBoundaryIs" ->
-                            inInnerBoundary = true;
+                    case "innerBoundaryIs" -> inInnerBoundary = true;
 
                     case "coordinates" -> {
                         String coordinates =
@@ -326,11 +312,9 @@ public class ForestStandKmlImportService {
                 String localName = reader.getLocalName();
 
                 switch (localName) {
-                    case "outerBoundaryIs" ->
-                            inOuterBoundary = false;
+                    case "outerBoundaryIs" -> inOuterBoundary = false;
 
-                    case "innerBoundaryIs" ->
-                            inInnerBoundary = false;
+                    case "innerBoundaryIs" -> inInnerBoundary = false;
 
                     case "Polygon" -> {
                         if (currentPolygon != null) {
@@ -377,19 +361,49 @@ public class ForestStandKmlImportService {
         entity.setMtip(attributes.get("MTIP"));
         entity.setStrata(toInteger(attributes.get("STRATA")));
         entity.setUgir1(attributes.get("UGIR_1"));
+
         entity.setInd(attributes.get("Ind"));
+//        entity.setInd(attributes.get("лесни") + "_" + attributes.get("кварт") + "_" + attributes.get("выдел"));
+
         entity.setLesho(attributes.get("лесхо"));
         entity.setLesni(attributes.get("лесни"));
         entity.setGrupp(attributes.get("групп"));
         entity.setKateg(attributes.get("катег"));
         entity.setOzu(attributes.get("ОЗУ"));
-        entity.setKvart(toBigDecimal(attributes.get("кварт")));
+
+        entity.setKvart(toInteger(attributes.get("кварт")));
         entity.setVydel(attributes.get("выдел"));
-        entity.setPlosha(attributes.get("площа"));
+
+        if (attributes.get("кварт") != null && toInteger(attributes.get("кварт")) != 0 && attributes.get("выдел") != null) {
+            entity.setInd(attributes.get("лесни") + "_" + attributes.get("кварт") + "_" + attributes.get("выдел"));
+        } else {
+            String[] parts = null;
+            if (attributes.get("Ind") != null && !attributes.get("Ind").isBlank()) {
+                parts = attributes.get("Ind").split("_");
+            }
+            if (attributes.get("кварт") == null || toInteger(attributes.get("кварт")) == 0) {
+                if (parts[1] != null) entity.setKvart(toInteger(parts[1]));
+            } else {
+                entity.setKvart(toInteger(attributes.get("кварт")));
+            }
+
+            if (attributes.get("выдел") == null || attributes.get("выдел").isBlank()) {
+                if (parts[2] != null) entity.setVydel(parts[2]);
+            } else {
+                entity.setVydel(attributes.get("выдел"));
+            }
+        }
+  //      entity.setIndexField(attributes.get("Index"));
+        entity.setIndexField(entity.getInd());
+
+        if (attributes.get("площа") != null)
+            entity.setPlosha(attributes.get("площа").replace(',', '.'));
+        else entity.setPlosha(attributes.get("площа"));
+
         entity.setKate1(attributes.get("кате_1"));
         entity.setSosta(attributes.get("соста"));
         entity.setPreob(attributes.get("преоб"));
-        entity.setVozra(toBigDecimal(attributes.get("возра")));
+        entity.setVozra(toInteger(attributes.get("возра")));
         entity.setVysot(toBigDecimal(attributes.get("высот")));
         entity.setDiame(toBigDecimal(attributes.get("диаме")));
         entity.setKlass(toBigDecimal(attributes.get("класс")));
@@ -398,12 +412,21 @@ public class ForestStandKmlImportService {
         entity.setTlu(attributes.get("тлу"));
         entity.setPolno(attributes.get("полно"));
         entity.setZapas(toBigDecimal(attributes.get("запас")));
-        entity.setIndexField(attributes.get("Index"));
+
         entity.setMu(attributes.get("Mu"));
         entity.setGir(attributes.get("Gir"));
         entity.setUgir(attributes.get("Ugir"));
-        entity.setY(attributes.get("Y"));
-        entity.setX(attributes.get("X"));
+        if ((attributes.get("Y") != null)) {
+            entity.setY(attributes.get("Y").replace(',', '.'));
+        } else {
+            entity.setY(attributes.get("Y"));
+        }
+
+        if ((attributes.get("X") != null)) {
+            entity.setX(attributes.get("X").replace(',', '.'));
+        } else {
+            entity.setX(attributes.get("X"));
+        }
 
         String rawCoordinates = data.polygons()
                 .stream()
