@@ -1311,6 +1311,56 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ==========================================
+    // НОВАЯ ЛОГИКА: ОЧИСТКА quarterId ПРИ ОЧИСТКЕ quarterInput
+    // ==========================================
+    const quarterInput = document.getElementById('quarterInput');
+    if (quarterInput) {
+        quarterInput.addEventListener('input', function () {
+            const quarterIdInput = document.getElementById('quarterId');
+            // Если поле quarterInput пустое, очищаем quarterId и деактивируем поле номера деляны
+            if (this.value === '' || this.value.trim() === '') {
+                if (quarterIdInput) {
+                    quarterIdInput.value = '';
+                    console.log('🗑️ Очищен quarterId, так как quarterInput очищен');
+                }
+                // Деактивируем поле номера деляны
+                const numberInQuarterField = document.getElementById('numberInQuarter');
+                if (numberInQuarterField) {
+                    numberInQuarterField.disabled = true;
+                    numberInQuarterField.value = '';
+                    numberInQuarterField.placeholder = 'Сначала выберите квартал';
+                }
+                // Обновляем информацию о территории
+                if (typeof updateTerritoryInfo === 'function') {
+                    updateTerritoryInfo();
+                }
+            }
+        });
+
+        // Также добавляем обработчик на изменение (для случаев, когда поле очищается программно)
+        quarterInput.addEventListener('change', function () {
+            // Проверяем, изменилось ли значение
+            const quarterIdInput = document.getElementById('quarterId');
+            if (this.value === '' || this.value.trim() === '') {
+                if (quarterIdInput && quarterIdInput.value !== '') {
+                    quarterIdInput.value = '';
+                    console.log('🗑️ Очищен quarterId (change), так как quarterInput очищен');
+                    // Деактивируем поле номера деляны
+                    const numberInQuarterField = document.getElementById('numberInQuarter');
+                    if (numberInQuarterField) {
+                        numberInQuarterField.disabled = true;
+                        numberInQuarterField.value = '';
+                        numberInQuarterField.placeholder = 'Сначала выберите квартал';
+                    }
+                    if (typeof updateTerritoryInfo === 'function') {
+                        updateTerritoryInfo();
+                    }
+                }
+            }
+        });
+    }
+
     const selectors = ['forestrySelect', 'subForestrySelect', 'technicalUnitSelect'];
     selectors.forEach(id => {
         const el = document.getElementById(id);
