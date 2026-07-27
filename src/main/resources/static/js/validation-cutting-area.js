@@ -632,91 +632,6 @@ function loadUISettingsFromServer() {
     loadForestryHierarchy(forestryUnitId, forestryType);
 }
 
-function loadForestryHierarchy(unitId, type) {
-    fetch('/api/territory/' + unitId)
-        .then(response => response.json())
-        .then(unit => {
-            loadFullHierarchy(unit);
-        })
-        .catch(error => {
-            console.error('Ошибка загрузки территории:', error);
-            refreshMap();
-        });
-}
-
-function loadFullHierarchy(unit) {
-    const savedId = document.getElementById('uiForestryUnitId')?.value;
-    if (savedId) {
-        fetch('/api/territory/path/' + savedId)
-            .then(response => response.json())
-            .then(path => {
-                let forestryId = null;
-                let districtForestryId = null;
-                let technicalUnitId = null;
-                let quarterId = null;
-
-                path.forEach(item => {
-                    switch (item.type) {
-                        case 'FORESTRY':
-                            forestryId = item.id;
-                            break;
-                        case 'SUB_FORESTRY':
-                            districtForestryId = item.id;
-                            break;
-                        case 'TECHNICAL_UNIT':
-                            technicalUnitId = item.id;
-                            break;
-                        case 'QUARTER':
-                            quarterId = item.id;
-                            break;
-                    }
-                });
-
-                restoreHierarchy(forestryId, districtForestryId, technicalUnitId, quarterId);
-            })
-            .catch(error => {
-                console.error('Ошибка загрузки пути:', error);
-                refreshMap();
-            });
-    }
-}
-
-function restoreHierarchy(forestryId, districtForestryId, technicalUnitId, quarterId) {
-    const forestrySelect = document.getElementById('forestrySelect');
-    if (forestrySelect && forestryId) {
-        forestrySelect.value = forestryId;
-        enableQuarterField();
-        loadSubForestries(forestryId, function () {
-            const districtSelect = document.getElementById('subForestrySelect');
-            if (districtSelect && districtForestryId) {
-                districtSelect.value = districtForestryId;
-                loadTechnicalUnits(districtForestryId, function () {
-                    const techSelect = document.getElementById('technicalUnitSelect');
-                    if (techSelect && technicalUnitId) {
-                        techSelect.value = technicalUnitId;
-                    }
-                    setQuarter(quarterId);
-                });
-            } else {
-                setQuarter(quarterId);
-            }
-        });
-    }
-}
-
-function enableQuarterField() {
-    const quarterInput = document.getElementById('quarterInput');
-    if (quarterInput) {
-        quarterInput.disabled = false;
-        quarterInput.placeholder = 'Введите номер квартала...';
-    }
-    const numberInQuarterInput = document.getElementById('numberInQuarter');
-    if (numberInQuarterInput) {
-        numberInQuarterInput.disabled = true;
-        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
-    }
-}
-
 function updateNumberInQuarterField() {
     const quarterId = document.getElementById('quarterId')?.value;
     const numberInQuarterInput = document.getElementById('numberInQuarter');
@@ -728,26 +643,6 @@ function updateNumberInQuarterField() {
         numberInQuarterInput.disabled = true;
         numberInQuarterInput.value = '';
         numberInQuarterInput.placeholder = 'Сначала выберите квартал';
-    }
-}
-
-function setQuarter(quarterId) {
-    if (quarterId) {
-        fetch('/api/territory/' + quarterId)
-            .then(response => response.json())
-            .then(unit => {
-                if (unit && unit.number) {
-                    const input = document.getElementById('quarterInput');
-                    if (input) {
-                        input.value = 'Кв. ' + unit.number + (unit.name ? ' (' + unit.name + ')' : '');
-                        input.disabled = false;
-                    }
-                    document.getElementById('quarterId').value = quarterId;
-                    console.log('✅ Установлен квартал:', unit.number);
-                    updateNumberInQuarterField();
-                }
-            })
-            .catch(error => console.error('Ошибка загрузки квартала:', error));
     }
 }
 

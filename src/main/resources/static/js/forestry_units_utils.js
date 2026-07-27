@@ -4,6 +4,55 @@
 let forestries = null;
 let subForestries = null;
 
+function loadForestryHierarchy(unitId, type) {
+    fetch('/api/territory/' + unitId)
+        .then(response => response.json())
+        .then(unit => {
+            loadFullHierarchy(unit);
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки территории:', error);
+            refreshMap();
+        });
+}
+
+function loadFullHierarchy(unit) {
+    const savedId = document.getElementById('uiForestryUnitId')?.value;
+    if (savedId) {
+        fetch('/api/territory/path/' + savedId)
+            .then(response => response.json())
+            .then(path => {
+                let forestryId = null;
+                let districtForestryId = null;
+                let technicalUnitId = null;
+                let quarterId = null;
+
+                path.forEach(item => {
+                    switch (item.type) {
+                        case 'FORESTRY':
+                            forestryId = item.id;
+                            break;
+                        case 'SUB_FORESTRY':
+                            districtForestryId = item.id;
+                            break;
+                        case 'TECHNICAL_UNIT':
+                            technicalUnitId = item.id;
+                            break;
+                        case 'QUARTER':
+                            quarterId = item.id;
+                            break;
+                    }
+                });
+
+                restoreHierarchy(forestryId, districtForestryId, technicalUnitId, quarterId);
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки пути:', error);
+                refreshMap();
+            });
+    }
+}
+
 function loadForestries(callback) {
     const forestrySelect = document.getElementById('forestrySelect');
     if (!forestrySelect) return;
@@ -194,12 +243,53 @@ function loadTechnicalUnits(districtForestryId, callback) {
         });
 }
 
+function restoreHierarchy(forestryId, districtForestryId, technicalUnitId, quarterId) {
+    const forestrySelect = document.getElementById('forestrySelect');
+    if (forestrySelect && forestryId) {
+        forestrySelect.value = forestryId;
+        enableQuarterField();
+        loadSubForestries(forestryId, function () {
+            const districtSelect = document.getElementById('subForestrySelect');
+            if (districtSelect && districtForestryId) {
+                districtSelect.value = districtForestryId;
+                loadTechnicalUnits(districtForestryId, function () {
+                    const techSelect = document.getElementById('technicalUnitSelect');
+                    if (techSelect && technicalUnitId) {
+                        techSelect.value = technicalUnitId;
+                    }
+                    setQuarter(quarterId);
+                });
+            } else {
+                setQuarter(quarterId);
+            }
+        });
+    }
+}
+
+function setQuarter(quarterId) {
+    if (quarterId) {
+        fetch('/api/territory/' + quarterId)
+            .then(response => response.json())
+            .then(unit => {
+                if (unit && unit.number) {
+                    const input = document.getElementById('quarterInput');
+                    if (input) {
+                        input.value = 'Кв. ' + unit.number + (unit.name ? ' (' + unit.name + ')' : '');
+                        input.disabled = false;
+                    }
+                    document.getElementById('quarterId').value = quarterId;
+                    console.log('✅ Установлен квартал:', unit.number);
+                    updateNumberInQuarterField();
+                }
+            })
+            .catch(error => console.error('Ошибка загрузки квартала:', error));
+    }
+}
+
 // ==========================================
 // КВАРТАЛЫ (AUTOCOMPLETE)
 // ==========================================
-
 let quarterSearchTimeout = null;
-
 function searchQuarters(query) {
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const subForestryId = document.getElementById('subForestrySelect')?.value;
@@ -301,7 +391,7 @@ function selectQuarter(id, number, name) {
     });
 }
 
-function clearSubForestry() {
+function resetSubForestry() {
     const subForestrySelect = document.getElementById('subForestrySelect');
     if (subForestrySelect) {
         subForestrySelect.innerHTML = '<option value="">-- Сначала выберите лесничество --</option>';
@@ -310,13 +400,25 @@ function clearSubForestry() {
     }
 }
 
-function clearTechUnit() {
+function resetTechUnit() {
     const techSelect = document.getElementById('technicalUnitSelect');
     if (techSelect) {
         techSelect.innerHTML = '<option value="">-- Сначала выберите участковое лесничество --</option>';
         techSelect.disabled = true;
         techSelect.classList.remove('loading');
     }
+}
+
+function resetQuarter(){
+
+    const quarterInput = document.getElementById('quarterInput');
+    if (quarterInput) {
+        quarterInput.disabled = true;
+        quarterInput.value = '';
+        quarterInput.placeholder = 'Сначала выберите лесничество';
+    }
+    const quarterId = document.getElementById('quarterId');
+    if (quarterId) quarterId.value = '';
 }
 
 function clearQuarter() {
@@ -330,6 +432,9 @@ function clearQuarter() {
 
     const suggestions = document.getElementById('quarterSuggestions');
     if (suggestions) suggestions.style.display = 'none';
+}
+
+function resetCuttingArea(){
 
     const numberInQuarterInput = document.getElementById('numberInQuarter');
     if (numberInQuarterInput) {
@@ -339,7 +444,18 @@ function clearQuarter() {
     }
 }
 
-
+function enableQuarterField() {
+    const quarterInput = document.getElementById('quarterInput');
+    if (quarterInput) {
+        quarterInput.disabled = false;
+        quarterInput.placeholder = 'Введите номер квартала...';
+    }
+    const numberInQuarterInput = document.getElementById('numberInQuarter');
+    if (numberInQuarterInput) {
+        numberInQuarterInput.disabled = true;
+        numberInQuarterInput.placeholder = 'Сначала выберите квартал';
+    }
+}
 // ==========================================
 // ОБРАБОТЧИКИ ИЗМЕНЕНИЙ
 // ==========================================
@@ -381,9 +497,11 @@ function onForestryChange(forestryId) {
 function onSubForestryChange(subForestryId) {
     console.log('🔄 onSubForestryChange вызван с subForestryId:', subForestryId);
 
-    clearTechUnit();
+    resetTechUnit();
 
     clearQuarter();
+
+    resetCuttingArea();
 
     const techSelect = document.getElementById('technicalUnitSelect');
     const quarterInput = document.getElementById('quarterInput');
@@ -414,6 +532,8 @@ function onSubForestryChange(subForestryId) {
 function onTechnicalUnitChange(technicalUnitId) {
 
     clearQuarter();
+
+    resetCuttingArea();
 
     if (!technicalUnitId) {
         saveUISetting('forestry-unit', 0);
@@ -622,17 +742,15 @@ function resetDependentSelects(level) {
 
 function resetAllDependentSelects() {
 
-    clearSubForestry();
+    resetSubForestry();
 
-    clearTechUnit();
+    resetTechUnit();
 
-    const quarterInput = document.getElementById('quarterInput');
-    if (quarterInput) {
-        quarterInput.disabled = true;
-        quarterInput.value = '';
-        quarterInput.placeholder = 'Сначала выберите лесничество';
-    }
+    resetQuarter();
+
     clearQuarter();
+
+    resetCuttingArea();
 
     updateTerritoryInfo();
 }
