@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Data
 public class FgislkCsvRow {
 
-    @CsvBindByName(column = "region_code")
+    @CsvBindByName(column = "\uFEFFregion_code")
     private String regionCode;
 
     @CsvBindByName(column = "region_name")
