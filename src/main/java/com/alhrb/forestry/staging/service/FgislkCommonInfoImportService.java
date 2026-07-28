@@ -3,6 +3,7 @@ package com.alhrb.forestry.staging.service;
 import com.alhrb.forestry.staging.dto.FgislkCsvRow;
 import com.alhrb.forestry.staging.model.FgislkCommonInfo;
 import com.alhrb.forestry.staging.repository.FgislkCommonInfoRepository;
+import com.alhrb.forestry.util.SecurityHelper;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.List;
 public class FgislkCommonInfoImportService {
 
     private final FgislkCommonInfoRepository repository;
+    private final SecurityHelper securityHelper;
 
     @Value("${import.batch-size:1000}")
     private int batchSize;
@@ -47,7 +49,7 @@ public class FgislkCommonInfoImportService {
             log.info("Определена кодировка: {}", detectedEncoding);
 
             // 2. Очищаем таблицу
-            repository.truncateTable();
+            repository.truncateTable(securityHelper.getCurrentUserId());
             log.info("Таблица staging.fgislk_common_info очищена");
 
             // 3. Парсим CSV
@@ -129,10 +131,12 @@ public class FgislkCommonInfoImportService {
     private List<FgislkCommonInfo> convertToEntities(List<FgislkCsvRow> csvRows) {
         List<FgislkCommonInfo> entities = new ArrayList<>();
         int errorCount = 0;
+        Long userId = securityHelper.getCurrentUserId();
 
         for (FgislkCsvRow row : csvRows) {
             try {
                 FgislkCommonInfo entity = FgislkCommonInfo.builder()
+                        .userId(userId)
                         .regionCode(cleanString(row.getRegionCode()))
                         .regionName(cleanString(row.getRegionName()))
                         .forestDistrictCode(cleanString(row.getForestDistrictCode()))
@@ -245,18 +249,18 @@ public class FgislkCommonInfoImportService {
 
     // Методы для проверки данных
     public boolean hasData() {
-        return repository.hasData();
+        return repository.hasData(securityHelper.getCurrentUserId());
     }
 
     public long getCount() {
-        return repository.count();
+        return repository.getCount(securityHelper.getCurrentUserId());
     }
 
     public List<Object[]> getRegionStatistics() {
-        return repository.getRegionStatistics();
+        return repository.getRegionStatistics(securityHelper.getCurrentUserId());
     }
 
     public Object[] getTotalStatistics() {
-        return repository.getTotalStatistics();
+        return repository.getTotalStatistics(securityHelper.getCurrentUserId());
     }
 }

@@ -35,6 +35,8 @@ public class FgislkCommonInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long userId;
+
     @Column(name = "region_code", length = 50)
     private String regionCode;
 

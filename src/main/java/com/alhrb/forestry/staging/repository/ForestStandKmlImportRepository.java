@@ -1,4 +1,4 @@
-package com.alhrb.forestry.repository.staging;
+package com.alhrb.forestry.staging.repository;
 
 import com.alhrb.forestry.staging.model.ForestStandKmlImport;
 import com.alhrb.forestry.staging.ImportStatus;

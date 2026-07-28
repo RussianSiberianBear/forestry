@@ -3,7 +3,7 @@ package com.alhrb.forestry.files;
 import com.alhrb.forestry.config.DirectoryConfig;
 import com.alhrb.forestry.dto.FileUploadResponseDto;
 import com.alhrb.forestry.files.model.staging.StoredFile;
-import com.alhrb.forestry.repository.staging.StoredFileRepository;
+import com.alhrb.forestry.staging.StoredFileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

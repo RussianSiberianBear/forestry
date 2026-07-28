@@ -3,6 +3,7 @@ package com.alhrb.forestry.staging.controller;
 import com.alhrb.forestry.staging.service.FgislkCommonInfoImportService;
 import com.alhrb.forestry.staging.model.FgislkCommonInfo;
 import com.alhrb.forestry.staging.repository.FgislkCommonInfoRepository;
+import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ public class FgislkCommonInfoController {
 
     private final FgislkCommonInfoImportService importService;
     private final FgislkCommonInfoRepository repository;
+    private final SecurityHelper securityHelper;
 
     /**
      * Загрузка CSV файла
@@ -127,7 +129,7 @@ public class FgislkCommonInfoController {
     @DeleteMapping("/clear")
     public ResponseEntity<Map<String, Object>> clearTable() {
         try {
-            repository.truncateTable();
+            repository.truncateTable(securityHelper.getCurrentUserId());
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Таблица очищена"
