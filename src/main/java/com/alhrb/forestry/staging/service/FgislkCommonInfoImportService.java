@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -17,15 +18,11 @@ import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,12 +32,6 @@ import java.util.List;
 public class FgislkCommonInfoImportService {
 
     private static final char CSV_DELIMITER = ';';
-
-    private static final DateTimeFormatter DATE_DMY_DOT =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
-    private static final DateTimeFormatter DATE_DMY_SLASH =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final FgislkCommonInfoRepository repository;
     private final SecurityHelper securityHelper;
@@ -52,32 +43,36 @@ public class FgislkCommonInfoImportService {
     private String defaultEncoding;
 
     /**
-     * Импорт CSV, содержащего кириллические заголовки и данные.
-     * DTO привязан к колонкам по позиции, поэтому текст заголовков не влияет
-     * на сопоставление полей.
+     * Полностью заменяет staging-данные текущего пользователя данными из CSV.
+     *
+     * DTO и entity содержат одинаковые 83 строковых поля. Сопоставление выполняется
+     * явно, чтобы изменение структуры одного из классов обнаруживалось при компиляции.
      */
     @Transactional
     public ImportResult importCsv(MultipartFile file) {
         long startedAt = System.currentTimeMillis();
-        log.info("Начало импорта файла: {}", file.getOriginalFilename());
+        String fileName = file != null ? file.getOriginalFilename() : null;
+        log.info("Начало импорта файла: {}", fileName);
 
         try {
             validateFile(file);
+            validateBatchSize();
 
             Charset charset = detectCharset(file);
             log.info("Кодировка CSV: {}, разделитель: '{}'", charset, CSV_DELIMITER);
 
             List<FgislkCsvRow> rows = parseCsv(file, charset);
-            if (rows.isEmpty()) {
-                throw new IllegalArgumentException("CSV-файл не содержит строк данных");
-            }
-
             validateParsedRows(rows);
 
             Long userId = securityHelper.getCurrentUserId();
+            if (userId == null) {
+                throw new IllegalStateException("Не удалось определить текущего пользователя");
+            }
+
             List<FgislkCommonInfo> entities = convertToEntities(rows, userId);
 
-            // Очищаем прежние данные только после успешного чтения и проверки CSV.
+            // Старые записи удаляются только после успешного чтения, проверки
+            // и преобразования всего CSV-файла.
             repository.truncateTable(userId);
             log.info("Предыдущие данные пользователя {} удалены", userId);
 
@@ -89,8 +84,12 @@ public class FgislkCommonInfoImportService {
 
             return ImportResult.success(importedCount, processingTime);
         } catch (Exception e) {
-            log.error("Ошибка импорта CSV-файла {}",
-                    file != null ? file.getOriginalFilename() : null, e);
+            // Метод возвращает ImportResult, а не пробрасывает исключение. Поэтому
+            // транзакцию необходимо явно пометить на откат, иначе truncate/часть
+            // батчей могли бы сохраниться при ошибке.
+            markTransactionRollbackOnly();
+
+            log.error("Ошибка импорта CSV-файла {}", fileName, e);
             return ImportResult.failure(rootMessage(e));
         }
     }
@@ -105,7 +104,7 @@ public class FgislkCommonInfoImportService {
             List<FgislkCsvRow> rows = new CsvToBeanBuilder<FgislkCsvRow>(reader)
                     .withType(FgislkCsvRow.class)
                     .withSeparator(CSV_DELIMITER)
-                    .withSkipLines(1) // Пропускаем строку кириллических заголовков.
+                    .withSkipLines(1)
                     .withIgnoreLeadingWhiteSpace(true)
                     .withIgnoreEmptyLine(true)
                     .withThrowExceptions(true)
@@ -115,10 +114,10 @@ public class FgislkCommonInfoImportService {
             if (!rows.isEmpty()) {
                 FgislkCsvRow first = rows.get(0);
                 log.debug(
-                        "Первая строка CSV: regionCode={}, regionName={}, districtCode={}",
+                        "Первая строка CSV: regionCode={}, regionName={}, forestDistrict={}",
                         first.getRegionCode(),
                         first.getRegionName(),
-                        first.getLocalForestDistrictName()
+                        first.getForestDistrictAccountingNumber()
                 );
             }
 
@@ -127,8 +126,8 @@ public class FgislkCommonInfoImportService {
     }
 
     /**
-     * Определяет UTF-8/UTF-16 по BOM. Без BOM сначала строго проверяет UTF-8,
-     * затем использует кодировку из import.encoding.
+     * Определяет UTF-8/UTF-16 по BOM. Если BOM отсутствует, сначала строго
+     * проверяет UTF-8, затем использует кодировку из import.encoding.
      */
     private Charset detectCharset(MultipartFile file) throws IOException {
         byte[] bytes = file.getBytes();
@@ -184,11 +183,22 @@ public class FgislkCommonInfoImportService {
         }
     }
 
+    private void validateBatchSize() {
+        if (batchSize <= 0) {
+            throw new IllegalArgumentException(
+                    "Параметр import.batch-size должен быть больше нуля");
+        }
+    }
+
     private void validateParsedRows(List<FgislkCsvRow> rows) {
+        if (rows == null || rows.isEmpty()) {
+            throw new IllegalArgumentException("CSV-файл не содержит строк данных");
+        }
+
         FgislkCsvRow first = rows.get(0);
         if (isBlank(first.getRegionCode())
                 && isBlank(first.getRegionName())
-                && isBlank(first.getForestDistrictCode())) {
+                && isBlank(first.getForestDistrictAccountingNumber())) {
             throw new IllegalArgumentException(
                     "CSV распознан неверно: первые столбцы строки данных пусты. " +
                     "Проверьте разделитель ';' и порядок столбцов"
@@ -204,35 +214,10 @@ public class FgislkCommonInfoImportService {
 
         for (int i = 0; i < rows.size(); i++) {
             FgislkCsvRow row = rows.get(i);
-            int csvLine = i + 2; // Первая строка — заголовок.
+            int csvLine = i + 2;
 
             try {
-                entities.add(FgislkCommonInfo.builder()
-                        .userId(userId)
-                        .regionCode(cleanString(row.getRegionCode()))
-                        .regionName(cleanString(row.getRegionName()))
-                        .forestDistrictCode(cleanString(row.getForestDistrictCode()))
-                        .forestDistrictName(cleanString(row.getForestDistrictName()))
-                        .forestQuarterCode(cleanString(row.getForestQuarterCode()))
-                        .forestPlotCode(cleanString(row.getForestPlotCode()))
-                        .forestPlotArea(parseArea(row.getForestPlotArea()))
-                        .forestPlotCharacteristic(cleanString(row.getForestPlotCharacteristic()))
-                        .forestType(cleanString(row.getForestType()))
-                        .dominantSpecies(cleanString(row.getDominantSpecies()))
-                        // В выгрузке нет отдельного столбца «Класс возраста».
-                        // Сохраняем наиболее близкое по смыслу значение — возраст рубки.
-                        .ageClass(cleanString(row.getCuttingAgeName()))
-                        .forestGroup(cleanString(row.getForestGroup()))
-                        .forestCategory(firstNotBlank(
-                                row.getProtectedForestCategoryName(),
-                                row.getForestCategory()))
-                        .protectionCategory(cleanString(row.getProtectionCategory()))
-                        .purpose(firstNotBlank(
-                                row.getForestLandTypeName(),
-                                row.getLandTypeName()))
-                        .inventoryDate(parseDate(row.getInventoryDate()))
-                        .notes(buildNotes(row))
-                        .build());
+                entities.add(convertToEntity(row, userId));
             } catch (Exception e) {
                 throw new IllegalArgumentException(
                         "Ошибка в строке CSV " + csvLine + ": " + rootMessage(e), e);
@@ -242,14 +227,106 @@ public class FgislkCommonInfoImportService {
         return entities;
     }
 
+    /** Явное сопоставление всех 83 полей DTO с колонками staging-entity. */
+    private FgislkCommonInfo convertToEntity(FgislkCsvRow row, Long userId) {
+        FgislkCommonInfo entity = new FgislkCommonInfo();
+        entity.setUserId(userId);
+        entity.setRegionCode(cleanString(row.getRegionCode()));
+        entity.setRegionName(cleanString(row.getRegionName()));
+        entity.setForestDistrictAccountingNumber(cleanString(row.getForestDistrictAccountingNumber()));
+        entity.setForestDistrictName(cleanString(row.getForestDistrictName()));
+        entity.setLocalForestDistrictAccountingNumber(cleanString(row.getLocalForestDistrictAccountingNumber()));
+        entity.setLocalForestDistrictName(cleanString(row.getLocalForestDistrictName()));
+        entity.setQuarterRegistrationNumber(cleanString(row.getQuarterRegistrationNumber()));
+        entity.setQuarterForestManagementNumber(cleanString(row.getQuarterForestManagementNumber()));
+        entity.setTract(cleanString(row.getTract()));
+        entity.setPlotId(cleanString(row.getPlotId()));
+        entity.setPlotRegistrationNumber(cleanString(row.getPlotRegistrationNumber()));
+        entity.setPlotForestManagementNumber(cleanString(row.getPlotForestManagementNumber()));
+        entity.setPlotStatus(cleanString(row.getPlotStatus()));
+        entity.setPlotArea(cleanString(row.getPlotArea()));
+        entity.setTotalGrowingStock(cleanString(row.getTotalGrowingStock()));
+        entity.setLandTypeCode(cleanString(row.getLandTypeCode()));
+        entity.setLandTypeName(cleanString(row.getLandTypeName()));
+        entity.setForestLandTypeCode(cleanString(row.getForestLandTypeCode()));
+        entity.setForestLandTypeName(cleanString(row.getForestLandTypeName()));
+        entity.setNonForestLandTypeCode(cleanString(row.getNonForestLandTypeCode()));
+        entity.setNonForestLandTypeName(cleanString(row.getNonForestLandTypeName()));
+        entity.setForestTypeCode(cleanString(row.getForestTypeCode()));
+        entity.setForestTypeName(cleanString(row.getForestTypeName()));
+        entity.setForestSiteConditionsTypeName(cleanString(row.getForestSiteConditionsTypeName()));
+        entity.setDeadwoodStock(cleanString(row.getDeadwoodStock()));
+        entity.setNaturalOpenForestStock(cleanString(row.getNaturalOpenForestStock()));
+        entity.setSingleTreesStock(cleanString(row.getSingleTreesStock()));
+        entity.setNonCommercialWoodStock(cleanString(row.getNonCommercialWoodStock()));
+        entity.setForestPlantationCreationYear(cleanString(row.getForestPlantationCreationYear()));
+        entity.setForestStandConditionName(cleanString(row.getForestStandConditionName()));
+        entity.setTargetSpeciesCode(cleanString(row.getTargetSpeciesCode()));
+        entity.setTargetSpeciesNsi(cleanString(row.getTargetSpeciesNsi()));
+        entity.setTargetSpeciesName(cleanString(row.getTargetSpeciesName()));
+        entity.setRadionuclidePollutionName(cleanString(row.getRadionuclidePollutionName()));
+        entity.setLastForestInventoryDate(cleanString(row.getLastForestInventoryDate()));
+        entity.setForestSeedProductionObjectName(cleanString(row.getForestSeedProductionObjectName()));
+        entity.setSpecialProtectiveAreas(cleanString(row.getSpecialProtectiveAreas()));
+        entity.setEconomicCategory(cleanString(row.getEconomicCategory()));
+        entity.setProtectionCategory(cleanString(row.getProtectionCategory()));
+        entity.setProtectiveForestCategoryCode(cleanString(row.getProtectiveForestCategoryCode()));
+        entity.setProtectiveForestCategoryName(cleanString(row.getProtectiveForestCategoryName()));
+        entity.setProtectiveForestSubcategoryCode(cleanString(row.getProtectiveForestSubcategoryCode()));
+        entity.setProtectiveForestSubcategoryName(cleanString(row.getProtectiveForestSubcategoryName()));
+        entity.setAdministrativeDistrictMnemonic(cleanString(row.getAdministrativeDistrictMnemonic()));
+        entity.setAdministrativeDistrictName(cleanString(row.getAdministrativeDistrictName()));
+        entity.setPlotFeatures(cleanString(row.getPlotFeatures()));
+        entity.setTappingInformation(cleanString(row.getTappingInformation()));
+        entity.setRecreationalCharacteristic(cleanString(row.getRecreationalCharacteristic()));
+        entity.setSelectionAssessment(cleanString(row.getSelectionAssessment()));
+        entity.setClutterStockPerHectare(cleanString(row.getClutterStockPerHectare()));
+        entity.setMerchantableStock(cleanString(row.getMerchantableStock()));
+        entity.setDominantSpeciesCode(cleanString(row.getDominantSpeciesCode()));
+        entity.setDominantSpeciesName(cleanString(row.getDominantSpeciesName()));
+        entity.setBonitetClassCode(cleanString(row.getBonitetClassCode()));
+        entity.setBonitetClassName(cleanString(row.getBonitetClassName()));
+        entity.setEconomicSection(cleanString(row.getEconomicSection()));
+        entity.setLoggingAge(cleanString(row.getLoggingAge()));
+        entity.setCuttingAgeCode(cleanString(row.getCuttingAgeCode()));
+        entity.setCuttingAgeName(cleanString(row.getCuttingAgeName()));
+        entity.setForestInventoryArea(cleanString(row.getForestInventoryArea()));
+        entity.setPopdArea(cleanString(row.getPopdArea()));
+        entity.setErosionType(cleanString(row.getErosionType()));
+        entity.setErosionDegree(cleanString(row.getErosionDegree()));
+        entity.setSlopeExposureCode(cleanString(row.getSlopeExposureCode()));
+        entity.setSlopeExposureName(cleanString(row.getSlopeExposureName()));
+        entity.setSlopeSteepnessCode(cleanString(row.getSlopeSteepnessCode()));
+        entity.setSlopeSteepnessName(cleanString(row.getSlopeSteepnessName()));
+        entity.setReliefTypeName(cleanString(row.getReliefTypeName()));
+        entity.setElevationAboveSeaLevel(cleanString(row.getElevationAboveSeaLevel()));
+        entity.setStumpsPerHectare(cleanString(row.getStumpsPerHectare()));
+        entity.setAverageStumpDiameter(cleanString(row.getAverageStumpDiameter()));
+        entity.setCuttingGroupCategoryNsi(cleanString(row.getCuttingGroupCategoryNsi()));
+        entity.setCuttingTypeName(cleanString(row.getCuttingTypeName()));
+        entity.setCuttingYear(cleanString(row.getCuttingYear()));
+        entity.setPineStumpsCount(cleanString(row.getPineStumpsCount()));
+        entity.setVegetationTypeCode(cleanString(row.getVegetationTypeCode()));
+        entity.setVegetationTypeName(cleanString(row.getVegetationTypeName()));
+        entity.setBogTypeCode(cleanString(row.getBogTypeCode()));
+        entity.setBogTypeName(cleanString(row.getBogTypeName()));
+        entity.setSpeciesNsiCode(cleanString(row.getSpeciesNsiCode()));
+        entity.setSpeciesNsiName(cleanString(row.getSpeciesNsiName()));
+        entity.setOvergrowthPercentage(cleanString(row.getOvergrowthPercentage()));
+        entity.setPeatLayerThickness(cleanString(row.getPeatLayerThickness()));
+        return entity;
+    }
+
     private int saveInBatches(List<FgislkCommonInfo> entities) {
         int savedCount = 0;
 
         for (int from = 0; from < entities.size(); from += batchSize) {
             int to = Math.min(from + batchSize, entities.size());
             List<FgislkCommonInfo> batch = entities.subList(from, to);
+
             repository.saveAll(batch);
             savedCount += batch.size();
+
             log.debug("Сохранён батч {}-{} из {}", from + 1, to, entities.size());
         }
 
@@ -260,79 +337,21 @@ public class FgislkCommonInfoImportService {
         if (value == null) {
             return null;
         }
+
         String cleaned = value.strip();
         return cleaned.isEmpty() ? null : cleaned;
     }
 
-    private BigDecimal parseArea(String value) {
-        String cleaned = cleanString(value);
-        if (cleaned == null) {
-            return null;
-        }
-
-        // Убираем обычные и неразрывные пробелы-разделители тысяч.
-        cleaned = cleaned
-                .replace("\u00A0", "")
-                .replace(" ", "")
-                .replace(',', '.');
-
-        try {
-            return new BigDecimal(cleaned);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Некорректная площадь: " + value, e);
-        }
-    }
-
-    private LocalDate parseDate(String value) {
-        String cleaned = cleanString(value);
-        if (cleaned == null) {
-            return null;
-        }
-
-        DateTimeFormatter[] formatters = {
-                DateTimeFormatter.ISO_LOCAL_DATE,
-                DATE_DMY_DOT,
-                DATE_DMY_SLASH
-        };
-
-        for (DateTimeFormatter formatter : formatters) {
-            try {
-                return LocalDate.parse(cleaned, formatter);
-            } catch (DateTimeParseException ignored) {
-                // Пробуем следующий формат.
-            }
-        }
-
-        throw new IllegalArgumentException("Некорректная дата: " + value);
-    }
-
-
-    private String firstNotBlank(String first, String second) {
-        String cleanedFirst = cleanString(first);
-        return cleanedFirst != null ? cleanedFirst : cleanString(second);
-    }
-
-    private String buildNotes(FgislkCsvRow row) {
-        List<String> parts = new ArrayList<>();
-        addNote(parts, "Участковое лесничество", row.getLocalForestDistrictName());
-        addNote(parts, "Учетный номер участкового лесничества", row.getLocalForestDistrictCode());
-        addNote(parts, "Лесоустроительный номер квартала", row.getForestQuarterNumber());
-        addNote(parts, "Лесоустроительный номер выдела", row.getForestPlotNumber());
-        addNote(parts, "Статус выдела", row.getForestPlotStatus());
-        addNote(parts, "Урочище", row.getTract());
-        addNote(parts, "Класс бонитета", row.getBonitetClass());
-        return parts.isEmpty() ? null : String.join("; ", parts);
-    }
-
-    private void addNote(List<String> parts, String title, String value) {
-        String cleaned = cleanString(value);
-        if (cleaned != null) {
-            parts.add(title + ": " + cleaned);
-        }
-    }
-
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private void markTransactionRollbackOnly() {
+        try {
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+        } catch (Exception ignored) {
+            log.warn("Не удалось пометить транзакцию импорта на откат");
+        }
     }
 
     private String rootMessage(Throwable throwable) {
