@@ -4,7 +4,6 @@ import com.alhrb.forestry.staging.dto.FgislkCsvRow;
 import com.alhrb.forestry.staging.model.FgislkCommonInfo;
 import com.alhrb.forestry.staging.repository.FgislkCommonInfoRepository;
 import com.alhrb.forestry.util.SecurityHelper;
-import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +12,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FilterReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +33,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FgislkCommonInfoImportService {
+
+    private static final char CSV_DELIMITER = ';';
+
+    private static final DateTimeFormatter DATE_DMY_DOT =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    private static final DateTimeFormatter DATE_DMY_SLASH =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final FgislkCommonInfoRepository repository;
     private final SecurityHelper securityHelper;
@@ -36,119 +51,75 @@ public class FgislkCommonInfoImportService {
     @Value("${import.encoding:UTF-8}")
     private String defaultEncoding;
 
-    // РАЗДЕЛИТЕЛЬ CSV - ТОЧКА С ЗАПЯТОЙ
-    private static final char CSV_DELIMITER = ';';
-
     /**
-     * Основной метод импорта
+     * Импорт CSV, содержащего кириллические заголовки и данные.
+     * DTO привязан к колонкам по позиции, поэтому текст заголовков не влияет
+     * на сопоставление полей.
      */
     @Transactional
     public ImportResult importCsv(MultipartFile file) {
+        long startedAt = System.currentTimeMillis();
         log.info("Начало импорта файла: {}", file.getOriginalFilename());
-        long startTime = System.currentTimeMillis();
 
         try {
-            // 1. Определяем кодировку
-            String detectedEncoding = detectEncoding(file);
-            log.info("Определена кодировка: {}", detectedEncoding);
+            validateFile(file);
 
-            // 2. Очищаем таблицу
-            repository.truncateTable(securityHelper.getCurrentUserId());
-            log.info("Таблица staging.fgislk_common_info очищена");
+            Charset charset = detectCharset(file);
+            log.info("Кодировка CSV: {}, разделитель: '{}'", charset, CSV_DELIMITER);
 
-            // 3. Парсим CSV с BOM-фильтром и разделителем ;
-            List<FgislkCsvRow> csvRows = parseCsv(file, detectedEncoding);
-            log.info("Распарсено {} строк из CSV", csvRows.size());
-
-            // 4. Если OpenCSV не дал результатов, пробуем ручной парсинг
-            if (csvRows.isEmpty() || allFieldsAreNull(csvRows)) {
-                log.warn("OpenCSV не распарсил данные, пробуем ручной парсинг");
-                csvRows = parseCsvManual(file, detectedEncoding);
-                log.info("Ручной парсинг дал {} строк", csvRows.size());
+            List<FgislkCsvRow> rows = parseCsv(file, charset);
+            if (rows.isEmpty()) {
+                throw new IllegalArgumentException("CSV-файл не содержит строк данных");
             }
 
-            // 5. Конвертируем в Entity и сохраняем
-            List<FgislkCommonInfo> entities = convertToEntities(csvRows);
-            List<FgislkCommonInfo> savedEntities = saveInBatches(entities);
+            validateParsedRows(rows);
 
-            long endTime = System.currentTimeMillis();
-            log.info("Импорт завершен. Загружено {} записей за {} мс",
-                    savedEntities.size(), (endTime - startTime));
+            Long userId = securityHelper.getCurrentUserId();
+            List<FgislkCommonInfo> entities = convertToEntities(rows, userId);
 
-            return ImportResult.success(savedEntities.size(), (endTime - startTime));
+            // Очищаем прежние данные только после успешного чтения и проверки CSV.
+            repository.truncateTable(userId);
+            log.info("Предыдущие данные пользователя {} удалены", userId);
 
+            int importedCount = saveInBatches(entities);
+            long processingTime = System.currentTimeMillis() - startedAt;
+
+            log.info("Импорт завершён: {} записей за {} мс",
+                    importedCount, processingTime);
+
+            return ImportResult.success(importedCount, processingTime);
         } catch (Exception e) {
-            log.error("Ошибка при импорте CSV", e);
-            return ImportResult.failure(e.getMessage());
+            log.error("Ошибка импорта CSV-файла {}",
+                    file != null ? file.getOriginalFilename() : null, e);
+            return ImportResult.failure(rootMessage(e));
         }
     }
 
-    /**
-     * ===================================================
-     * КЛАСС-ФИЛЬТР ДЛЯ ПРОПУСКА BOM (Byte Order Mark)
-     * ===================================================
-     */
-    private static class BomFilterReader extends FilterReader {
-        private boolean haveReadBOM = false;
-        private static final char BOM = '\uFEFF';
-
-        public BomFilterReader(Reader in) {
-            super(in);
-        }
-
-        @Override
-        public int read() throws IOException {
-            int c = super.read();
-            if (!haveReadBOM && c == BOM) {
-                haveReadBOM = true;
-                return super.read();
-            }
-            haveReadBOM = true;
-            return c;
-        }
-
-        @Override
-        public int read(char[] cbuf, int off, int len) throws IOException {
-            int count = 0;
-            for (int i = 0; i < len; i++) {
-                int c = read();
-                if (c == -1) {
-                    return count > 0 ? count : -1;
-                }
-                cbuf[off + i] = (char) c;
-                count++;
-            }
-            return count;
-        }
-    }
-
-    /**
-     * ИСПРАВЛЕННЫЙ: Парсинг CSV с BOM-фильтром и разделителем ;
-     */
-    private List<FgislkCsvRow> parseCsv(MultipartFile file, String encoding) throws Exception {
-        Charset charset = StandardCharsets.UTF_8;
-        log.info("Парсинг CSV с кодировкой: {}, разделитель: '{}'", charset, CSV_DELIMITER);
+    private List<FgislkCsvRow> parseCsv(MultipartFile file, Charset charset)
+            throws IOException {
 
         try (Reader reader = new BomFilterReader(
                 new BufferedReader(
                         new InputStreamReader(file.getInputStream(), charset)))) {
 
-            CsvToBean<FgislkCsvRow> csvToBean = new CsvToBeanBuilder<FgislkCsvRow>(reader)
+            List<FgislkCsvRow> rows = new CsvToBeanBuilder<FgislkCsvRow>(reader)
                     .withType(FgislkCsvRow.class)
+                    .withSeparator(CSV_DELIMITER)
+                    .withSkipLines(1) // Пропускаем строку кириллических заголовков.
                     .withIgnoreLeadingWhiteSpace(true)
                     .withIgnoreEmptyLine(true)
-                    .withSkipLines(1)
-                    .withSeparator(CSV_DELIMITER)  // <-- ЯВНО УКАЗЫВАЕМ РАЗДЕЛИТЕЛЬ ;
-                    .withThrowExceptions(false)
-                    .build();
+                    .withThrowExceptions(true)
+                    .build()
+                    .parse();
 
-            List<FgislkCsvRow> rows = csvToBean.parse();
-
-            // Логируем первую строку для отладки
             if (!rows.isEmpty()) {
                 FgislkCsvRow first = rows.get(0);
-                log.debug("Первая строка после парсинга: regionCode={}, regionName={}, districtCode={}",
-                        first.getRegionCode(), first.getRegionName(), first.getForestDistrictCode());
+                log.debug(
+                        "Первая строка CSV: regionCode={}, regionName={}, districtCode={}",
+                        first.getRegionCode(),
+                        first.getRegionName(),
+                        first.getLocalForestDistrictName()
+                );
             }
 
             return rows;
@@ -156,236 +127,87 @@ public class FgislkCommonInfoImportService {
     }
 
     /**
-     * Определение кодировки файла
+     * Определяет UTF-8/UTF-16 по BOM. Без BOM сначала строго проверяет UTF-8,
+     * затем использует кодировку из import.encoding.
      */
-    private String detectEncoding(MultipartFile file) throws Exception {
+    private Charset detectCharset(MultipartFile file) throws IOException {
         byte[] bytes = file.getBytes();
 
-        // 1. Проверка BOM
-        if (bytes.length >= 3) {
-            if (bytes[0] == (byte) 0xEF && bytes[1] == (byte) 0xBB && bytes[2] == (byte) 0xBF) {
-                log.debug("Обнаружен UTF-8 BOM");
-                return "UTF-8";
-            }
-            if (bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xFE) {
-                log.debug("Обнаружен UTF-16 LE BOM");
-                return "UTF-16LE";
-            }
-            if (bytes[0] == (byte) 0xFE && bytes[1] == (byte) 0xFF) {
-                log.debug("Обнаружен UTF-16 BE BOM");
-                return "UTF-16BE";
-            }
+        if (startsWith(bytes, 0xEF, 0xBB, 0xBF)) {
+            return StandardCharsets.UTF_8;
+        }
+        if (startsWith(bytes, 0xFF, 0xFE)) {
+            return StandardCharsets.UTF_16LE;
+        }
+        if (startsWith(bytes, 0xFE, 0xFF)) {
+            return StandardCharsets.UTF_16BE;
+        }
+        if (isValidUtf8(bytes)) {
+            return StandardCharsets.UTF_8;
         }
 
-        // 2. Пробуем прочитать как UTF-8
         try {
-            String testString = new String(bytes, StandardCharsets.UTF_8);
-            if (isValidUtf8(bytes)) {
-                log.debug("Файл валидный UTF-8");
-                return "UTF-8";
-            }
+            return Charset.forName(defaultEncoding);
         } catch (Exception e) {
-            log.debug("Не удалось прочитать как UTF-8");
+            throw new IllegalArgumentException(
+                    "Неизвестная кодировка import.encoding: " + defaultEncoding, e);
         }
-
-        // 3. Проверяем наличие русских символов в Windows-1251
-        boolean hasRussian1251 = false;
-        for (byte b : bytes) {
-            if (b >= (byte) 0xC0 && b <= (byte) 0xFF) {
-                hasRussian1251 = true;
-                break;
-            }
-        }
-
-        if (hasRussian1251) {
-            log.debug("Обнаружены русские символы в Windows-1251");
-            return "Windows-1251";
-        }
-
-        // 4. Проверяем содержимое
-        String content = new String(bytes, StandardCharsets.UTF_8);
-        if (content.contains("region_code") || content.contains("лесничество")) {
-            return "UTF-8";
-        }
-
-        log.debug("Используем кодировку по умолчанию: {}", defaultEncoding);
-        return defaultEncoding;
     }
 
-    /**
-     * Проверка валидности UTF-8
-     */
     private boolean isValidUtf8(byte[] bytes) {
         try {
-            String test = new String(bytes, StandardCharsets.UTF_8);
-            byte[] roundTrip = test.getBytes(StandardCharsets.UTF_8);
-            if (roundTrip.length == bytes.length) {
-                for (int i = 0; i < bytes.length; i++) {
-                    if (bytes[i] != roundTrip[i]) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
-     * РУЧНОЙ ПАРСИНГ CSV (с BOM-фильтром и разделителем ;)
-     */
-    private List<FgislkCsvRow> parseCsvManual(MultipartFile file, String encoding) throws Exception {
-        List<FgislkCsvRow> rows = new ArrayList<>();
-        Charset charset = Charset.forName(encoding);
-
-        try (BufferedReader reader = new BufferedReader(
-                new BomFilterReader(
-                        new InputStreamReader(file.getInputStream(), charset)))) {
-
-            // Читаем заголовки (пропускаем)
-            String headerLine = reader.readLine();
-            if (headerLine == null) {
-                return rows;
-            }
-            log.debug("Заголовок: {}", headerLine);
-
-            // Читаем данные
-            String line;
-            int lineNumber = 1;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                if (line.trim().isEmpty()) {
-                    continue;
-                }
-
-                try {
-                    // Разбиваем строку с разделителем ;
-                    String[] columns = splitCsvLine(line);
-                    if (columns.length >= 17) {
-                        FgislkCsvRow row = new FgislkCsvRow();
-                        row.setRegionCode(cleanString(columns[0]));
-                        row.setRegionName(cleanString(columns[1]));
-                        row.setForestDistrictCode(cleanString(columns[2]));
-                        row.setForestDistrictName(cleanString(columns[3]));
-                        row.setForestQuarterCode(cleanString(columns[4]));
-                        row.setForestPlotCode(cleanString(columns[5]));
-                        row.setForestPlotArea(cleanString(columns[6]));
-                        row.setForestPlotCharacteristic(cleanString(columns[7]));
-                        row.setForestType(cleanString(columns[8]));
-                        row.setDominantSpecies(cleanString(columns[9]));
-                        row.setAgeClass(cleanString(columns[10]));
-                        row.setForestGroup(cleanString(columns[11]));
-                        row.setForestCategory(cleanString(columns[12]));
-                        row.setProtectionCategory(cleanString(columns[13]));
-                        row.setPurpose(cleanString(columns[14]));
-                        row.setInventoryDate(parseDate(cleanString(columns[15])));
-                        row.setNotes(cleanString(columns[16]));
-                        rows.add(row);
-                    } else {
-                        log.warn("Строка {} имеет {} колонок (ожидается 17)", lineNumber, columns.length);
-                    }
-                } catch (Exception e) {
-                    log.warn("Ошибка парсинга строки {}: {}", lineNumber, e.getMessage());
-                }
-            }
-        }
-
-        return rows;
-    }
-
-    /**
-     * Разбивка CSV строки с учётом кавычек и разделителя ;
-     */
-    private String[] splitCsvLine(String line) {
-        if (line == null || line.isEmpty()) {
-            return new String[0];
-        }
-
-        List<String> result = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-        boolean inQuotes = false;
-
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-
-            if (c == '"') {
-                // Проверяем двойные кавычки внутри строки
-                if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                    current.append('"');
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
-                continue;
-            }
-
-            // РАЗДЕЛИТЕЛЬ - ТОЧКА С ЗАПЯТОЙ
-            if (c == CSV_DELIMITER && !inQuotes) {
-                result.add(current.toString());
-                current = new StringBuilder();
-                continue;
-            }
-
-            current.append(c);
-        }
-
-        result.add(current.toString());
-        return result.toArray(new String[0]);
-    }
-
-    /**
-     * Проверка, что все поля в списке null
-     */
-    private boolean allFieldsAreNull(List<FgislkCsvRow> rows) {
-        if (rows.isEmpty()) {
+            StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes));
             return true;
+        } catch (CharacterCodingException e) {
+            return false;
         }
+    }
+
+    private boolean startsWith(byte[] bytes, int... prefix) {
+        if (bytes.length < prefix.length) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length; i++) {
+            if ((bytes[i] & 0xFF) != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("CSV-файл не выбран или пуст");
+        }
+    }
+
+    private void validateParsedRows(List<FgislkCsvRow> rows) {
         FgislkCsvRow first = rows.get(0);
-        return first.getRegionCode() == null &&
-                first.getRegionName() == null &&
-                first.getForestDistrictCode() == null;
-    }
-
-    /**
-     * Парсинг даты
-     */
-    private LocalDate parseDate(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            String cleaned = value.trim();
-            if (cleaned.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                return LocalDate.parse(cleaned);
-            }
-            if (cleaned.matches("\\d{2}\\.\\d{2}\\.\\d{4}")) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-                return LocalDate.parse(cleaned, formatter);
-            }
-            if (cleaned.matches("\\d{2}/\\d{2}/\\d{4}")) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                return LocalDate.parse(cleaned, formatter);
-            }
-            return LocalDate.parse(cleaned);
-        } catch (Exception e) {
-            log.warn("Не удалось распарсить дату: {}", value);
-            return null;
+        if (isBlank(first.getRegionCode())
+                && isBlank(first.getRegionName())
+                && isBlank(first.getForestDistrictCode())) {
+            throw new IllegalArgumentException(
+                    "CSV распознан неверно: первые столбцы строки данных пусты. " +
+                    "Проверьте разделитель ';' и порядок столбцов"
+            );
         }
     }
 
-    /**
-     * Преобразование CSV строк в Entity
-     */
-    private List<FgislkCommonInfo> convertToEntities(List<FgislkCsvRow> csvRows) {
-        List<FgislkCommonInfo> entities = new ArrayList<>();
-        int errorCount = 0;
-        Long userId = securityHelper.getCurrentUserId();
+    private List<FgislkCommonInfo> convertToEntities(
+            List<FgislkCsvRow> rows,
+            Long userId
+    ) {
+        List<FgislkCommonInfo> entities = new ArrayList<>(rows.size());
 
-        for (FgislkCsvRow row : csvRows) {
+        for (int i = 0; i < rows.size(); i++) {
+            FgislkCsvRow row = rows.get(i);
+            int csvLine = i + 2; // Первая строка — заголовок.
+
             try {
-                FgislkCommonInfo entity = FgislkCommonInfo.builder()
+                entities.add(FgislkCommonInfo.builder()
                         .userId(userId)
                         .regionCode(cleanString(row.getRegionCode()))
                         .regionName(cleanString(row.getRegionName()))
@@ -397,87 +219,179 @@ public class FgislkCommonInfoImportService {
                         .forestPlotCharacteristic(cleanString(row.getForestPlotCharacteristic()))
                         .forestType(cleanString(row.getForestType()))
                         .dominantSpecies(cleanString(row.getDominantSpecies()))
-                        .ageClass(cleanString(row.getAgeClass()))
+                        // В выгрузке нет отдельного столбца «Класс возраста».
+                        // Сохраняем наиболее близкое по смыслу значение — возраст рубки.
+                        .ageClass(cleanString(row.getCuttingAgeName()))
                         .forestGroup(cleanString(row.getForestGroup()))
-                        .forestCategory(cleanString(row.getForestCategory()))
+                        .forestCategory(firstNotBlank(
+                                row.getProtectedForestCategoryName(),
+                                row.getForestCategory()))
                         .protectionCategory(cleanString(row.getProtectionCategory()))
-                        .purpose(cleanString(row.getPurpose()))
-                        .inventoryDate(row.getInventoryDate())
-                        .notes(cleanString(row.getNotes()))
-                        .build();
-
-                entities.add(entity);
-
+                        .purpose(firstNotBlank(
+                                row.getForestLandTypeName(),
+                                row.getLandTypeName()))
+                        .inventoryDate(parseDate(row.getInventoryDate()))
+                        .notes(buildNotes(row))
+                        .build());
             } catch (Exception e) {
-                errorCount++;
-                log.warn("Ошибка при преобразовании строки", e);
+                throw new IllegalArgumentException(
+                        "Ошибка в строке CSV " + csvLine + ": " + rootMessage(e), e);
             }
-        }
-
-        if (errorCount > 0) {
-            log.warn("Пропущено {} ошибочных строк", errorCount);
         }
 
         return entities;
     }
 
-    /**
-     * Сохранение батчами
-     */
-    private List<FgislkCommonInfo> saveInBatches(List<FgislkCommonInfo> entities) {
-        if (entities.isEmpty()) {
-            return new ArrayList<>();
+    private int saveInBatches(List<FgislkCommonInfo> entities) {
+        int savedCount = 0;
+
+        for (int from = 0; from < entities.size(); from += batchSize) {
+            int to = Math.min(from + batchSize, entities.size());
+            List<FgislkCommonInfo> batch = entities.subList(from, to);
+            repository.saveAll(batch);
+            savedCount += batch.size();
+            log.debug("Сохранён батч {}-{} из {}", from + 1, to, entities.size());
         }
 
-        List<FgislkCommonInfo> saved = new ArrayList<>();
-
-        for (int i = 0; i < entities.size(); i += batchSize) {
-            int end = Math.min(i + batchSize, entities.size());
-            List<FgislkCommonInfo> batch = entities.subList(i, end);
-            List<FgislkCommonInfo> savedBatch = repository.saveAll(batch);
-            saved.addAll(savedBatch);
-            log.debug("Сохранен батч {}-{} из {}", i + 1, end, entities.size());
-        }
-
-        return saved;
+        return savedCount;
     }
 
-    /**
-     * Очистка строки от лишних символов
-     */
     private String cleanString(String value) {
         if (value == null) {
             return null;
         }
-        String cleaned = value.trim();
-        if (cleaned.isEmpty()) {
-            return null;
-        }
-        // Удаляем кавычки в начале и конце
-        if (cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
-            cleaned = cleaned.substring(1, cleaned.length() - 1);
-        }
-        cleaned = cleaned.replaceAll("^\"|\"$", "");
+        String cleaned = value.strip();
         return cleaned.isEmpty() ? null : cleaned;
     }
 
-    /**
-     * Парсинг площади
-     */
-    private BigDecimal parseArea(String areaStr) {
-        if (areaStr == null || areaStr.trim().isEmpty()) {
+    private BigDecimal parseArea(String value) {
+        String cleaned = cleanString(value);
+        if (cleaned == null) {
             return null;
         }
+
+        // Убираем обычные и неразрывные пробелы-разделители тысяч.
+        cleaned = cleaned
+                .replace("\u00A0", "")
+                .replace(" ", "")
+                .replace(',', '.');
+
         try {
-            String cleaned = areaStr.trim().replace(",", ".");
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
-            log.warn("Не удалось распарсить площадь: {}", areaStr);
-            return null;
+            throw new IllegalArgumentException("Некорректная площадь: " + value, e);
         }
     }
 
-    // ===== Вспомогательные методы =====
+    private LocalDate parseDate(String value) {
+        String cleaned = cleanString(value);
+        if (cleaned == null) {
+            return null;
+        }
+
+        DateTimeFormatter[] formatters = {
+                DateTimeFormatter.ISO_LOCAL_DATE,
+                DATE_DMY_DOT,
+                DATE_DMY_SLASH
+        };
+
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                return LocalDate.parse(cleaned, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Пробуем следующий формат.
+            }
+        }
+
+        throw new IllegalArgumentException("Некорректная дата: " + value);
+    }
+
+
+    private String firstNotBlank(String first, String second) {
+        String cleanedFirst = cleanString(first);
+        return cleanedFirst != null ? cleanedFirst : cleanString(second);
+    }
+
+    private String buildNotes(FgislkCsvRow row) {
+        List<String> parts = new ArrayList<>();
+        addNote(parts, "Участковое лесничество", row.getLocalForestDistrictName());
+        addNote(parts, "Учетный номер участкового лесничества", row.getLocalForestDistrictCode());
+        addNote(parts, "Лесоустроительный номер квартала", row.getForestQuarterNumber());
+        addNote(parts, "Лесоустроительный номер выдела", row.getForestPlotNumber());
+        addNote(parts, "Статус выдела", row.getForestPlotStatus());
+        addNote(parts, "Урочище", row.getTract());
+        addNote(parts, "Класс бонитета", row.getBonitetClass());
+        return parts.isEmpty() ? null : String.join("; ", parts);
+    }
+
+    private void addNote(List<String> parts, String title, String value) {
+        String cleaned = cleanString(value);
+        if (cleaned != null) {
+            parts.add(title + ": " + cleaned);
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        return current.getMessage() != null
+                ? current.getMessage()
+                : throwable.getClass().getSimpleName();
+    }
+
+    /** Удаляет только первый символ BOM после декодирования потока. */
+    private static final class BomFilterReader extends FilterReader {
+
+        private static final int BOM = '\uFEFF';
+        private boolean firstCharacter = true;
+
+        private BomFilterReader(Reader reader) {
+            super(reader);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int character = super.read();
+            if (firstCharacter) {
+                firstCharacter = false;
+                if (character == BOM) {
+                    return super.read();
+                }
+            }
+            return character;
+        }
+
+        @Override
+        public int read(char[] buffer, int offset, int length) throws IOException {
+            if (length == 0) {
+                return 0;
+            }
+
+            int first = read();
+            if (first == -1) {
+                return -1;
+            }
+
+            buffer[offset] = (char) first;
+            int count = 1;
+
+            while (count < length) {
+                int read = super.read(buffer, offset + count, length - count);
+                if (read == -1) {
+                    break;
+                }
+                count += read;
+            }
+
+            return count;
+        }
+    }
 
     public boolean hasData() {
         return repository.hasData(securityHelper.getCurrentUserId());
@@ -495,16 +409,18 @@ public class FgislkCommonInfoImportService {
         return repository.getTotalStatistics(securityHelper.getCurrentUserId());
     }
 
-    /**
-     * Класс результата импорта
-     */
     public static class ImportResult {
         private final boolean success;
         private final int importedCount;
         private final long processingTimeMs;
         private final String errorMessage;
 
-        private ImportResult(boolean success, int importedCount, long processingTimeMs, String errorMessage) {
+        private ImportResult(
+                boolean success,
+                int importedCount,
+                long processingTimeMs,
+                String errorMessage
+        ) {
             this.success = success;
             this.importedCount = importedCount;
             this.processingTimeMs = processingTimeMs;
@@ -519,9 +435,20 @@ public class FgislkCommonInfoImportService {
             return new ImportResult(false, 0, 0, message);
         }
 
-        public boolean isSuccess() { return success; }
-        public int getImportedCount() { return importedCount; }
-        public long getProcessingTimeMs() { return processingTimeMs; }
-        public String getErrorMessage() { return errorMessage; }
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public int getImportedCount() {
+            return importedCount;
+        }
+
+        public long getProcessingTimeMs() {
+            return processingTimeMs;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
     }
 }
