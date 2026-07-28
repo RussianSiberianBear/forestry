@@ -351,12 +351,14 @@
             let el = document.getElementById('fileUpload');
             const fileType = ['/api/uploadFromFgislk/import_common_info_csv'];
 
+
             function initUpload(url) {
-                // Удаляем старый экземпляр если есть
-                const oldUpload = UIkit.upload('.js-upload');
-                if (oldUpload) {
-                    oldUpload.destroy(); // или .off() - зависит от версии UIkit
-                }
+
+                const uploadContainer = document.querySelector('.js-upload');
+                //    Отключаем старый компонент, очищая элемент
+                //    Простой способ: заменяем содержимое, чтобы сбросить все обработчики
+                uploadContainer.innerHTML = uploadContainer.innerHTML;
+
                 UIkit.upload('.js-upload', {
                     url: url || fileType[el.value] || '',
                     multiple: false,
