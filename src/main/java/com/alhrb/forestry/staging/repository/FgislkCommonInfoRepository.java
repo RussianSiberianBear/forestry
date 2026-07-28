@@ -27,7 +27,7 @@ public interface FgislkCommonInfoRepository extends JpaRepository<FgislkCommonIn
     @Query("SELECT COUNT(f) > 0 FROM FgislkCommonInfo f")
     boolean hasData(@Param("userId") Long userId);
 
-    @Query("SELECT COUNT(f) FROM FgislkCommonInfo f WHERE f.userId =: userId")
+    @Query("SELECT COUNT(f) FROM FgislkCommonInfo f WHERE f.userId = :userId")
     long getCount(@Param("userId") Long userId);
 
     /**
@@ -45,15 +45,15 @@ public interface FgislkCommonInfoRepository extends JpaRepository<FgislkCommonIn
     /**
      * Получение общей статистики
      */
-    @Query("""
-        SELECT 
-            COUNT(f),
-            COUNT(DISTINCT f.regionCode),
-            COUNT(DISTINCT f.forestDistrictCode),
-            SUM(f.forestPlotArea)
-        FROM FgislkCommonInfo f
-        WHERE f.userId = :userId    
-    """)
+    @Query(value = """
+    SELECT
+        COUNT(*),
+        COUNT(DISTINCT region_code),
+        COUNT(DISTINCT forest_district_accounting_number),
+        SUM(REPLACE(plot_area, ',', '.')::numeric)
+    FROM staging.fgislk_common_info
+    WHERE user_id = :userId
+    """, nativeQuery = true)
     Object[] getTotalStatistics(@Param("userId") Long userId);
 
     /**
@@ -64,5 +64,5 @@ public interface FgislkCommonInfoRepository extends JpaRepository<FgislkCommonIn
     /**
      * Поиск по лесничеству
      */
-    List<FgislkCommonInfo> findByForestDistrictCode(String forestDistrictCode);
+    List<FgislkCommonInfo> findByForestDistrictAccountingNumber(String forestDistrictAccountingNumber);
 }

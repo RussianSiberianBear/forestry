@@ -1,0 +1,53 @@
+Если GeoJSON лежит в файле
+
+Сам PostgreSQL обычным SQL не всегда удобно заставлять читать файл с файловой системы, поскольку файл должен быть доступен именно серверу PostgreSQL. Практичнее:
+
+Прочитать файл в Java как строку.
+Передать строку в SQL как jsonb.
+Выполнить приведённый выше INSERT.
+
+Например, через Spring JDBC:
+
+String geoJson = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+
+String sql = """
+    INSERT INTO tmp_registration_geometry (
+        registration_no,
+        geom
+    )
+    SELECT
+        feature -> 'properties' ->> 'registration_no',
+        ST_Force2D(
+            ST_GeomFromGeoJSON(feature -> 'geometry')
+        )::geometry(Geometry, 4326)
+    FROM jsonb_array_elements(
+        CAST(:geojson AS jsonb) -> 'features'
+    ) AS feature
+    """;
+
+namedParameterJdbcTemplate.update(
+    sql,
+    Map.of("geojson", geoJson)
+);
+Проверка результата
+SELECT
+    registration_no,
+    ST_GeometryType(geom) AS geometry_type,
+    ST_SRID(geom) AS srid,
+    ST_IsValid(geom) AS is_valid
+FROM tmp_registration_geometry;
+
+Ожидаемый результат:
+
+03:5:1:100:1   ST_Polygon   4326   true
+03:5:1:100:10  ST_Polygon   4326   true
+...
+
+Площадь таких объектов нужно считать через geography, потому что 4326 хранит координаты в градусах:
+
+SELECT
+    registration_no,
+    ST_Area(geom::geography) AS area_m2
+FROM tmp_registration_geometry;
+
+Итого: файл у тебя корректный GeoJSON в EPSG:4326, и его геометрии можно непосредственно преобразовывать через ST_GeomFromGeoJSON().
