@@ -1,4 +1,103 @@
 
+
+
+
+
+
+
+-- =====================================================
+-- 1. Создаём схему staging
+-- =====================================================
+CREATE SCHEMA IF NOT EXISTS staging;
+
+-- =====================================================
+-- 2. Удаляем старую таблицу (если есть)
+-- =====================================================
+DROP TABLE IF EXISTS staging.fgislk_common_info CASCADE;
+
+-- =====================================================
+-- 3. Создаём таблицу для данных ФГИС ЛК
+-- =====================================================
+CREATE TABLE staging.fgislk_common_info (
+                                            id                              BIGSERIAL PRIMARY KEY,
+                                            user_id                         int8,
+                                            region_code                     VARCHAR(50),    -- Код региона
+                                            region_name                     VARCHAR(255),   -- Название региона
+                                            forest_district_code            VARCHAR(50),    -- Код лесничества
+                                            forest_district_name            VARCHAR(255),   -- Название лесничества
+                                            forest_quarter_code             VARCHAR(50),    -- Код квартала
+                                            forest_plot_code                VARCHAR(50),    -- Код выдела
+                                            forest_plot_area                NUMERIC(15, 4), -- Площадь выдела (га)
+                                            forest_plot_characteristic      TEXT,           -- Характеристика выдела
+                                            forest_type                     VARCHAR(100),   -- Тип леса
+                                            dominant_species                VARCHAR(50),    -- Преобладающая порода
+                                            age_class                       VARCHAR(50),    -- Класс возраста
+                                            forest_group                    VARCHAR(100),   -- Группа лесов
+                                            forest_category                 VARCHAR(100),   -- Категория лесов
+                                            protection_category             VARCHAR(100),   -- Категория защитности
+                                            purpose                         VARCHAR(255),   -- Целевое назначение
+                                            inventory_date                  DATE,           -- Дата таксации
+                                            notes                           TEXT,           -- Примечания
+                                            created_at                      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                            updated_at                      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- 4. Создаём индексы для ускорения поиска
+-- =====================================================
+CREATE INDEX idx_fgislk_region_code ON staging.fgislk_common_info (region_code);
+CREATE INDEX idx_fgislk_region_name ON staging.fgislk_common_info (region_name);
+CREATE INDEX idx_fgislk_district_code ON staging.fgislk_common_info (forest_district_code);
+CREATE INDEX idx_fgislk_district_name ON staging.fgislk_common_info (forest_district_name);
+CREATE INDEX idx_fgislk_quarter_code ON staging.fgislk_common_info (forest_quarter_code);
+CREATE INDEX idx_fgislk_plot_code ON staging.fgislk_common_info (forest_plot_code);
+CREATE INDEX idx_fgislk_inventory_date ON staging.fgislk_common_info (inventory_date);
+
+-- =====================================================
+-- 5. Добавляем комментарии
+-- =====================================================
+COMMENT ON TABLE staging.fgislk_common_info IS 'Атрибутивная информация по лесничествам из ФГИС ЛК';
+COMMENT ON COLUMN staging.fgislk_common_info.region_code IS 'Код субъекта РФ';
+COMMENT ON COLUMN staging.fgislk_common_info.region_name IS 'Наименование субъекта РФ';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_district_code IS 'Код лесничества';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_district_name IS 'Наименование лесничества';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_quarter_code IS 'Номер квартала';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_plot_code IS 'Номер выдела';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_plot_area IS 'Площадь выдела, га';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_plot_characteristic IS 'Характеристика выдела';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_type IS 'Тип лесорастительных условий';
+COMMENT ON COLUMN staging.fgislk_common_info.dominant_species IS 'Преобладающая порода';
+COMMENT ON COLUMN staging.fgislk_common_info.age_class IS 'Класс возраста';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_group IS 'Группа лесов';
+COMMENT ON COLUMN staging.fgislk_common_info.forest_category IS 'Категория лесов';
+COMMENT ON COLUMN staging.fgislk_common_info.protection_category IS 'Категория защитности';
+COMMENT ON COLUMN staging.fgislk_common_info.purpose IS 'Целевое назначение лесов';
+COMMENT ON COLUMN staging.fgislk_common_info.inventory_date IS 'Дата проведения таксации';
+COMMENT ON COLUMN staging.fgislk_common_info.notes IS 'Примечания';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SELECT  ind, upload_file_id, COUNT(*) AS total
 FROM staging.forest_stand_kml_import
 GROUP by upload_file_id, ind

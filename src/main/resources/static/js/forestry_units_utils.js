@@ -12,7 +12,7 @@ function loadForestryHierarchy(unitId, type) {
         })
         .catch(error => {
             console.error('Ошибка загрузки территории:', error);
-            refreshMap();
+            refreshCuttingAreaMap();
         });
 }
 
@@ -48,7 +48,7 @@ function loadFullHierarchy(unit) {
             })
             .catch(error => {
                 console.error('Ошибка загрузки пути:', error);
-                refreshMap();
+                refreshCuttingAreaMap();
             });
     }
 }

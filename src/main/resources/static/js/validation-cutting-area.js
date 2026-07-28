@@ -13,9 +13,9 @@ let mouseCoordsControl = null; // Контрол для отображения �
 // ФИЛЬТРЫ ДЛЯ КАРТЫ
 // ==========================================
 
-let currentFilters = {};
+let currentCuttingAreaFilters = {};
 
-function collectFilters() {
+function collectCuttingAreaFilters() {
     if (typeof collectFilterAuto === 'function') {
         const filters = collectFilterAuto('plotForm', {
             selector: '[data-filter]',
@@ -27,11 +27,11 @@ function collectFilters() {
         return filters;
     } else {
         console.warn('⚠️ Функция collectFilterAuto не найдена, используем ручной сбор');
-        return collectFiltersManual();
+        return collectCuttingAreaFiltersManual();
     }
 }
 
-function collectFiltersManual() {
+function collectCuttingAreaFiltersManual() {
     const forestrySelect = document.getElementById('forestrySelect');
     const subForestrySelect = document.getElementById('subForestrySelect');
     const technicalUnitSelect = document.getElementById('technicalUnitSelect');
@@ -73,9 +73,9 @@ function collectFiltersManual() {
 // ОБНОВЛЕНИЕ КАРТЫ
 // ==========================================
 
-function refreshMap() {
-    currentFilters = collectFilters();
-    console.log('🔍 Обновление карты с фильтрами:', currentFilters);
+function refreshCuttingAreaMap() {
+    currentCuttingAreaFilters = collectCuttingAreaFilters();
+    console.log('🔍 Обновление карты с фильтрами:', currentCuttingAreaFilters);
 
     const mapContainer = document.getElementById(mapElement);
     if (mapContainer) {
@@ -83,11 +83,11 @@ function refreshMap() {
     }
 
     const params = new URLSearchParams();
-    Object.keys(currentFilters).forEach(key => {
-        params.append(key, currentFilters[key]);
+    Object.keys(currentCuttingAreaFilters).forEach(key => {
+        params.append(key, currentCuttingAreaFilters[key]);
     });
 
-    const hasFilters = Object.keys(currentFilters).length > 0;
+    const hasFilters = Object.keys(currentCuttingAreaFilters).length > 0;
     const url = hasFilters
         ? '/api/cutting-area/map-data-filtered?' + params.toString()
         : '/api/cutting-area/map-data';
@@ -109,7 +109,7 @@ function refreshMap() {
 
             const infoSpan = document.getElementById('filterInfo');
             if (infoSpan) {
-                if (Object.keys(currentFilters).length === 0) {
+                if (Object.keys(currentCuttingAreaFilters).length === 0) {
                     infoSpan.textContent = 'Все деляны';
                     infoSpan.style.background = '#1e87f0';
                 } else {
@@ -194,7 +194,7 @@ function updateLegend(plotsData) {
     const labelsStatus = showLabels ? '🟢 Включены' : '🔴 Выключены';
 
     let filterInfo = '';
-    const filters = collectFilters();
+    const filters = collectCuttingAreaFilters();
     if (filters.cutType) {
         filterInfo += `<div style="font-size: 10px; color: #1e87f0;">Тип рубки: ${filters.cutType}</div>`;
     }
@@ -249,7 +249,7 @@ function updateLegend(plotsData) {
 }
 
 function loadAllPlots() {
-    refreshMap();
+    refreshCuttingAreaMap();
 }
 
 // ==========================================
@@ -625,7 +625,7 @@ function loadUISettingsFromServer() {
 
     if (!forestryUnitId || forestryUnitId === '') {
         console.log('⚠️ Нет сохранённого лесничества');
-        refreshMap();
+        refreshCuttingAreaMap();
         return;
     }
 
@@ -1011,7 +1011,7 @@ function toggleLabels() {
     if (cachedPlots) {
         renderPlots(cachedPlots);
     } else {
-        refreshMap();
+        refreshCuttingAreaMap();
     }
 
     UIkit.notification({
@@ -1328,7 +1328,7 @@ function submitPlotForm() {
 
             if (data.success) {
                 setTimeout(() => {
-                    refreshMap();
+                    refreshCuttingAreaMap();
                 }, 500);
             }
         })
@@ -1422,22 +1422,6 @@ function handleSubmitResponse(data) {
     } else {
         showNotification(data.message, 'danger');
         // При ошибке НЕ сбрасываем форму
-    }
-}
-
-// ==========================================
-// ПОКАЗ УВЕДОМЛЕНИЙ
-// ==========================================
-
-function showNotification(message, status = 'info') {
-    if (typeof UIkit !== 'undefined') {
-        UIkit.notification({
-            message: message,
-            status: status,
-            timeout: 5000
-        });
-    } else {
-        alert(message);
     }
 }
 

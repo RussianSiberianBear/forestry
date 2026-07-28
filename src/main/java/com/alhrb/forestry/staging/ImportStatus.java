@@ -1,4 +1,4 @@
-package com.alhrb.forestry.model.staging;
+package com.alhrb.forestry.staging;
 
 public enum ImportStatus {
 

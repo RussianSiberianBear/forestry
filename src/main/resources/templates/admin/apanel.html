@@ -174,6 +174,18 @@
                 <div id="gridUsers"></div>
             </div>
             <div sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
+                <div>
+                    <label class="uk-form-label" id="lblfileUpload"
+                           for="fileUpload">
+                        Тип загружаемого файла
+                    </label>
+                    <select id="fileUpload" data-filter name="fileUpload"
+                            class="uk-form-controls uk-width-medium  uk-margin-small-bottom" size="1">
+                        <option value=""></option>
+                        <option value="0">Общая информация из ФГИС ЛК</option>
+                    </select>
+                </div>
+                <div th:replace="~{upload}"></div>
             </div>
         </div>
     </div>
@@ -331,6 +343,115 @@
             }
         }
         const gridUsers = new ABGrid("#gridUsers", cfgGridUsers);
+    </script>
+
+    <script sec:authorize="hasAnyRole('SUPERADMIN','ADMIN')">
+
+        document.addEventListener('DOMContentLoaded', function () {
+            let el = document.getElementById('fileUpload');
+            const fileType = ['/api/uploadFromFgislk/import_common_info_csv'];
+
+
+            function initUpload(url) {
+
+                const uploadContainer = document.querySelector('.js-upload');
+                //    Отключаем старый компонент, очищая элемент
+                //    Простой способ: заменяем содержимое, чтобы сбросить все обработчики
+                uploadContainer.innerHTML = uploadContainer.innerHTML;
+
+                UIkit.upload('.js-upload', {
+                    url: url || fileType[el.value] || '',
+                    multiple: false,
+                    name: 'file',
+                    params: {
+                        extractZip: true // Явно передаем параметр
+                    },
+                    credentials: 'include',
+                    beforeSend: function () {
+                        console.log('beforeSend', arguments);
+                    },
+                    beforeAll: function () {
+                        console.log('beforeAll', arguments);
+                    },
+                    load: function () {
+
+                    },
+                    error: function (env) {
+                        let response = JSON.parse(env.xhr.responseText);
+                        UIkit.notification({
+                            message: '❌ Ошибка загрузки: ' + response.message,
+                            status: 'danger',
+                            timeout: 3000
+                        });
+
+                    },
+                    complete: function () {
+                        console.log('complete', arguments);
+                    },
+
+                    loadStart: function (e) {
+                        console.log('loadStart', arguments);
+
+                        bar.removeAttribute('hidden');
+                        bar.max = e.total;
+                        bar.value = e.loaded;
+                    },
+
+                    progress: function (e) {
+                        console.log('progress', arguments);
+
+                        bar.max = e.total;
+                        bar.value = e.loaded;
+                    },
+
+                    loadEnd: function (e) {
+                        console.log('loadEnd', arguments);
+
+                        bar.max = e.total;
+                        bar.value = e.loaded;
+                    },
+
+                    completeAll: function () {
+                        console.log('completeAll', arguments);
+
+                        setTimeout(function () {
+                            bar.setAttribute('hidden', 'hidden');
+                        }, 1000);
+
+                        var response = JSON.parse(arguments[0].response);
+                        if (!response.success) {
+                            UIkit.notification({
+                                message: '❌ Ошибка загрузки: ' + response.message + '<br>' +
+                                    'Всего объектов: ' + response.totalPlacemarkCount + '<br>' +
+                                    'Загружено: ' + response.importedCount + '<br>' +
+                                    'Ошибок: ' + response.errorCount,
+                                status: 'danger',
+                                timeout: 3000
+                            });
+                        } else {
+                            UIkit.notification({
+                                message: response.message,
+                                status: 'success',
+                                timeout: 3000
+                            });
+                        }
+                    }
+
+                });
+
+            }
+
+            initUpload(fileType[el.value]);
+
+            el.addEventListener('change', function () {
+                const type = fileType[el.value];
+                if (type) {
+                    initUpload(type);
+                }
+            });
+        });
+
+
     </script>
 </div>
 </html>
