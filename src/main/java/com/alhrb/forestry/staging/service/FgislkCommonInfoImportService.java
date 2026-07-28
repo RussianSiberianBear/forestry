@@ -36,6 +36,9 @@ public class FgislkCommonInfoImportService {
     @Value("${import.encoding:UTF-8}")
     private String defaultEncoding;
 
+    // РАЗДЕЛИТЕЛЬ CSV - ТОЧКА С ЗАПЯТОЙ
+    private static final char CSV_DELIMITER = ';';
+
     /**
      * Основной метод импорта
      */
@@ -52,8 +55,8 @@ public class FgislkCommonInfoImportService {
             // 2. Очищаем таблицу
             repository.truncateTable(securityHelper.getCurrentUserId());
             log.info("Таблица staging.fgislk_common_info очищена");
-/*
-            // 3. Парсим CSV с BOM-фильтром
+
+            // 3. Парсим CSV с BOM-фильтром и разделителем ;
             List<FgislkCsvRow> csvRows = parseCsv(file, detectedEncoding);
             log.info("Распарсено {} строк из CSV", csvRows.size());
 
@@ -63,8 +66,6 @@ public class FgislkCommonInfoImportService {
                 csvRows = parseCsvManual(file, detectedEncoding);
                 log.info("Ручной парсинг дал {} строк", csvRows.size());
             }
-*/
-            List<FgislkCsvRow> csvRows = parseCsvManual(file, detectedEncoding);
 
             // 5. Конвертируем в Entity и сохраняем
             List<FgislkCommonInfo> entities = convertToEntities(csvRows);
@@ -108,7 +109,6 @@ public class FgislkCommonInfoImportService {
 
         @Override
         public int read(char[] cbuf, int off, int len) throws IOException {
-            // Читаем по одному символу, чтобы корректно обрабатывать BOM
             int count = 0;
             for (int i = 0; i < len; i++) {
                 int c = read();
@@ -123,22 +123,22 @@ public class FgislkCommonInfoImportService {
     }
 
     /**
-     * ИСПРАВЛЕННЫЙ: Парсинг CSV с BOM-фильтром
+     * ИСПРАВЛЕННЫЙ: Парсинг CSV с BOM-фильтром и разделителем ;
      */
     private List<FgislkCsvRow> parseCsv(MultipartFile file, String encoding) throws Exception {
         Charset charset = StandardCharsets.UTF_8;
-        log.info("Парсинг CSV с кодировкой: {} и BOM-фильтром", charset);
+        log.info("Парсинг CSV с кодировкой: {}, разделитель: '{}'", charset, CSV_DELIMITER);
 
         try (Reader reader = new BomFilterReader(
                 new BufferedReader(
                         new InputStreamReader(file.getInputStream(), charset)))) {
 
-            // Дополнительная проверка: скипаем пустые строки в начале
             CsvToBean<FgislkCsvRow> csvToBean = new CsvToBeanBuilder<FgislkCsvRow>(reader)
                     .withType(FgislkCsvRow.class)
                     .withIgnoreLeadingWhiteSpace(true)
                     .withIgnoreEmptyLine(true)
                     .withSkipLines(1)
+                    .withSeparator(CSV_DELIMITER)  // <-- ЯВНО УКАЗЫВАЕМ РАЗДЕЛИТЕЛЬ ;
                     .withThrowExceptions(false)
                     .build();
 
@@ -234,7 +234,7 @@ public class FgislkCommonInfoImportService {
     }
 
     /**
-     * РУЧНОЙ ПАРСИНГ CSV (с BOM-фильтром)
+     * РУЧНОЙ ПАРСИНГ CSV (с BOM-фильтром и разделителем ;)
      */
     private List<FgislkCsvRow> parseCsvManual(MultipartFile file, String encoding) throws Exception {
         List<FgislkCsvRow> rows = new ArrayList<>();
@@ -261,6 +261,7 @@ public class FgislkCommonInfoImportService {
                 }
 
                 try {
+                    // Разбиваем строку с разделителем ;
                     String[] columns = splitCsvLine(line);
                     if (columns.length >= 17) {
                         FgislkCsvRow row = new FgislkCsvRow();
@@ -295,7 +296,7 @@ public class FgislkCommonInfoImportService {
     }
 
     /**
-     * Разбивка CSV строки с учётом кавычек
+     * Разбивка CSV строки с учётом кавычек и разделителя ;
      */
     private String[] splitCsvLine(String line) {
         if (line == null || line.isEmpty()) {
@@ -320,7 +321,8 @@ public class FgislkCommonInfoImportService {
                 continue;
             }
 
-            if (c == ',' && !inQuotes) {
+            // РАЗДЕЛИТЕЛЬ - ТОЧКА С ЗАПЯТОЙ
+            if (c == CSV_DELIMITER && !inQuotes) {
                 result.add(current.toString());
                 current = new StringBuilder();
                 continue;
