@@ -1,5 +1,6 @@
-package com.alhrb.forestry.model.staging;
+package com.alhrb.forestry.staging.model;
 
+import com.alhrb.forestry.staging.ImportStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

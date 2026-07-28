@@ -1,3 +1,18 @@
+// ==========================================
+// ПОКАЗ УВЕДОМЛЕНИЙ
+// ==========================================
+function showNotification(message, status = 'info') {
+    if (typeof UIkit !== 'undefined') {
+        UIkit.notification({
+            message: message,
+            status: status,
+            timeout: 5000
+        });
+    } else {
+        alert(message);
+    }
+}
+
 function getDefaultCoordinateCenterMap() {
     // пока возвращаем по умолчанию координаты с.Бичура
     return [50.592834, 107.598389];

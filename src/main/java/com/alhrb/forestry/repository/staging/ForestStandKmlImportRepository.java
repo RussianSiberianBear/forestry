@@ -1,7 +1,7 @@
 package com.alhrb.forestry.repository.staging;
 
-import com.alhrb.forestry.model.staging.ForestStandKmlImport;
-import com.alhrb.forestry.model.staging.ImportStatus;
+import com.alhrb.forestry.staging.model.ForestStandKmlImport;
+import com.alhrb.forestry.staging.ImportStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

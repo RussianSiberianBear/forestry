@@ -1,7 +1,7 @@
 package com.alhrb.forestry.service.importer;
 
-import com.alhrb.forestry.model.staging.ForestStandKmlImport;
-import com.alhrb.forestry.model.staging.ImportStatus;
+import com.alhrb.forestry.staging.model.ForestStandKmlImport;
+import com.alhrb.forestry.staging.ImportStatus;
 import com.alhrb.forestry.repository.staging.ForestStandKmlImportRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
