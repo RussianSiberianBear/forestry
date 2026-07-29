@@ -41,7 +41,7 @@ public class FileController {
 
     }
 
-    @GetMapping
+    @PostMapping
     public ResponseEntity<List<FileUploadResponseDto>> getUserFiles() {
         return ResponseEntity.ok(fileUploadService.getUserFiles(securityHelper.getCurrentUserId()));
     }
