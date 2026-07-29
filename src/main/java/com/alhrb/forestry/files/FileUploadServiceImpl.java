@@ -1,7 +1,6 @@
 package com.alhrb.forestry.files;
 
 import com.alhrb.forestry.config.DirectoryConfig;
-import com.alhrb.forestry.dto.FileUploadResponseDto;
 import com.alhrb.forestry.files.model.staging.StoredFile;
 import com.alhrb.forestry.staging.StoredFileRepository;
 import lombok.RequiredArgsConstructor;

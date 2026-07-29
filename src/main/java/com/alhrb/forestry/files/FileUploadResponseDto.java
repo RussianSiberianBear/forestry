@@ -1,4 +1,4 @@
-package com.alhrb.forestry.dto;
+package com.alhrb.forestry.files;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,6 +1,5 @@
 package com.alhrb.forestry.files;
 
-import com.alhrb.forestry.dto.FileUploadResponseDto;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
