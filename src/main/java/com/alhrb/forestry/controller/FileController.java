@@ -1,7 +1,7 @@
 package com.alhrb.forestry.controller;
 
 import com.alhrb.forestry.files.StoredFileDto;
-import com.alhrb.forestry.files.FileUploadService;
+import com.alhrb.forestry.files.StoredFileService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 public class FileController {
 
-    private final FileUploadService fileUploadService;
+    private final StoredFileService storedFileService;
     private final SecurityHelper securityHelper;
 
     @PostMapping("/upload")
@@ -30,7 +30,7 @@ public class FileController {
 
         Long userId = securityHelper.getCurrentUserId();
         try {
-            StoredFileDto response = fileUploadService.uploadFile(userId, file);
+            StoredFileDto response = storedFileService.uploadFile(userId, file);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -43,12 +43,12 @@ public class FileController {
 
     @PostMapping
     public ResponseEntity<List<StoredFileDto>> getUserFiles() {
-        return ResponseEntity.ok(fileUploadService.getUserFiles(securityHelper.getCurrentUserId()));
+        return ResponseEntity.ok(storedFileService.getUserFiles(securityHelper.getCurrentUserId()));
     }
 
     @GetMapping("/{fileId}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
-        byte[] fileData = fileUploadService.getFileData(fileId, securityHelper.getCurrentUserId());
+        byte[] fileData = storedFileService.getFileData(fileId, securityHelper.getCurrentUserId());
         ByteArrayResource resource = new ByteArrayResource(fileData);
 
         return ResponseEntity.ok()

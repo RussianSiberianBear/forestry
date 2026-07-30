@@ -1,9 +1,8 @@
 package com.alhrb.forestry.staging.controller;
 
-import com.alhrb.forestry.files.FileUploadServiceImpl;
+import com.alhrb.forestry.files.StoredFileServiceImpl;
 import com.alhrb.forestry.files.ZipExtractResultDto;
 import com.alhrb.forestry.staging.service.FgislkCommonInfoImportService;
-import com.alhrb.forestry.staging.model.FgislkCommonInfo;
 import com.alhrb.forestry.staging.repository.FgislkCommonInfoRepository;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -25,7 +23,7 @@ import java.util.Map;
 public class FgislkUploadController {
 
     private final FgislkCommonInfoImportService importService;
-    private final FileUploadServiceImpl uploadService;
+    private final StoredFileServiceImpl uploadService;
     private final FgislkCommonInfoRepository repository;
     private final SecurityHelper securityHelper;
 

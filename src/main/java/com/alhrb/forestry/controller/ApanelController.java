@@ -126,10 +126,10 @@ public class ApanelController {
             GridP p = (req != null) ? req.first() : null;
 
             if (p.getOper().equalsIgnoreCase("read")) {
-
+                return ResponseEntity.ok(userService.findAll(p));
             }
 
-            return ResponseEntity.ok(userService.findAll(p));
+
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("success", false, "message", "Ошибка при выполнении операции!"));
         }

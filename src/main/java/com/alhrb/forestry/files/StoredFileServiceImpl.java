@@ -20,7 +20,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class FileUploadServiceImpl implements FileUploadService {
+public class StoredFileServiceImpl implements StoredFileService {
     private static final String STATUS_SAVING = "SAVING";
     private static final String STATUS_UPLOADED = "UPLOADED";
     private static final String STATUS_EXTRACTED = "EXTRACTED";

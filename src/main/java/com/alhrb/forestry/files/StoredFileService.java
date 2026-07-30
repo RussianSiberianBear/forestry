@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-public interface FileUploadService {
+public interface StoredFileService {
     StoredFileDto uploadFile(Long userId, MultipartFile file) throws IOException;
     ZipExtractResultDto uploadAndExtractZip(Long userId, MultipartFile file) throws IOException;
     List<StoredFileDto> getUserFiles(Long userId);
