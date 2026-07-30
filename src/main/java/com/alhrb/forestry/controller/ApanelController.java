@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +22,7 @@ import java.util.Map;
 
 
 @Controller
+@RequestMapping("/api/apanel")
 @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
 public class ApanelController {
 
@@ -38,8 +40,7 @@ public class ApanelController {
         return "admin/apanel";
     }
 
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
-    @PostMapping("/api/apanel/users")
+    @PostMapping("/users")
     public ResponseEntity<?> userOperation(@RequestBody(required = false) GridRequest req) {
 
         try {
@@ -118,4 +119,21 @@ public class ApanelController {
         return ResponseEntity.ok(Map.of("success", false, "message", "Неподдерживаемая операция!"));
     }
 
+    @PostMapping("/userfiles")
+    public ResponseEntity<?> userFiles(@RequestBody(required = false) GridRequest req) {
+        try {
+
+            GridP p = (req != null) ? req.first() : null;
+
+            if (p.getOper().equalsIgnoreCase("read")) {
+
+            }
+
+            return ResponseEntity.ok(userService.findAll(p));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("success", false, "message", "Ошибка при выполнении операции!"));
+        }
+
+        return ResponseEntity.ok(Map.of("success", false, "message", "Неподдерживаемая операция!"));
+    }
 }

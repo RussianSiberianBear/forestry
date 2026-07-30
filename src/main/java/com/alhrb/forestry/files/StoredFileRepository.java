@@ -1,4 +1,4 @@
-package com.alhrb.forestry.staging;
+package com.alhrb.forestry.files;
 
 import com.alhrb.forestry.files.model.staging.StoredFile;
 import org.springframework.data.jpa.repository.JpaRepository;

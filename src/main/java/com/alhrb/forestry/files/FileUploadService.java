@@ -7,16 +7,16 @@ import java.nio.file.Path;
 import java.util.List;
 
 public interface FileUploadService {
-    FileUploadResponseDto uploadFile(Long userId, MultipartFile file) throws IOException;
+    StoredFileDto uploadFile(Long userId, MultipartFile file) throws IOException;
     ZipExtractResultDto uploadAndExtractZip(Long userId, MultipartFile file) throws IOException;
-    List<FileUploadResponseDto> getUserFiles(Long userId);
+    List<StoredFileDto> getUserFiles(Long userId);
     byte[] getFileData(Long fileId);
     byte[] getFileData(Long fileId, Long userId);
     void deleteFile(Long fileId, Long userId);
-    FileUploadResponseDto updateFileStatus(Long fileId, String status);
-    FileUploadResponseDto markProcessed(Long fileId, Long userId);
-    FileUploadResponseDto markProcessingError(Long fileId, Long userId, String errorMessage);
-    List<FileUploadResponseDto> getFilesByStatus(String status);
+    StoredFileDto updateFileStatus(Long fileId, String status);
+    StoredFileDto markProcessed(Long fileId, Long userId);
+    StoredFileDto markProcessingError(Long fileId, Long userId, String errorMessage);
+    List<StoredFileDto> getFilesByStatus(String status);
     String getFileExtension(String filename);
     boolean isZipFile(MultipartFile file);
     boolean isZipFile(Path path);

@@ -1,6 +1,6 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.files.FileUploadResponseDto;
+import com.alhrb.forestry.files.StoredFileDto;
 import com.alhrb.forestry.files.FileUploadService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +26,11 @@ public class FileController {
     private final SecurityHelper securityHelper;
 
     @PostMapping("/upload")
-    public ResponseEntity<FileUploadResponseDto> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<StoredFileDto> uploadFile(@RequestParam("file") MultipartFile file) {
 
         Long userId = securityHelper.getCurrentUserId();
         try {
-            FileUploadResponseDto response = fileUploadService.uploadFile(userId, file);
+            StoredFileDto response = fileUploadService.uploadFile(userId, file);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -42,7 +42,7 @@ public class FileController {
     }
 
     @PostMapping
-    public ResponseEntity<List<FileUploadResponseDto>> getUserFiles() {
+    public ResponseEntity<List<StoredFileDto>> getUserFiles() {
         return ResponseEntity.ok(fileUploadService.getUserFiles(securityHelper.getCurrentUserId()));
     }
 

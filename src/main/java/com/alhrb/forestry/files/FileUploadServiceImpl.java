@@ -2,7 +2,6 @@ package com.alhrb.forestry.files;
 
 import com.alhrb.forestry.config.DirectoryConfig;
 import com.alhrb.forestry.files.model.staging.StoredFile;
-import com.alhrb.forestry.staging.StoredFileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +32,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     @Transactional
-    public FileUploadResponseDto uploadFile(Long userId, MultipartFile file) throws IOException {
+    public StoredFileDto uploadFile(Long userId, MultipartFile file) throws IOException {
         validate(userId, file);
 
         String checksum = sha256(file);
@@ -67,7 +66,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             target = savePhysicalFile(file, entity.getId(), userId);
             entity.setRelativePath(toRelativePath(target));
             entity.setStatus(STATUS_UPLOADED);
-            return mapToDto(repository.save(entity));
+            return StoredFileDto.fromEntity(repository.save(entity));
         } catch (Exception e) {
             deleteStorageDirectory(userId, entity.getId());
             repository.delete(entity);
@@ -85,16 +84,16 @@ public class FileUploadServiceImpl implements FileUploadService {
             throw new IllegalArgumentException("Файл должен быть ZIP-архивом");
         }
 
-        FileUploadResponseDto saved = uploadFile(userId, file);
+        StoredFileDto saved = uploadFile(userId, file);
         try {
             ZipExtractResultDto result = zipExtractorService.extractZip(
-                    getPhysicalFilePath(saved.getId(), userId), userId, saved.getId()
+                    getPhysicalFilePath(saved.id(), userId), userId, saved.id()
             );
-            result.setStorageId(saved.getId());
-            updateFileStatus(saved.getId(), STATUS_EXTRACTED);
+            result.setStorageId(saved.id());
+            updateFileStatus(saved.id(), STATUS_EXTRACTED);
             return result;
         } catch (Exception e) {
-            deleteFile(saved.getId(), userId);
+            deleteFile(saved.id(), userId);
             if (e instanceof IOException io) {
                 throw io;
             }
@@ -134,8 +133,8 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
-    public List<FileUploadResponseDto> getUserFiles(Long userId) {
-        return repository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::mapToDto).toList();
+    public List<StoredFileDto> getUserFiles(Long userId) {
+        return repository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(StoredFileDto::fromEntity).toList();
     }
 
     @Override
@@ -167,40 +166,40 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     @Transactional
-    public FileUploadResponseDto updateFileStatus(Long fileId, String status) {
+    public StoredFileDto updateFileStatus(Long fileId, String status) {
         StoredFile file = repository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("Файл не найден"));
         file.setStatus(status);
-        return mapToDto(repository.save(file));
+        return StoredFileDto.fromEntity(repository.save(file));
     }
 
     @Override
     @Transactional
-    public FileUploadResponseDto markProcessed(Long fileId, Long userId) {
+    public StoredFileDto markProcessed(Long fileId, Long userId) {
         StoredFile file = repository.findByIdAndUserId(fileId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
         file.setStatus(STATUS_PROCESSED);
         file.setProcessed(true);
         file.setProcessedAt(LocalDateTime.now());
         file.setErrorMessage(null);
-        return mapToDto(repository.save(file));
+        return StoredFileDto.fromEntity(repository.save(file));
     }
 
     @Override
     @Transactional
-    public FileUploadResponseDto markProcessingError(Long fileId, Long userId, String errorMessage) {
+    public StoredFileDto markProcessingError(Long fileId, Long userId, String errorMessage) {
         StoredFile file = repository.findByIdAndUserId(fileId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
         file.setStatus(STATUS_PROCESSING_ERROR);
         file.setProcessed(false);
         file.setProcessedAt(null);
         file.setErrorMessage(limit(errorMessage, 2000));
-        return mapToDto(repository.save(file));
+        return StoredFileDto.fromEntity(repository.save(file));
     }
 
     @Override
-    public List<FileUploadResponseDto> getFilesByStatus(String status) {
-        return repository.findByStatus(status).stream().map(this::mapToDto).toList();
+    public List<StoredFileDto> getFilesByStatus(String status) {
+        return repository.findByStatus(status).stream().map(StoredFileDto::fromEntity).toList();
     }
 
     @Override
@@ -220,8 +219,8 @@ public class FileUploadServiceImpl implements FileUploadService {
         return index >= 0 && index < name.length() - 1 ? name.substring(index + 1) : "";
     }
 
-    private FileUploadResponseDto mapToDto(StoredFile file) {
-        return new FileUploadResponseDto(
+    private StoredFileDto mapToDto(StoredFile file) {
+        return new StoredFileDto(
                 file.getId(), file.getUserId(), file.getType(), file.getOriginalName(), file.getStoredName(),
                 file.getRelativePath(), file.getSha256(), file.getContentType(), file.getExtension(), file.getSize(),
                 file.getStatus(), file.getProcessed(), file.getCreatedAt(), file.getProcessedAt(), file.getErrorMessage()
