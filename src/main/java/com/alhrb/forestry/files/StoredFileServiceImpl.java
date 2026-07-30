@@ -1,21 +1,32 @@
 package com.alhrb.forestry.files;
 
+import com.alhrb.forestry.common.specification.DynamicSpecificationBuilder;
+import com.alhrb.forestry.common.specification.GridPageableBuilder;
 import com.alhrb.forestry.config.DirectoryConfig;
+import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.files.model.staging.StoredFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +37,40 @@ public class StoredFileServiceImpl implements StoredFileService {
     private static final String STATUS_EXTRACTED = "EXTRACTED";
     private static final String STATUS_PROCESSED = "PROCESSED";
     private static final String STATUS_PROCESSING_ERROR = "PROCESSING_ERROR";
+
+    private static final Set<String> FILTER_FIELDS = Set.of(
+            "id",
+            "userId",
+            "type",
+            "originalName",
+            "storedName",
+            "relativePath",
+            "sha256",
+            "contentType",
+            "extension",
+            "size",
+            "status",
+            "createdAt",
+            "processedAt",
+            "errorMessage"
+    );
+
+    private static final Set<String> SORT_FIELDS = Set.of(
+            "id",
+            "userId",
+            "type",
+            "originalName",
+            "storedName",
+            "relativePath",
+            "sha256",
+            "contentType",
+            "extension",
+            "size",
+            "status",
+            "createdAt",
+            "processedAt",
+            "errorMessage"
+    );
 
     private final StoredFileRepository repository;
     private final ZipExtractorService zipExtractorService;
@@ -119,7 +164,7 @@ public class StoredFileServiceImpl implements StoredFileService {
         StoredFile file = userId == null
                 ? repository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("Файл не найден"))
                 : repository.findByIdAndUserId(fileId, userId)
-                    .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
+                .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
 
         if (file.getRelativePath() == null || file.getRelativePath().isBlank() || "pending".equals(file.getRelativePath())) {
             throw new IOException("Для файла не сохранён путь на диске");
@@ -133,8 +178,29 @@ public class StoredFileServiceImpl implements StoredFileService {
     }
 
     @Override
-    public List<StoredFileDto> getUserFiles(Long userId) {
-        return repository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(StoredFileDto::fromEntity).toList();
+    public Map<String, Object> getUserFiles(GridP params) {
+
+        Specification<StoredFile> specification =
+                DynamicSpecificationBuilder.build(
+                        params.getFilter(),
+                        FILTER_FIELDS
+                );
+
+        Pageable pageable =
+                GridPageableBuilder.build(
+                        params,
+                        SORT_FIELDS
+                );
+
+        Page page = repository
+                .findAll(specification, pageable)
+                .map(StoredFileDto::fromEntity);
+
+        Map<String, Object> data = Map.of(
+                "rows", page.getContent(),
+                "totalRecords", page.getTotalElements()
+        );
+        return Map.of("success", true, "message", "OK", "data", data);
     }
 
     @Override
@@ -217,14 +283,6 @@ public class StoredFileServiceImpl implements StoredFileService {
         if (name == null) return "";
         int index = name.lastIndexOf('.');
         return index >= 0 && index < name.length() - 1 ? name.substring(index + 1) : "";
-    }
-
-    private StoredFileDto mapToDto(StoredFile file) {
-        return new StoredFileDto(
-                file.getId(), file.getUserId(), file.getType(), file.getOriginalName(), file.getStoredName(),
-                file.getRelativePath(), file.getSha256(), file.getContentType(), file.getExtension(), file.getSize(),
-                file.getStatus(), file.getProcessed(), file.getCreatedAt(), file.getProcessedAt(), file.getErrorMessage()
-        );
     }
 
     private String resolveType(String extension) {

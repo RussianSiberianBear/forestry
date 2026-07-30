@@ -1,17 +1,24 @@
 package com.alhrb.forestry.files;
 
-import com.alhrb.forestry.config.DirectoryConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -32,9 +39,11 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
         Files.createDirectories(dir);
         try {
             ZipExtractResultDto result;
-            try { result = extract(zipPath, dir, StandardCharsets.UTF_8); }
-            catch (IllegalArgumentException malformedUtf8) {
-                deleteRecursively(dir); Files.createDirectories(dir);
+            try {
+                result = extract(zipPath, dir, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException malformedUtf8) {
+                deleteRecursively(dir);
+                Files.createDirectories(dir);
                 result = extract(zipPath, dir, Charset.forName("CP866"));
             }
             if (result.getTotalFiles() == 0) throw new IOException("В ZIP-архиве не найдено ни одного KML-файла");
@@ -49,8 +58,12 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
     @Override
     public ZipExtractResultDto extractZip(MultipartFile file, Long userId) throws IOException {
         Path temp = Files.createTempFile("forest-stand-", ".zip");
-        try { file.transferTo(temp); return extractZip(temp, userId, null); }
-        finally { Files.deleteIfExists(temp); }
+        try {
+            file.transferTo(temp);
+            return extractZip(temp, userId, null);
+        } finally {
+            Files.deleteIfExists(temp);
+        }
     }
 
     @Override
@@ -67,7 +80,11 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
     public List<String> getZipContents(Path zipPath) throws IOException {
         List<String> names = new ArrayList<>();
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipPath), StandardCharsets.UTF_8)) {
-            ZipEntry e; while ((e = zis.getNextEntry()) != null) { names.add(e.getName()); zis.closeEntry(); }
+            ZipEntry e;
+            while ((e = zis.getNextEntry()) != null) {
+                names.add(e.getName());
+                zis.closeEntry();
+            }
         }
         return names;
     }
@@ -78,11 +95,17 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zip), charset)) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) { zis.closeEntry(); continue; }
+                if (entry.isDirectory()) {
+                    zis.closeEntry();
+                    continue;
+                }
                 if (files.size() >= MAX_FILES) throw new IOException("В архиве больше " + MAX_FILES + " файлов");
                 String entryName = entry.getName().replace('\\', '/');
                 String ext = extension(entryName).toLowerCase();
-                if (!ALLOWED.contains(ext)) { zis.closeEntry(); continue; }
+                if (!ALLOWED.contains(ext)) {
+                    zis.closeEntry();
+                    continue;
+                }
 
                 Path relative = safeRelativePath(entryName);
                 Path target = root.resolve(relative).normalize();
@@ -92,7 +115,7 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
                 long written = copyEntry(zis, target, total);
                 total += written;
                 files.add(ZipExtractResultDto.ExtractedFileInfo.builder()
-                        .originalName(entryName).storedName(relative.toString().replace('\\','/')).path(target)
+                        .originalName(entryName).storedName(relative.toString().replace('\\', '/')).path(target)
                         .size(written).extension(ext).build());
                 zis.closeEntry();
             }
@@ -103,14 +126,19 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
     private long copyEntry(ZipInputStream zis, Path target, long alreadyTotal) throws IOException {
         long written = 0;
         try (OutputStream out = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW)) {
-            byte[] buf = new byte[8192]; int n;
+            byte[] buf = new byte[8192];
+            int n;
             while ((n = zis.read(buf)) != -1) {
                 written += n;
                 if (written > MAX_SINGLE_FILE_SIZE) throw new IOException("KML-файл в архиве превышает 100 МБ");
-                if (alreadyTotal + written > MAX_TOTAL_SIZE) throw new IOException("Распакованный архив превышает 500 МБ");
+                if (alreadyTotal + written > MAX_TOTAL_SIZE)
+                    throw new IOException("Распакованный архив превышает 500 МБ");
                 out.write(buf, 0, n);
             }
-        } catch (Exception e) { Files.deleteIfExists(target); throw e; }
+        } catch (Exception e) {
+            Files.deleteIfExists(target);
+            throw e;
+        }
         return written;
     }
 
@@ -120,12 +148,28 @@ public class ZipExtractorServiceImpl implements ZipExtractorService {
         Path result = Paths.get("");
         for (Path part : raw) {
             String s = part.toString().replaceAll("[<>:\"|?*\\p{Cntrl}]", "_");
-            if (s.isBlank() || s.equals(".") || s.equals("..")) throw new IOException("Некорректное имя в ZIP: " + entryName);
+            if (s.isBlank() || s.equals(".") || s.equals(".."))
+                throw new IOException("Некорректное имя в ZIP: " + entryName);
             result = result.resolve(s);
         }
         return result;
     }
 
-    private String extension(String name) { int i = name.lastIndexOf('.'); return i >= 0 && i < name.length()-1 ? name.substring(i+1) : ""; }
-    private void deleteRecursively(Path root) { if (!Files.exists(root)) return; try (var w=Files.walk(root)) { w.sorted(Comparator.reverseOrder()).forEach(p->{try{Files.deleteIfExists(p);}catch(IOException ignored){}}); } catch(IOException ignored){} }
+    private String extension(String name) {
+        int i = name.lastIndexOf('.');
+        return i >= 0 && i < name.length() - 1 ? name.substring(i + 1) : "";
+    }
+
+    private void deleteRecursively(Path root) {
+        if (!Files.exists(root)) return;
+        try (var w = Files.walk(root)) {
+            w.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException ignored) {
+                }
+            });
+        } catch (IOException ignored) {
+        }
+    }
 }

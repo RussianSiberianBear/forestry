@@ -290,6 +290,7 @@ function setQuarter(quarterId) {
 // КВАРТАЛЫ (AUTOCOMPLETE)
 // ==========================================
 let quarterSearchTimeout = null;
+
 function searchQuarters(query) {
     const technicalUnitId = document.getElementById('technicalUnitSelect')?.value;
     const subForestryId = document.getElementById('subForestrySelect')?.value;
@@ -409,7 +410,7 @@ function resetTechUnit() {
     }
 }
 
-function resetQuarter(){
+function resetQuarter() {
 
     const quarterInput = document.getElementById('quarterInput');
     if (quarterInput) {
@@ -434,7 +435,7 @@ function clearQuarter() {
     if (suggestions) suggestions.style.display = 'none';
 }
 
-function resetCuttingArea(){
+function resetCuttingArea() {
 
     const numberInQuarterInput = document.getElementById('numberInQuarter');
     if (numberInQuarterInput) {
@@ -456,6 +457,7 @@ function enableQuarterField() {
         numberInQuarterInput.placeholder = 'Сначала выберите квартал';
     }
 }
+
 // ==========================================
 // ОБРАБОТЧИКИ ИЗМЕНЕНИЙ
 // ==========================================

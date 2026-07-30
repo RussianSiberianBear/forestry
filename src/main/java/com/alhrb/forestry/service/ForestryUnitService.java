@@ -7,7 +7,6 @@ import com.alhrb.forestry.mapper.ForestryUnitMapper;
 import com.alhrb.forestry.model.ForestryUnit;
 import com.alhrb.forestry.model.ForestryUnitType;
 import com.alhrb.forestry.repository.ForestryUnitRepository;
-import com.alhrb.forestry.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

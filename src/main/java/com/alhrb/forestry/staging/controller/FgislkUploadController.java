@@ -2,14 +2,17 @@ package com.alhrb.forestry.staging.controller;
 
 import com.alhrb.forestry.files.StoredFileServiceImpl;
 import com.alhrb.forestry.files.ZipExtractResultDto;
-import com.alhrb.forestry.staging.service.FgislkCommonInfoImportService;
 import com.alhrb.forestry.staging.repository.FgislkCommonInfoRepository;
+import com.alhrb.forestry.staging.service.FgislkCommonInfoImportService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
@@ -49,8 +52,8 @@ public class FgislkUploadController {
         Long userId = securityHelper.getCurrentUserId();
 
         try {
-    //        FgislkCommonInfoImportService.ImportResult result = importService.importCsv(file);
-            ZipExtractResultDto resultDto = uploadService.uploadAndExtractZip(userId,file);
+            //        FgislkCommonInfoImportService.ImportResult result = importService.importCsv(file);
+            ZipExtractResultDto resultDto = uploadService.uploadAndExtractZip(userId, file);
 
 
             Map<String, Object> response = new HashMap<>();

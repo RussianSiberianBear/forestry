@@ -1,7 +1,7 @@
 package com.alhrb.forestry.service.importer;
 
-import com.alhrb.forestry.staging.model.ForestStandKmlImport;
 import com.alhrb.forestry.staging.ImportStatus;
+import com.alhrb.forestry.staging.model.ForestStandKmlImport;
 import com.alhrb.forestry.staging.repository.ForestStandKmlImportRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -393,7 +393,7 @@ public class ForestStandKmlImportService {
                 entity.setVydel(attributes.get("выдел"));
             }
         }
-  //      entity.setIndexField(attributes.get("Index"));
+        //      entity.setIndexField(attributes.get("Index"));
         entity.setIndexField(entity.getInd());
 
         if (attributes.get("площа") != null)

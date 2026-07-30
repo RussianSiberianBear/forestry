@@ -13,11 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
-import java.io.FilterReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -44,7 +40,7 @@ public class FgislkCommonInfoImportService {
 
     /**
      * Полностью заменяет staging-данные текущего пользователя данными из CSV.
-     *
+     * <p>
      * DTO и entity содержат одинаковые 83 строковых поля. Сопоставление выполняется
      * явно, чтобы изменение структуры одного из классов обнаруживалось при компиляции.
      */
@@ -201,7 +197,7 @@ public class FgislkCommonInfoImportService {
                 && isBlank(first.getForestDistrictAccountingNumber())) {
             throw new IllegalArgumentException(
                     "CSV распознан неверно: первые столбцы строки данных пусты. " +
-                    "Проверьте разделитель ';' и порядок столбцов"
+                            "Проверьте разделитель ';' и порядок столбцов"
             );
         }
     }
@@ -227,7 +223,9 @@ public class FgislkCommonInfoImportService {
         return entities;
     }
 
-    /** Явное сопоставление всех 83 полей DTO с колонками staging-entity. */
+    /**
+     * Явное сопоставление всех 83 полей DTO с колонками staging-entity.
+     */
     private FgislkCommonInfo convertToEntity(FgislkCsvRow row, Long userId) {
         FgislkCommonInfo entity = new FgislkCommonInfo();
         entity.setUserId(userId);
@@ -364,7 +362,9 @@ public class FgislkCommonInfoImportService {
                 : throwable.getClass().getSimpleName();
     }
 
-    /** Удаляет только первый символ BOM после декодирования потока. */
+    /**
+     * Удаляет только первый символ BOM после декодирования потока.
+     */
     private static final class BomFilterReader extends FilterReader {
 
         private static final int BOM = '\uFEFF';

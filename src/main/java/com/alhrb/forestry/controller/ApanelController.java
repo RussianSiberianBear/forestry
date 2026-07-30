@@ -3,6 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.UserDto;
 import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.dto.abgrid.GridRequest;
+import com.alhrb.forestry.files.StoredFileService;
 import com.alhrb.forestry.user.UserMapper;
 import com.alhrb.forestry.user.service.UserService;
 import com.alhrb.forestry.util.DateTimeUtil;
@@ -13,7 +14,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,16 +22,17 @@ import java.util.Map;
 
 
 @Controller
-@RequestMapping("/api/apanel")
 @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
 public class ApanelController {
 
     private final UserService userService;
     private final UserMapper mapper;
+    private final StoredFileService fileService;
 
-    public ApanelController(UserService userService, UserMapper mapper) {
+    public ApanelController(UserService userService, UserMapper mapper, StoredFileService fileService) {
         this.userService = userService;
         this.mapper = mapper;
+        this.fileService = fileService;
     }
 
     @GetMapping("/apanel")
@@ -40,7 +41,7 @@ public class ApanelController {
         return "admin/apanel";
     }
 
-    @PostMapping("/users")
+    @PostMapping("/api/apanel/users")
     public ResponseEntity<?> userOperation(@RequestBody(required = false) GridRequest req) {
 
         try {
@@ -119,14 +120,13 @@ public class ApanelController {
         return ResponseEntity.ok(Map.of("success", false, "message", "Неподдерживаемая операция!"));
     }
 
-    @PostMapping("/userfiles")
+    @PostMapping("/api/apanel/userfiles")
     public ResponseEntity<?> userFiles(@RequestBody(required = false) GridRequest req) {
         try {
-
             GridP p = (req != null) ? req.first() : null;
 
             if (p.getOper().equalsIgnoreCase("read")) {
-                return ResponseEntity.ok(userService.findAll(p));
+                return ResponseEntity.ok(fileService.getUserFiles(p));
             }
 
 

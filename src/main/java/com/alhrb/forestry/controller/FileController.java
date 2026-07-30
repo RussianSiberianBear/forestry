@@ -1,5 +1,6 @@
 package com.alhrb.forestry.controller;
 
+import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.files.StoredFileDto;
 import com.alhrb.forestry.files.StoredFileService;
 import com.alhrb.forestry.util.SecurityHelper;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/files")
@@ -42,8 +42,8 @@ public class FileController {
     }
 
     @PostMapping
-    public ResponseEntity<List<StoredFileDto>> getUserFiles() {
-        return ResponseEntity.ok(storedFileService.getUserFiles(securityHelper.getCurrentUserId()));
+    public ResponseEntity<?> getUserFiles(GridP params) {
+        return ResponseEntity.ok(storedFileService.getUserFiles(params));
     }
 
     @GetMapping("/{fileId}/download")
