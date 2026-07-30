@@ -34,26 +34,26 @@ public interface FgislkCommonInfoRepository extends JpaRepository<FgislkCommonIn
      * Получение статистики по регионам
      */
     @Query("""
-        SELECT f.regionName, COUNT(f) as count 
-        FROM FgislkCommonInfo f 
-        WHERE f.userId =: userId    
-        GROUP BY f.regionName 
-        ORDER BY count DESC
-    """)
+                SELECT f.regionName, COUNT(f) as count 
+                FROM FgislkCommonInfo f 
+                WHERE f.userId =: userId    
+                GROUP BY f.regionName 
+                ORDER BY count DESC
+            """)
     List<Object[]> getRegionStatistics(@Param("userId") Long userId);
 
     /**
      * Получение общей статистики
      */
     @Query(value = """
-    SELECT
-        COUNT(*),
-        COUNT(DISTINCT region_code),
-        COUNT(DISTINCT forest_district_accounting_number),
-        SUM(REPLACE(plot_area, ',', '.')::numeric)
-    FROM staging.fgislk_common_info
-    WHERE user_id = :userId
-    """, nativeQuery = true)
+            SELECT
+                COUNT(*),
+                COUNT(DISTINCT region_code),
+                COUNT(DISTINCT forest_district_accounting_number),
+                SUM(REPLACE(plot_area, ',', '.')::numeric)
+            FROM staging.fgislk_common_info
+            WHERE user_id = :userId
+            """, nativeQuery = true)
     Object[] getTotalStatistics(@Param("userId") Long userId);
 
     /**

@@ -59,9 +59,8 @@ public class SecurityConfig {
                 // Настройка авторизации
                 .authorizeHttpRequests(auth -> auth
                         // 1) Закрытые endpoints
-                        .requestMatchers("/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
-                        .requestMatchers("/api/admin/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/abgrid-engine/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        .requestMatchers("/api/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
                         .requestMatchers("/apanel/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // 2) Публичные endpoints

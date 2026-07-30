@@ -186,6 +186,8 @@
                     </select>
                 </div>
                 <div th:replace="~{upload}"></div>
+                <div id="gridUploadedFiles"></div>
+
             </div>
         </div>
     </div>
@@ -451,6 +453,55 @@
             });
         });
 
+        const cfgUploadedFiles = {
+            autoLoad: true,
+            readOnly: true,
+            data: {
+                dataKey: 'gridUploadedFiles',
+                url: '/api/apanel/userfiles'
+            },
+            schema: {
+                fields: {
+                    id: {
+                        type: 'int',
+                        editor: {edit: {visible: false}, create: {visible: false}},
+                        ui: {label: 'id', grid: {visible: false}}
+                    },
+                    createdAt: {type: 'datetime', ui: {label: 'Загружен', grid: {visible: true, width: '8%'}}},
+                    originalName: {type: 'string', ui: {label: 'Ориг. имя', grid: {visible: true, width: '12%'}}},
+                    type: {type: 'string', ui: {label: 'Тип', grid: {visible: true, width: '10%'}}},
+                    size: {type: 'string', ui: {label: 'Размер, байт', grid: {visible: true, width: '10%'}}},
+                    status: {type: 'string', ui: {label: 'Статус', grid: {visible: true, width: '10%'}}},
+                    sha256: {type: 'string', ui: {label: 'Контр. сумма', grid: {visible: true, width: '10%'}}},
+                    relativePath: {type: 'string', ui: {label: 'Путь', grid: {visible: true, width: '10%'}}},
+                    contentType: {type: 'string', ui: {label: 'ContentType', grid: {visible: true, width: '10%'}}},
+                    extension: {type: 'string', ui: {label: 'Расширение', grid: {visible: true, width: '10%'}}},
+                    errorMessage: {type: 'string', ui: {label: 'Контр. сумма', grid: {visible: true, width: '10%'}}}
+                }
+            },
+            view: {
+                checkbox: true,
+                columnsResizable: true,
+                height: 415,
+                tableTitle: {
+                    enabled: true,
+                    caption: 'Файлы пользователя',
+                    hint: 'Файлы пользователя',
+                    toggle: false
+                },
+                toolBar: {
+                    del: {caption: 'Удалить', hint: 'Удалить'},
+                    doIt: {caption: 'Обработать', hint: 'Обработать'},
+                },
+                pager: {
+                    enabled: true,
+                    rpp: [10, 20, 50]
+                },
+                sortOrder: [{field: 'createdAt', dir: 'desc'}]
+            }
+        }
+
+        const gridUploadedFiles = new ABGrid("#gridUploadedFiles", cfgUploadedFiles);
 
     </script>
 </div>

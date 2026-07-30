@@ -1,7 +1,8 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.dto.FileUploadResponseDto;
-import com.alhrb.forestry.files.FileUploadService;
+import com.alhrb.forestry.dto.abgrid.GridP;
+import com.alhrb.forestry.files.StoredFileDto;
+import com.alhrb.forestry.files.StoredFileService;
 import com.alhrb.forestry.util.SecurityHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/files")
@@ -22,15 +22,15 @@ import java.util.List;
 @Slf4j
 public class FileController {
 
-    private final FileUploadService fileUploadService;
+    private final StoredFileService storedFileService;
     private final SecurityHelper securityHelper;
 
     @PostMapping("/upload")
-    public ResponseEntity<FileUploadResponseDto> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<StoredFileDto> uploadFile(@RequestParam("file") MultipartFile file) {
 
         Long userId = securityHelper.getCurrentUserId();
         try {
-            FileUploadResponseDto response = fileUploadService.uploadFile(userId, file);
+            StoredFileDto response = storedFileService.uploadFile(userId, file);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -41,14 +41,14 @@ public class FileController {
 
     }
 
-    @GetMapping
-    public ResponseEntity<List<FileUploadResponseDto>> getUserFiles() {
-        return ResponseEntity.ok(fileUploadService.getUserFiles(securityHelper.getCurrentUserId()));
+    @PostMapping
+    public ResponseEntity<?> getUserFiles(GridP params) {
+        return ResponseEntity.ok(storedFileService.getUserFiles(params));
     }
 
     @GetMapping("/{fileId}/download")
     public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
-        byte[] fileData = fileUploadService.getFileData(fileId, securityHelper.getCurrentUserId());
+        byte[] fileData = storedFileService.getFileData(fileId, securityHelper.getCurrentUserId());
         ByteArrayResource resource = new ByteArrayResource(fileData);
 
         return ResponseEntity.ok()

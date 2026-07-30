@@ -1,40 +1,83 @@
 package com.alhrb.forestry.files;
 
+import com.alhrb.forestry.common.specification.DynamicSpecificationBuilder;
+import com.alhrb.forestry.common.specification.GridPageableBuilder;
 import com.alhrb.forestry.config.DirectoryConfig;
-import com.alhrb.forestry.dto.FileUploadResponseDto;
+import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.files.model.staging.StoredFile;
-import com.alhrb.forestry.staging.StoredFileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class FileUploadServiceImpl implements FileUploadService {
+public class StoredFileServiceImpl implements StoredFileService {
     private static final String STATUS_SAVING = "SAVING";
     private static final String STATUS_UPLOADED = "UPLOADED";
     private static final String STATUS_EXTRACTED = "EXTRACTED";
     private static final String STATUS_PROCESSED = "PROCESSED";
     private static final String STATUS_PROCESSING_ERROR = "PROCESSING_ERROR";
 
+    private static final Set<String> FILTER_FIELDS = Set.of(
+            "id",
+            "userId",
+            "type",
+            "originalName",
+            "storedName",
+            "relativePath",
+            "sha256",
+            "contentType",
+            "extension",
+            "size",
+            "status",
+            "createdAt",
+            "processedAt",
+            "errorMessage"
+    );
+
+    private static final Set<String> SORT_FIELDS = Set.of(
+            "id",
+            "userId",
+            "type",
+            "originalName",
+            "storedName",
+            "relativePath",
+            "sha256",
+            "contentType",
+            "extension",
+            "size",
+            "status",
+            "createdAt",
+            "processedAt",
+            "errorMessage"
+    );
+
     private final StoredFileRepository repository;
     private final ZipExtractorService zipExtractorService;
 
     @Override
     @Transactional
-    public FileUploadResponseDto uploadFile(Long userId, MultipartFile file) throws IOException {
+    public StoredFileDto uploadFile(Long userId, MultipartFile file) throws IOException {
         validate(userId, file);
 
         String checksum = sha256(file);
@@ -68,7 +111,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             target = savePhysicalFile(file, entity.getId(), userId);
             entity.setRelativePath(toRelativePath(target));
             entity.setStatus(STATUS_UPLOADED);
-            return mapToDto(repository.save(entity));
+            return StoredFileDto.fromEntity(repository.save(entity));
         } catch (Exception e) {
             deleteStorageDirectory(userId, entity.getId());
             repository.delete(entity);
@@ -86,16 +129,16 @@ public class FileUploadServiceImpl implements FileUploadService {
             throw new IllegalArgumentException("Файл должен быть ZIP-архивом");
         }
 
-        FileUploadResponseDto saved = uploadFile(userId, file);
+        StoredFileDto saved = uploadFile(userId, file);
         try {
             ZipExtractResultDto result = zipExtractorService.extractZip(
-                    getPhysicalFilePath(saved.getId(), userId), userId, saved.getId()
+                    getPhysicalFilePath(saved.id(), userId), userId, saved.id()
             );
-            result.setStorageId(saved.getId());
-            updateFileStatus(saved.getId(), STATUS_EXTRACTED);
+            result.setStorageId(saved.id());
+            updateFileStatus(saved.id(), STATUS_EXTRACTED);
             return result;
         } catch (Exception e) {
-            deleteFile(saved.getId(), userId);
+            deleteFile(saved.id(), userId);
             if (e instanceof IOException io) {
                 throw io;
             }
@@ -121,7 +164,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         StoredFile file = userId == null
                 ? repository.findById(fileId).orElseThrow(() -> new IllegalArgumentException("Файл не найден"))
                 : repository.findByIdAndUserId(fileId, userId)
-                    .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
+                .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
 
         if (file.getRelativePath() == null || file.getRelativePath().isBlank() || "pending".equals(file.getRelativePath())) {
             throw new IOException("Для файла не сохранён путь на диске");
@@ -135,8 +178,29 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
-    public List<FileUploadResponseDto> getUserFiles(Long userId) {
-        return repository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::mapToDto).toList();
+    public Map<String, Object> getUserFiles(GridP params) {
+
+        Specification<StoredFile> specification =
+                DynamicSpecificationBuilder.build(
+                        params.getFilter(),
+                        FILTER_FIELDS
+                );
+
+        Pageable pageable =
+                GridPageableBuilder.build(
+                        params,
+                        SORT_FIELDS
+                );
+
+        Page page = repository
+                .findAll(specification, pageable)
+                .map(StoredFileDto::fromEntity);
+
+        Map<String, Object> data = Map.of(
+                "rows", page.getContent(),
+                "totalRecords", page.getTotalElements()
+        );
+        return Map.of("success", true, "message", "OK", "data", data);
     }
 
     @Override
@@ -168,40 +232,40 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     @Transactional
-    public FileUploadResponseDto updateFileStatus(Long fileId, String status) {
+    public StoredFileDto updateFileStatus(Long fileId, String status) {
         StoredFile file = repository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("Файл не найден"));
         file.setStatus(status);
-        return mapToDto(repository.save(file));
+        return StoredFileDto.fromEntity(repository.save(file));
     }
 
     @Override
     @Transactional
-    public FileUploadResponseDto markProcessed(Long fileId, Long userId) {
+    public StoredFileDto markProcessed(Long fileId, Long userId) {
         StoredFile file = repository.findByIdAndUserId(fileId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
         file.setStatus(STATUS_PROCESSED);
         file.setProcessed(true);
         file.setProcessedAt(LocalDateTime.now());
         file.setErrorMessage(null);
-        return mapToDto(repository.save(file));
+        return StoredFileDto.fromEntity(repository.save(file));
     }
 
     @Override
     @Transactional
-    public FileUploadResponseDto markProcessingError(Long fileId, Long userId, String errorMessage) {
+    public StoredFileDto markProcessingError(Long fileId, Long userId, String errorMessage) {
         StoredFile file = repository.findByIdAndUserId(fileId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Файл не найден или недоступен"));
         file.setStatus(STATUS_PROCESSING_ERROR);
         file.setProcessed(false);
         file.setProcessedAt(null);
         file.setErrorMessage(limit(errorMessage, 2000));
-        return mapToDto(repository.save(file));
+        return StoredFileDto.fromEntity(repository.save(file));
     }
 
     @Override
-    public List<FileUploadResponseDto> getFilesByStatus(String status) {
-        return repository.findByStatus(status).stream().map(this::mapToDto).toList();
+    public List<StoredFileDto> getFilesByStatus(String status) {
+        return repository.findByStatus(status).stream().map(StoredFileDto::fromEntity).toList();
     }
 
     @Override
@@ -219,14 +283,6 @@ public class FileUploadServiceImpl implements FileUploadService {
         if (name == null) return "";
         int index = name.lastIndexOf('.');
         return index >= 0 && index < name.length() - 1 ? name.substring(index + 1) : "";
-    }
-
-    private FileUploadResponseDto mapToDto(StoredFile file) {
-        return new FileUploadResponseDto(
-                file.getId(), file.getUserId(), file.getType(), file.getOriginalName(), file.getStoredName(),
-                file.getRelativePath(), file.getSha256(), file.getContentType(), file.getExtension(), file.getSize(),
-                file.getStatus(), file.getProcessed(), file.getCreatedAt(), file.getProcessedAt(), file.getErrorMessage()
-        );
     }
 
     private String resolveType(String extension) {

@@ -115,9 +115,9 @@ public interface ForestryUnitMapper extends BaseMapper<ForestryUnit, ForestryUni
 
     @Named("mapIsLeaf")
     default Boolean mapIsLEaf(ForestryUnit entity) {
-        Boolean isLeaf = (entity.getType()==ForestryUnitType.FORESTRY && entity.getChildren().size()== 0)
-                || (entity.getType()==ForestryUnitType.SUB_FORESTRY);
+        Boolean isLeaf = (entity.getType() == ForestryUnitType.FORESTRY && entity.getChildren().size() == 0)
+                || (entity.getType() == ForestryUnitType.SUB_FORESTRY);
 
-          return entity == null ? null : isLeaf;
+        return entity == null ? null : isLeaf;
     }
 }

@@ -1,6 +1,6 @@
 package com.alhrb.forestry.controller;
 
-import com.alhrb.forestry.files.FileUploadService;
+import com.alhrb.forestry.files.StoredFileService;
 import com.alhrb.forestry.files.ZipExtractResultDto;
 import com.alhrb.forestry.service.importer.ForestStandKmlImportService;
 import com.alhrb.forestry.service.importer.KmlImportResult;
@@ -9,7 +9,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -26,7 +29,7 @@ public class ForestStandController {
     private static final long MAX_ZIP_SIZE = 50L * 1024 * 1024;
 
     private final SecurityHelper securityHelper;
-    private final FileUploadService fileUploadService;
+    private final StoredFileService storedFileService;
     private final ForestStandKmlImportService forestStandKmlImportService;
 
     @PostMapping(value = "/uploadForestStand", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -36,7 +39,7 @@ public class ForestStandController {
 
         try {
             validate(file);
-            extractResult = fileUploadService.uploadAndExtractZip(userId, file);
+            extractResult = storedFileService.uploadAndExtractZip(userId, file);
 
             List<KmlImportResult> imports = new ArrayList<>();
             for (ZipExtractResultDto.ExtractedFileInfo extractedFile : extractResult.getFiles()) {
@@ -60,9 +63,9 @@ public class ForestStandController {
             int errors = imports.stream().mapToInt(KmlImportResult::errorCount).sum();
 
             if (errors == 0) {
-                fileUploadService.markProcessed(extractResult.getStorageId(), userId);
+                storedFileService.markProcessed(extractResult.getStorageId(), userId);
             } else {
-                fileUploadService.markProcessingError(
+                storedFileService.markProcessingError(
                         extractResult.getStorageId(),
                         userId,
                         "Импорт завершён с ошибками: " + errors
@@ -103,7 +106,7 @@ public class ForestStandController {
             return;
         }
         try {
-            fileUploadService.markProcessingError(
+            storedFileService.markProcessingError(
                     result.getStorageId(),
                     userId,
                     exception.getMessage()
@@ -117,7 +120,7 @@ public class ForestStandController {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Файл не выбран или пуст");
         }
-        if (!fileUploadService.isZipFile(file)) {
+        if (!storedFileService.isZipFile(file)) {
             throw new IllegalArgumentException("Для загрузки лесных выделов требуется ZIP-архив с KML-файлом");
         }
         if (file.getSize() > MAX_ZIP_SIZE) {

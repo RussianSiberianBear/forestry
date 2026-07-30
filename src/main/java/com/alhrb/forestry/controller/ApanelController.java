@@ -3,6 +3,7 @@ package com.alhrb.forestry.controller;
 import com.alhrb.forestry.dto.UserDto;
 import com.alhrb.forestry.dto.abgrid.GridP;
 import com.alhrb.forestry.dto.abgrid.GridRequest;
+import com.alhrb.forestry.files.StoredFileService;
 import com.alhrb.forestry.user.UserMapper;
 import com.alhrb.forestry.user.service.UserService;
 import com.alhrb.forestry.util.DateTimeUtil;
@@ -26,10 +27,12 @@ public class ApanelController {
 
     private final UserService userService;
     private final UserMapper mapper;
+    private final StoredFileService fileService;
 
-    public ApanelController(UserService userService, UserMapper mapper) {
+    public ApanelController(UserService userService, UserMapper mapper, StoredFileService fileService) {
         this.userService = userService;
         this.mapper = mapper;
+        this.fileService = fileService;
     }
 
     @GetMapping("/apanel")
@@ -38,7 +41,6 @@ public class ApanelController {
         return "admin/apanel";
     }
 
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
     @PostMapping("/api/apanel/users")
     public ResponseEntity<?> userOperation(@RequestBody(required = false) GridRequest req) {
 
@@ -118,4 +120,20 @@ public class ApanelController {
         return ResponseEntity.ok(Map.of("success", false, "message", "Неподдерживаемая операция!"));
     }
 
+    @PostMapping("/api/apanel/userfiles")
+    public ResponseEntity<?> userFiles(@RequestBody(required = false) GridRequest req) {
+        try {
+            GridP p = (req != null) ? req.first() : null;
+
+            if (p.getOper().equalsIgnoreCase("read")) {
+                return ResponseEntity.ok(fileService.getUserFiles(p));
+            }
+
+
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("success", false, "message", "Ошибка при выполнении операции!"));
+        }
+
+        return ResponseEntity.ok(Map.of("success", false, "message", "Неподдерживаемая операция!"));
+    }
 }
