@@ -394,9 +394,20 @@
                     loadStart: function (e) {
                         console.log('loadStart', arguments);
 
-                        bar.removeAttribute('hidden');
-                        bar.max = e.total;
-                        bar.value = e.loaded;
+                        const type = fileType[el.value];
+
+                        if (!type) {
+                            UIkit.notification({
+                                message: '❌ Ошибка! Выберете тип файла!',
+                                status: 'danger',
+                                timeout: 3000
+                            });
+                            e.target.abort();
+                        } else {
+                            bar.removeAttribute('hidden');
+                            bar.max = e.total;
+                            bar.value = e.loaded;
+                        }
                     },
 
                     progress: function (e) {
@@ -496,7 +507,7 @@
                         bulkOper: {
                             type: 'select',
                             caption: 'Операция',
-                            placeholder: '— выберите —',
+                            placeholder: '— Выберите операцию —',
                             options: [
                                 {value: 'doIt', caption: 'Обработать'},
                                 {value: 'delete', caption: 'Удалить'},
