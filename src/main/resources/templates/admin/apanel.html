@@ -394,9 +394,20 @@
                     loadStart: function (e) {
                         console.log('loadStart', arguments);
 
-                        bar.removeAttribute('hidden');
-                        bar.max = e.total;
-                        bar.value = e.loaded;
+                        const type = fileType[el.value];
+
+                        if (!type) {
+                            UIkit.notification({
+                                message: '❌ Ошибка! Выберете тип файла!',
+                                status: 'danger',
+                                timeout: 3000
+                            });
+                            e.target.abort();
+                        } else {
+                            bar.removeAttribute('hidden');
+                            bar.max = e.total;
+                            bar.value = e.loaded;
+                        }
                     },
 
                     progress: function (e) {
@@ -455,7 +466,7 @@
 
         const cfgUploadedFiles = {
             autoLoad: true,
-            readOnly: true,
+        //    readOnly: true,
             data: {
                 dataKey: 'gridUploadedFiles',
                 url: '/api/apanel/userfiles'
@@ -490,8 +501,23 @@
                     toggle: false
                 },
                 toolBar: {
-                    del: {caption: 'Удалить', hint: 'Удалить'},
-                    doIt: {caption: 'Обработать', hint: 'Обработать'},
+                    bulkGroup: {
+                        type: 'group',
+                        class: 'abgrid-bulk',
+                        bulkOper: {
+                            type: 'select',
+                            caption: 'Операция',
+                            placeholder: '— Выберите операцию —',
+                            options: [
+                                {value: 'doIt', caption: 'Обработать'},
+                                {value: 'delete', caption: 'Удалить'},
+                            ]
+                        },
+                        applyBulkOper: {
+                            caption: 'Выполнить',
+                            requiresSelection: true
+                        }
+                    },
                 },
                 pager: {
                     enabled: true,
@@ -502,6 +528,18 @@
         }
 
         const gridUploadedFiles = new ABGrid("#gridUploadedFiles", cfgUploadedFiles);
+        gridUploadedFiles.onToolBarClick(async (action, ctx, grid) => {
+            if (action !== 'applyBulkOper') return true;
+            var opt = {};
+            opt.action = 'bulkOper';
+            opt.qConfirmEx = 'Вы уверены, что хотите выполнить данную операцию?';
+            opt.operName = 'storedFilesBulkOper';
+            opt.intent = 'files:';
+            opt.data = {};
+            opt.data.oper = grid.toolbar.getValue('bulkOper');
+            await bulkOperation(action, ctx, grid, opt);
+            return false;
+        });
 
     </script>
 </div>
